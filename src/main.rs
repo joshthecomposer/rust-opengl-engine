@@ -1,4 +1,4 @@
-use std::{ffi::CString, fs::{self, read_to_string}, mem, ptr};
+use std::{ffi::CString, fs::read_to_string, mem, ptr};
 
 use glfw::{Context, Action, Key};
 use gl;
@@ -126,23 +126,16 @@ fn handle_window_event(window: &mut glfw::Window, event: glfw::WindowEvent) {
 }
 
 fn init_shader_program(vs: &str, fs: &str) -> u32 {
-
-    println!("{}",vs);
-    println!("{}",fs);
-    let mut vertex_shader = 0;
-    let mut fragment_shader = 0;
-    let mut shader = 0;
-
-    let mut vs_source = read_to_string(vs).unwrap();
-    let mut fs_source = read_to_string(fs).unwrap();
+    let vs_source = read_to_string(vs).unwrap();
+    let fs_source = read_to_string(fs).unwrap();
 
     let vs_cstr = CString::new(vs_source).expect("Failed to convert vs source to C string");
     let fs_cstr = CString::new(fs_source).expect("Failed to convert vs source to C string");
     
     unsafe {
 
-        vertex_shader = gl::CreateShader(gl::VERTEX_SHADER);
-        fragment_shader = gl::CreateShader(gl::FRAGMENT_SHADER);
+        let vertex_shader = gl::CreateShader(gl::VERTEX_SHADER);
+        let fragment_shader = gl::CreateShader(gl::FRAGMENT_SHADER);
 
         gl::ShaderSource(vertex_shader, 1, &vs_cstr.as_ptr(), ptr::null());
         gl::ShaderSource(fragment_shader, 1, &fs_cstr.as_ptr(), ptr::null());
@@ -150,7 +143,7 @@ fn init_shader_program(vs: &str, fs: &str) -> u32 {
         compile_shader(vertex_shader);
         compile_shader(fragment_shader);
 
-        shader = gl::CreateProgram();
+        let shader = gl::CreateProgram();
 
         gl::AttachShader(shader, vertex_shader);
         gl::AttachShader(shader, fragment_shader);
