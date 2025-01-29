@@ -1,13 +1,22 @@
+use std::{path::Path, process::Command};
+
 fn main() {
-    println!("cargo:rustc-link-search=native=lib");
-
     // Link against the GLFW static library
+    println!("cargo:rustc-link-search=native=lib");
     println!("cargo:rustc-link-lib=static=glfw3");
+    
+    let resource_script_path = "./copy_files.sh";
 
-    //#[cfg(target_os = "macos")]
-    //{
-    //    println!("cargo:rustc-link-lib=framework=Cocoa");
-    //    println!("cargo:rustc-link-lib=framework=OpenGL");
-    //    println!("cargo:rustc-link-lib=framework=IOKit");
-    //}
+    if !Path::new(resource_script_path).exists() {
+        panic!("Script not found {}", resource_script_path);
+    }
+
+    let status = Command::new("bash")
+        .arg(resource_script_path)
+        .status()
+        .expect("Failed to execute external Bash script");
+
+    if !status.success() {
+        panic!("Script failed with status: {:?}", status);
+    }
 }
