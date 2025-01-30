@@ -37,13 +37,13 @@ fn compile_shader(input: u32) {
         gl::CompileShader(input);
 
         let mut success:i32 = 0;
-        let mut info_log:[i8; 512] = [0; 512];
+        let mut info_log = vec![0u8; 512];
 
         gl::GetShaderiv(input, gl::COMPILE_STATUS, &mut success);
 
         if success == 0 {
-            gl::GetShaderInfoLog(input, 512, core::ptr::null_mut(), info_log.as_mut_ptr());
-            println!("Problem compiling shader: {:?}", info_log);
+            gl::GetShaderInfoLog(input, 512, core::ptr::null_mut(), info_log.as_mut_ptr() as *mut i8);
+            println!("Problem compiling shader: {:?}", String::from_utf8_lossy(&info_log));
         }
     }
 }
