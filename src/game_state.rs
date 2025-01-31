@@ -39,7 +39,7 @@ impl GameState {
         #[cfg(target_os = "macos")]
         glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
 
-let (mut width,mut height):(i32, i32) = (1280, 720);
+        let (mut width,mut height):(i32, i32) = (1280, 720);
 
         let (mut window, events) = glfw
             .create_window(width as u32, height as u32, "Hello this is window", glfw::WindowMode::Windowed)
@@ -59,7 +59,7 @@ let (mut width,mut height):(i32, i32) = (1280, 720);
             gl_call!(gl::Enable(gl::DEPTH_TEST));
         }
 
-        
+
         let mut shaders = HashMap::new();
         let mut vaos = HashMap::new();
         let mut vbos = HashMap::new();
@@ -125,7 +125,7 @@ let (mut width,mut height):(i32, i32) = (1280, 720);
 
             // SKYBOX TEXTURES
             gl_call!(gl::GenTextures(1, &mut cubemap_texture));
-gl_call!(gl::BindTexture(gl::TEXTURE_CUBE_MAP, cubemap_texture));
+            gl_call!(gl::BindTexture(gl::TEXTURE_CUBE_MAP, cubemap_texture));
             gl_call!(gl::TexParameteri(gl::TEXTURE_CUBE_MAP, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32));
             gl_call!(gl::TexParameteri(gl::TEXTURE_CUBE_MAP, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32));
             // These are very important to prevent seams
@@ -143,7 +143,7 @@ gl_call!(gl::BindTexture(gl::TEXTURE_CUBE_MAP, cubemap_texture));
                     gl::TEXTURE_CUBE_MAP_POSITIVE_X + i as u32, 
                     0, 
                     gl::RGB as i32, 
-img_width as i32, 
+                    img_width as i32, 
                     img_height as i32, 
                     0, 
                     gl::RGB, 
@@ -180,7 +180,7 @@ img_width as i32,
             gl_call!(gl::VertexAttribPointer(
                 0,
                 3,
-gl::FLOAT,
+                gl::FLOAT,
                 gl::FALSE,
                 8 * mem::size_of::<f32>() as i32,
                 0 as *const _
@@ -210,7 +210,7 @@ gl::FLOAT,
             // =============================================================
             // Load Textures and Set Texture Params 
             // =============================================================
-            
+
             gl_call!(gl::GenTextures(1, &mut texture));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, texture));
 
@@ -238,7 +238,7 @@ gl::FLOAT,
                 //raw.as_ptr() as *const c_void
             ));
 
-gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));
+            gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));
         }
 
         Self {
@@ -315,9 +315,9 @@ gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));
                 z_axis: self.camera.view.z_axis.clone(),
                 w_axis: vec4(0.0, 0.0, 0.0, 1.0),
             };
-            gl::DepthFunc(gl::LEQUAL);
+            gl_call!(gl::DepthFunc(gl::LEQUAL));
 
-            gl::UseProgram(skybox_shader_prog);
+            gl_call!(gl::UseProgram(skybox_shader_prog));
 
             gl_call!(gl::UniformMatrix4fv(
                 gl::GetUniformLocation(skybox_shader_prog, view_c_string.as_ptr()),
@@ -332,14 +332,14 @@ gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));
                 gl::FALSE,
                 self.camera.projection.to_cols_array().as_ptr(),
             ));
-            gl::BindVertexArray(*self.vaos.get(&VaoType::SkyboxVao).unwrap());
-            
-            gl::ActiveTexture(gl::TEXTURE0);
-            gl::BindTexture(gl::TEXTURE_CUBE_MAP, self.cubemap_texture);
-            gl::DrawElements(gl::TRIANGLES, 36, gl::UNSIGNED_INT, 0 as *const _);
-            gl::BindVertexArray(0);
+            gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::SkyboxVao).unwrap()));
 
-            gl::DepthFunc(gl::LESS);
+            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+            gl_call!(gl::BindTexture(gl::TEXTURE_CUBE_MAP, self.cubemap_texture));
+            gl_call!(gl::DrawElements(gl::TRIANGLES, 36, gl::UNSIGNED_INT, 0 as *const _));
+            gl_call!(gl::BindVertexArray(0));
+
+            gl_call!(gl::DepthFunc(gl::LESS));
             // =============================================================
             // Draw cubes
             // =============================================================
@@ -349,7 +349,7 @@ gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));
 
             let texture_c_str = CString::new("u_texture").unwrap();
             gl_call!(gl::Uniform1i(gl::GetUniformLocation(main_shader_prog, texture_c_str.as_ptr()), 0));
-            
+
             gl_call!(gl::ActiveTexture(gl::TEXTURE0));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.texture));
 
@@ -370,23 +370,23 @@ gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));
             gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::CubeVao).unwrap()));
             self.camera.model = Mat4::IDENTITY;
 
-             for i in 0..CUBE_POSITIONS.len() {
-                 self.camera.model = Mat4::IDENTITY;
-                 self.camera.model = Mat4::from_translation(CUBE_POSITIONS[i]);
-                 
-                 // rotate the cube
-                 let angle = 20.0 * i as f32;
-                 let axis = vec3(1.0, 0.3, 0.5).normalize();
-                 self.camera.model *= Mat4::from_axis_angle(axis, angle);
-                 
-                 gl::UniformMatrix4fv(
-                     gl::GetUniformLocation(main_shader_prog, model_c_string.as_ptr()),
-                     1,
-                     gl::FALSE,
-                     self.camera.model.to_cols_array().as_ptr(),
-                 );
-                 gl::DrawArrays(gl::TRIANGLES, 0, 36);
-             }
+            for i in 0..CUBE_POSITIONS.len() {
+                self.camera.model = Mat4::IDENTITY;
+                self.camera.model = Mat4::from_translation(CUBE_POSITIONS[i]);
+
+                // rotate the cube
+                let angle = 20.0 * i as f32;
+                let axis = vec3(1.0, 0.3, 0.5).normalize();
+                self.camera.model *= Mat4::from_axis_angle(axis, angle);
+
+                gl::UniformMatrix4fv(
+                    gl::GetUniformLocation(main_shader_prog, model_c_string.as_ptr()),
+                    1,
+                    gl::FALSE,
+                    self.camera.model.to_cols_array().as_ptr(),
+                );
+                gl::DrawArrays(gl::TRIANGLES, 0, 36);
+            }
 
             self.window.swap_buffers();
             self.glfw.poll_events()
