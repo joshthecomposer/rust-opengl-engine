@@ -10,6 +10,7 @@ fn main() {
     let mut state = GameState::new();
 
     while !state.window.should_close() {
+        state.process_events();
         state.update();
         state.render();
     }
