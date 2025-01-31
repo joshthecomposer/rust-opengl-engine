@@ -3,6 +3,7 @@ mod camera;
 mod game_state;
 mod some_data;
 mod macros;
+mod enums_types;
 
 use game_state::GameState;
 

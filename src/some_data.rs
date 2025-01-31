@@ -69,3 +69,46 @@ pub const CUBE_POSITIONS: [Vec3; 10] = [
     Vec3::new( 1.5,  0.2, -1.5), 
     Vec3::new(-1.3,  1.0, -1.5),  
 ];
+
+pub const FACES_CUBEMAP:[&str; 6] = [
+    "resources/textures/sky_box/Anime Night_Cam_2_Left+X.png",
+    "resources/textures/sky_box/Anime Night_Cam_3_Right-X.png",
+    "resources/textures/sky_box/Anime Night_Cam_4_Up+Y.png",
+    "resources/textures/sky_box/Anime Night_Cam_5_Down-Y.png",
+    "resources/textures/sky_box/Anime Night_Cam_0_Front+Z.png",
+    "resources/textures/sky_box/Anime Night_Cam_1_Back-Z.png"
+];
+
+pub const SKYBOX_VERTICES:[f32; 24] = [
+		-1.0, -1.0,  1.0,
+		 1.0, -1.0,  1.0,
+		 1.0, -1.0, -1.0,
+		-1.0, -1.0, -1.0,
+		-1.0,  1.0,  1.0,
+		 1.0,  1.0,  1.0,
+		 1.0,  1.0, -1.0,
+		-1.0,  1.0, -1.0
+];
+
+pub const SKYBOX_INDICES:[u32; 36] = [
+		// Right
+		1, 2, 6,
+		6, 5, 1,
+		// Left
+		0, 4, 7,
+		7, 3, 0,
+		// Top
+		4, 5, 6,
+		6, 7, 4,
+		// Bottom
+		0, 3, 2,
+		2, 1, 0,
+		// Back
+		0, 1, 5,
+		5, 4, 0,
+		// Front
+		3, 7, 6,
+		6, 2, 3
+];
+
+
