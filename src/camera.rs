@@ -53,6 +53,10 @@ impl Camera {
         }
     }
 
+    pub fn update(&mut self) {
+        self.position.y = 1.75;
+    }
+
     pub fn get_view_matrix(&mut self) {
         self.view = Mat4::look_at_rh(self.position, self.target, self.up);
     }

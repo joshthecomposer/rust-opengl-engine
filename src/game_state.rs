@@ -288,6 +288,8 @@ gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));
         let current_frame = self.glfw.get_time();
         self.delta_time = current_frame - self.last_frame;
         self.last_frame = current_frame;
+
+        self.camera.update();
     }
 
     pub fn render(&mut self) {
