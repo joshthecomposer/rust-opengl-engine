@@ -1,23 +1,27 @@
 #[derive(Debug, Eq, PartialEq, Hash)]
 pub enum VaoType {
-    CubeVao,
-    SkyboxVao
+    Cube,
+    Skybox,
+    DebugLight
 }
 
 #[derive(Debug, Eq, PartialEq, Hash)]
 pub enum VboType {
-    CubeVbo,
-    SkyboxVbo
+    Cube,
+    Skybox,
+    DebugLight,
 }
 
 #[derive(Debug, Eq, PartialEq, Hash)]
 pub enum EboType {
-    CubeEbo,
-    SkyboxEbo
+    Cube,
+    Skybox,
+    DebugLight,
 }
 
 #[derive(Debug, Eq, PartialEq, Hash)]
 pub enum ShaderType {
-    MainShader,
-    SkyboxShader
+    Main,
+    Skybox,
+    DebugLight
 }

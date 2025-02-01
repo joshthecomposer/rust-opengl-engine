@@ -1,11 +1,13 @@
 use core::slice;
 use std::ops::{Deref, DerefMut};
 
+#[derive(Debug)]
 pub struct SparseSet<T> {
     pub dense: Vec<Entry<T>>,
-    sparse: Vec<usize>,
+    pub sparse: Vec<usize>
 }
 
+#[derive(Debug)]
 pub struct Entry<T> {
     key: usize,
     pub value: T,

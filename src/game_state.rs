@@ -6,7 +6,7 @@ use glam::{vec3, vec4, Mat4};
 use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent};
 use image::GenericImageView;
 
-use crate::{camera::Camera, enums_types::{EboType, ShaderType, VaoType, VboType}, gl_call, shaders, some_data::{CUBE_POSITIONS, FACES_CUBEMAP, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}};
+use crate::{camera::Camera, enums_types::{EboType, ShaderType, VaoType, VboType}, gl_call, shaders, some_data::{CUBE_POSITIONS, FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}};
 
 pub struct GameState {
     pub delta_time: f64,
@@ -25,7 +25,8 @@ pub struct GameState {
     pub vbos: HashMap<VboType, u32>,
     pub ebos: HashMap<EboType, u32>,
 
-    pub texture: u32,
+    pub container_diffuse: u32,
+    pub container_specular: u32,
     pub cubemap_texture: u32,
 }
 
@@ -67,15 +68,18 @@ impl GameState {
 
         let main_shader = shaders::init_shader_program("resources/shaders/shader.vs", "resources/shaders/shader.fs");
         let skybox_shader = shaders::init_shader_program("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
+        let debug_light_shader = shaders::init_shader_program("resources/shaders/point_light.vs", "resources/shaders/point_light.fs");
 
-        shaders.insert(ShaderType::MainShader, main_shader);
-        shaders.insert(ShaderType::SkyboxShader, skybox_shader);
+        shaders.insert(ShaderType::Main, main_shader);
+        shaders.insert(ShaderType::Skybox, skybox_shader);
+        shaders.insert(ShaderType::DebugLight, debug_light_shader);
 
 
         let mut vao = 0;
         let mut vbo = 0;
         let mut ebo = 0;
-        let mut texture = 0;
+        let mut container_diffuse = 0;
+        let mut container_specular = 0;
         let mut cubemap_texture = 0;
         // =============================================================
         // Skybox memes
@@ -85,9 +89,9 @@ impl GameState {
             gl_call!(gl::GenBuffers(1, &mut vbo));
             gl_call!(gl::GenBuffers(1, &mut ebo));
 
-            vaos.insert(VaoType::SkyboxVao, vao);
-            vbos.insert(VboType::SkyboxVbo, vbo);
-            ebos.insert(EboType::SkyboxEbo, ebo);
+            vaos.insert(VaoType::Skybox, vao);
+            vbos.insert(VboType::Skybox, vbo);
+            ebos.insert(EboType::Skybox, ebo);
 
             println!("vao skybox: {}", vao);
 
@@ -161,8 +165,8 @@ impl GameState {
             gl_call!(gl::GenVertexArrays(1, &mut vao));
             gl_call!(gl::GenBuffers(1, &mut vbo));
 
-            vaos.insert(VaoType::CubeVao, vao);
-            vbos.insert(VboType::CubeVbo, vbo);
+            vaos.insert(VaoType::Cube, vao);
+            vbos.insert(VboType::Cube, vbo);
 
             println!("vao is now: {}", vao);
 
@@ -176,7 +180,7 @@ impl GameState {
                 UNIT_CUBE_VERTICES.as_ptr().cast(), 
                 gl::STATIC_DRAW
             ));
-
+            // Position 
             gl_call!(gl::VertexAttribPointer(
                 0,
                 3,
@@ -186,7 +190,8 @@ impl GameState {
                 0 as *const _
             ));
             gl_call!(gl::EnableVertexAttribArray(0));
-
+            
+            // Tex Coords
             gl_call!(gl::VertexAttribPointer(
                 1, 
                 2, 
@@ -197,7 +202,8 @@ impl GameState {
             ));
 
             gl_call!(gl::EnableVertexAttribArray(1));
-
+            
+            // Normal
             gl_call!(gl::VertexAttribPointer(
                 2,
                 3,
@@ -207,15 +213,18 @@ impl GameState {
                 (5 * mem::size_of::<f32>()) as *const c_void
             ));
             gl_call!(gl::EnableVertexAttribArray(2));
-            // =============================================================
-            // Load Textures and Set Texture Params 
-            // =============================================================
+        }
 
-            gl_call!(gl::GenTextures(1, &mut texture));
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, texture));
+        // =============================================================
+        // Container Diffuse Texture
+        // =============================================================
+        unsafe {
 
-            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32));
-            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32));
+            gl_call!(gl::GenTextures(1, &mut container_diffuse));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, container_diffuse));
+
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as i32));
 
             gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32));
             gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32));
@@ -239,7 +248,97 @@ impl GameState {
             ));
 
             gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));
+
+            let diffuse_c = CString::new("material.diffuse").unwrap();
+
+            gl::UseProgram(main_shader);
+            gl_call!(gl::Uniform1i(gl::GetUniformLocation(main_shader, diffuse_c.as_ptr()), 0));
+            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, container_diffuse));
         }
+
+        // =============================================================
+        // Container Specular
+        // =============================================================
+        unsafe {
+            gl_call!(gl::GenTextures(1, &mut container_specular));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, container_specular));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32));
+
+            let img = image::open("resources/textures/container2_specular.png").unwrap();
+            let (img_width, img_height) = img.dimensions();
+            let rgba = img.to_rgba8();
+            let raw = rgba.as_raw();
+
+            gl_call!(gl::TexImage2D(
+                gl::TEXTURE_2D, 
+                0, 
+                gl::RGBA as i32, 
+                img_width as i32, 
+                img_height as i32, 
+                0, 
+                gl::RGBA, 
+                gl::UNSIGNED_BYTE, 
+                raw.as_ptr() as *const c_void
+                //raw.as_ptr() as *const c_void
+            ));
+
+            gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));
+
+            let specular_c = CString::new("material.specular").unwrap();
+
+            gl::UseProgram(main_shader);
+            gl_call!(gl::Uniform1i(gl::GetUniformLocation(main_shader, specular_c.as_ptr()), 1));
+            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, container_specular));
+        }
+
+        // =============================================================
+        // Debug point light setup
+        // =============================================================
+        unsafe {
+            gl_call!(gl::GenVertexArrays(1, &mut vao));
+            gl_call!(gl::GenBuffers(1, &mut vbo));
+
+            vaos.insert(VaoType::DebugLight, vao);
+            vbos.insert(VboType::DebugLight, vbo);
+
+            gl_call!(gl::BindVertexArray(vao));
+
+            gl_call!(gl::BindBuffer(gl::ARRAY_BUFFER, vbo));
+            gl_call!(gl::BufferData(
+                gl::ARRAY_BUFFER, 
+                (mem::size_of::<f32>() * UNIT_CUBE_VERTICES.len()) as isize, 
+                UNIT_CUBE_VERTICES.as_ptr().cast(), 
+                gl::STATIC_DRAW
+            ));
+
+            // Position 
+            gl_call!(gl::VertexAttribPointer(
+                0,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                8 * mem::size_of::<f32>() as i32,
+                0 as *const _
+            ));
+            gl_call!(gl::EnableVertexAttribArray(0));
+        
+            // Normal
+            gl_call!(gl::VertexAttribPointer(
+                1,
+                3,
+                gl::FLOAT,
+                gl::FALSE,
+                8 * mem::size_of::<f32>() as i32,
+                (5 * mem::size_of::<f32>()) as *const c_void
+            ));
+            gl_call!(gl::EnableVertexAttribArray(1));
+        }
+        
 
         Self {
             delta_time: 0.0,
@@ -257,7 +356,8 @@ impl GameState {
             vbos,
             ebos,
 
-            texture,
+            container_diffuse,
+            container_specular,
             cubemap_texture,
         }
     }
@@ -296,15 +396,18 @@ impl GameState {
         self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
 
         unsafe {
-            gl_call!(gl::ClearColor(0.1, 0.2, 0.33, 1.0));
+            gl_call!(gl::ClearColor(0.14, 0.13, 0.15, 1.0));
             gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT));
 
             let projection_c_string = CString::new("projection").unwrap();
             let view_c_string = CString::new("view").unwrap();
             let model_c_string = CString::new("model").unwrap();
 
-            let main_shader_prog = *self.shaders.get(&ShaderType::MainShader).unwrap();
-            let skybox_shader_prog = *self.shaders.get(&ShaderType::SkyboxShader).unwrap();
+            let LightColor_c_string = CString::new("LightColor").unwrap();
+
+            let main_shader_prog = *self.shaders.get(&ShaderType::Main).unwrap();
+            let skybox_shader_prog = *self.shaders.get(&ShaderType::Skybox).unwrap();
+            let debug_light_shader = *self.shaders.get(&ShaderType::DebugLight).unwrap();
 
             // =============================================================
             // Skybox
@@ -332,7 +435,7 @@ impl GameState {
                 gl::FALSE,
                 self.camera.projection.to_cols_array().as_ptr(),
             ));
-            gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::SkyboxVao).unwrap()));
+            gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::Skybox).unwrap()));
 
             gl_call!(gl::ActiveTexture(gl::TEXTURE0));
             gl_call!(gl::BindTexture(gl::TEXTURE_CUBE_MAP, self.cubemap_texture));
@@ -340,6 +443,27 @@ impl GameState {
             gl_call!(gl::BindVertexArray(0));
 
             gl_call!(gl::DepthFunc(gl::LESS));
+            // =============================================================
+            // Draw Debug Lights
+            // =============================================================
+            
+            gl_call!(gl::UseProgram(debug_light_shader));
+            gl_call!(gl::UniformMatrix4fv(gl::GetUniformLocation(debug_light_shader, view_c_string.as_ptr()), 1, gl::FALSE, self.camera.view.to_cols_array().as_ptr()));
+            gl_call!(gl::UniformMatrix4fv(gl::GetUniformLocation(debug_light_shader, projection_c_string.as_ptr()), 1, gl::FALSE, self.camera.projection.to_cols_array().as_ptr()));
+
+            gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::DebugLight).unwrap()));
+            for i in 0..POINT_LIGHT_POSITIONS.len() {
+                self.camera.model = Mat4::IDENTITY;
+                self.camera.model *= Mat4::from_translation(POINT_LIGHT_POSITIONS[i]);
+                self.camera.model *= Mat4::from_scale(vec3(0.2, 0.2, 0.2)); 
+                gl_call!(gl::UniformMatrix4fv(gl::GetUniformLocation(debug_light_shader, model_c_string.as_ptr()), 1, gl::FALSE, self.camera.model.to_cols_array().as_ptr()));  
+                gl_call!(gl::Uniform3f(gl::GetUniformLocation(debug_light_shader, LightColor_c_string.as_ptr()), 1.0, 1.0, 1.0));
+                gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 36));
+            }
+
+            gl_call!(gl::BindVertexArray(0));
+            
+
             // =============================================================
             // Draw cubes
             // =============================================================
@@ -351,7 +475,7 @@ impl GameState {
             gl_call!(gl::Uniform1i(gl::GetUniformLocation(main_shader_prog, texture_c_str.as_ptr()), 0));
 
             gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.texture));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.container_diffuse));
 
             gl_call!(gl::UniformMatrix4fv(
                 gl_call!(gl::GetUniformLocation(main_shader_prog, projection_c_string.as_ptr())),
@@ -367,7 +491,7 @@ impl GameState {
                 self.camera.view.to_cols_array().as_ptr(),
             ));
 
-            gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::CubeVao).unwrap()));
+            gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::Cube).unwrap()));
             self.camera.model = Mat4::IDENTITY;
 
             for i in 0..CUBE_POSITIONS.len() {

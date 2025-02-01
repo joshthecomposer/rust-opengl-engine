@@ -111,4 +111,9 @@ pub const SKYBOX_INDICES:[u32; 36] = [
 		6, 2, 3
 ];
 
-
+pub const POINT_LIGHT_POSITIONS:[Vec3; 4] = [
+    Vec3::new(0.7, 0.2, 2.0),
+    Vec3::new(2.3, -3.3, -4.0),
+    Vec3::new(-4.0, 2.0, -12.0),
+    Vec3::new(0.0, 0.0, -3.0),
+];
