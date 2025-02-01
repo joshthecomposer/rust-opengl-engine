@@ -469,13 +469,17 @@ impl GameState {
             // =============================================================
             self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
 
-            gl_call!(gl::UseProgram(main_shader_prog));
-
-            let texture_c_str = CString::new("u_texture").unwrap();
-            gl_call!(gl::Uniform1i(gl::GetUniformLocation(main_shader_prog, texture_c_str.as_ptr()), 0));
-
             gl_call!(gl::ActiveTexture(gl::TEXTURE0));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.container_diffuse));
+
+            gl_call!(gl::ActiveTexture(gl::TEXTURE1));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.container_specular));
+
+            gl_call!(gl::UseProgram(main_shader_prog));
+
+            let diffuse_c_str = CString::new("material.diffuse").unwrap();
+            gl_call!(gl::Uniform1i(gl::GetUniformLocation(main_shader_prog, diffuse_c_str.as_ptr()), 0));
+
 
             gl_call!(gl::UniformMatrix4fv(
                 gl_call!(gl::GetUniformLocation(main_shader_prog, projection_c_string.as_ptr())),
@@ -490,6 +494,9 @@ impl GameState {
                 gl::FALSE,
                 self.camera.view.to_cols_array().as_ptr(),
             ));
+
+            let shininess_c = CString::new("material.shininess").unwrap();
+		    gl_call!(gl::Uniform1f(gl::GetUniformLocation(main_shader_prog, shininess_c.as_ptr()), 64.0));
 
             gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::Cube).unwrap()));
             self.camera.model = Mat4::IDENTITY;
