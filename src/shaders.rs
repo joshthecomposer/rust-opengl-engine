@@ -1,6 +1,7 @@
 use std::{collections::HashMap, ffi::CString, fs::read_to_string, ptr};
 
-use gl::{types::{GLint, GLuint}, PolygonOffset};
+use gl::types::{GLint, GLuint};
+use glam::{Mat4, Vec3};
 
 use crate::gl_call;
 
@@ -10,11 +11,16 @@ pub struct Shader {
 }
 
 impl Shader {
-    pub fn new(id: GLuint) -> Self {
+    pub fn new(vs: &str, fs: &str) -> Self {
+        let id = init_shader_program(vs, fs);
         Self {
             id,
             uniform_locations: HashMap::new(),
         }
+    }
+
+    pub fn activate(&self) {
+        unsafe { gl_call!(gl::UseProgram(self.id)) }
     }
 
     pub fn store_uniform_location(&mut self, name: &str) {
@@ -27,10 +33,24 @@ impl Shader {
         *self.uniform_locations.get(name).unwrap_or(&-1)
     }
 
-    pub fn set_vec3(&self, name: &str, value: [f32; 3]) {
+    pub fn set_vec3(&self, name: &str, value: Vec3) {
         let location = self.get_uniform_location(name);
         if location != -1 {
-            unsafe { gl_call!(gl::Uniform3f(location, value[0], value[1], value[2])) };
+            unsafe { gl_call!(gl::Uniform3f(location, value.x, value.y, value.z)) }
+        }
+    }
+
+    pub fn set_mat4(&self, name: &str, value: Mat4) {
+        let location = self.get_uniform_location(name);
+        if location != -1 {
+            unsafe { gl_call!(gl::UniformMatrix4fv(location, 1, gl::FALSE, value.to_cols_array().as_ptr() )) }
+        }
+    }
+
+    pub fn set_int(&self, name: &str, value: u32) {
+        let location = self.get_uniform_location(name);
+        if location != -1 {
+            unsafe { gl_call!(gl::Uniform1i(location, value as i32)) };
         }
     }
 }

@@ -6,7 +6,7 @@ use glam::{vec3, vec4, Mat4};
 use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent};
 use image::GenericImageView;
 
-use crate::{camera::Camera, enums_types::{EboType, ShaderType, VaoType, VboType}, gl_call, shaders, some_data::{CUBE_POSITIONS, FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}};
+use crate::{camera::Camera, enums_types::{EboType, ShaderType, VaoType, VboType}, gl_call, shaders::{self, Shader}, some_data::{CUBE_POSITIONS, FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}};
 
 pub struct GameState {
     pub delta_time: f64,
@@ -66,14 +66,9 @@ impl GameState {
         let mut vbos = HashMap::new();
         let mut ebos = HashMap::new();
 
-        let main_shader = shaders::init_shader_program("resources/shaders/shader.vs", "resources/shaders/shader.fs");
-        let skybox_shader = shaders::init_shader_program("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
-        let debug_light_shader = shaders::init_shader_program("resources/shaders/point_light.vs", "resources/shaders/point_light.fs");
-
-        shaders.insert(ShaderType::Main, main_shader);
-        shaders.insert(ShaderType::Skybox, skybox_shader);
-        shaders.insert(ShaderType::DebugLight, debug_light_shader);
-
+        let main_shader = Shader::new("resources/shaders/shader.vs", "resources/shaders/shader.fs");
+        let skybox_shader = Shader::new("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
+        let debug_light_shader = Shader::new("resources/shaders/point_light.vs", "resources/shaders/point_light.fs");
 
         let mut vao = 0;
         let mut vbo = 0;
@@ -251,7 +246,8 @@ impl GameState {
 
             let diffuse_c = CString::new("material.diffuse").unwrap();
 
-            gl::UseProgram(main_shader);
+            main_shader.activate();
+
             gl_call!(gl::Uniform1i(gl::GetUniformLocation(main_shader, diffuse_c.as_ptr()), 0));
             gl_call!(gl::ActiveTexture(gl::TEXTURE0));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, container_diffuse));
@@ -403,8 +399,6 @@ impl GameState {
             let view_c_string = CString::new("view").unwrap();
             let model_c_string = CString::new("model").unwrap();
 
-            let LightColor_c_string = CString::new("LightColor").unwrap();
-
             let main_shader_prog = *self.shaders.get(&ShaderType::Main).unwrap();
             let skybox_shader_prog = *self.shaders.get(&ShaderType::Skybox).unwrap();
             let debug_light_shader = *self.shaders.get(&ShaderType::DebugLight).unwrap();
@@ -419,7 +413,7 @@ impl GameState {
                 w_axis: vec4(0.0, 0.0, 0.0, 1.0),
             };
             gl_call!(gl::DepthFunc(gl::LEQUAL));
-
+        
             gl_call!(gl::UseProgram(skybox_shader_prog));
 
             gl_call!(gl::UniformMatrix4fv(
