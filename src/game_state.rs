@@ -1,8 +1,9 @@
 use std::{collections::HashMap, ffi::c_void, mem};
 
 use glam::{vec3, vec4, Mat4};
-use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent};
+use glfw::{Action, Context, Glfw, GlfwReceiver, MouseButton, PWindow, WindowEvent};
 use image::GenericImageView;
+use imgui::{Ui};
 
 use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{ShaderType, VaoType}, gl_call, lights::Lights, shaders::Shader, some_data::{BISEXUAL_BLUE, BISEXUAL_BLUE_SCALE, BISEXUAL_PINK, BISEXUAL_PINK_SCALE, BISEXUAL_PURPLE, BISEXUAL_PURPLE_SCALE, CUBE_POSITIONS, FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES, WHITE}};
 
@@ -27,6 +28,9 @@ pub struct GameState {
 
     pub entity_manager: EntityManager,
     pub light_manager: Lights,
+    pub imgui: imgui::Context,
+    pub renderer: imgui_opengl_renderer::Renderer,
+    pub paused: bool,
 }
 
 impl GameState {
@@ -39,7 +43,7 @@ impl GameState {
         #[cfg(target_os = "macos")]
         glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
 
-        let (mut width,mut height):(i32, i32) = (1280, 720);
+        let (mut width,mut height):(i32, i32) = (1920, 1080);
 
         let (mut window, events) = glfw
             .create_window(width as u32, height as u32, "Hello this is window", glfw::WindowMode::Windowed)
@@ -55,10 +59,19 @@ impl GameState {
         unsafe {
             gl_call!(gl::Enable(gl::BLEND));
             gl_call!(gl::Enable(gl::TEXTURE_CUBE_MAP_SEAMLESS));
-            gl_call!(gl::Viewport(0, 0, 1280, 720));
+            gl_call!(gl::Viewport(0, 0, width, height));
             gl_call!(gl::Enable(gl::DEPTH_TEST));
         }
 
+        // =============================================================
+        // imgui
+        // =============================================================
+        let mut imgui = imgui::Context::create();
+        imgui.set_ini_filename(None);
+        
+        let renderer = imgui_opengl_renderer::Renderer::new(&mut imgui, |s| {
+            window.get_proc_address(s) as *const _
+        });
 
         let mut shaders = HashMap::new();
         let mut vaos = HashMap::new();
@@ -389,13 +402,17 @@ impl GameState {
 
             entity_manager,
             light_manager,
+            imgui,
+            renderer,
+            paused: false,
         }
     }
 
     pub fn process_events(&mut self) {
         self.camera.process_key_event(&self.window, self.delta_time);
+        let events: Vec<(f64, glfw::WindowEvent)> = glfw::flush_messages(&self.events).collect();
 
-        for (_, event) in glfw::flush_messages(&self.events) {
+        for (_, event) in events {
             match event {
                 glfw::WindowEvent::FramebufferSize(w, h) => {
                     self.window_width = w as u32;
@@ -405,12 +422,55 @@ impl GameState {
                     }
                 },
                 glfw:: WindowEvent::Key(glfw::Key::Escape, _, glfw::Action::Press, _) => {
-                    self.window.set_should_close(true);
+                    // self.window.set_should_close(true);
+                    self.paused = !self.paused;
+
                 },
                 _ => {
-                    self.camera.process_mouse_input(&self.window, &event);
+                    if self.paused {
+                        self.handle_imgui_event(&event);
+                    } else {
+                        self.camera.process_mouse_input(&self.window, &event);
+                    }
                 },
             }
+        }
+    }
+
+    fn handle_imgui_event(&mut self, event: &WindowEvent) {
+        let io = self.imgui.io_mut();
+        match *event {
+            // Mouse Buttons
+            WindowEvent::MouseButton(btn, action, _) => {
+                let pressed = action != Action::Release;
+                match btn {
+                    MouseButton::Button1 => io.mouse_down[0] = pressed,
+                    MouseButton::Button2 => io.mouse_down[1] = pressed,
+                    MouseButton::Button3 => io.mouse_down[2] = pressed,
+                    _ => {}
+                }
+            }
+            // Mouse Position
+            WindowEvent::CursorPos(x, y) => {
+                io.mouse_pos = [x as f32, y as f32];
+            }
+            // Scroll Wheel
+            WindowEvent::Scroll(_x, scroll_y) => {
+                io.mouse_wheel = scroll_y as f32;
+            }
+            // Text input
+            WindowEvent::Char(ch) => {
+                io.add_input_character(ch);
+            }
+            // Key press/release
+            WindowEvent::Key(key, _, action, mods) => {
+                let pressed = action != Action::Release;
+                // If you want to track ImGui’s internal key map, do something like:
+                // io.keys_down[imgui_key_index] = pressed;
+                // or handle advanced shortcuts, etc.
+            }
+
+            _ => {}
         }
     }
 
@@ -419,6 +479,8 @@ impl GameState {
         self.delta_time = current_frame - self.last_frame;
         self.last_frame = current_frame;
 
+
+        if self.paused { return; }
         self.entity_manager.update(&self.delta_time);
         self.light_manager.update(&self.delta_time);
 
@@ -427,6 +489,8 @@ impl GameState {
 
     pub fn render(&mut self) {
         self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
+
+
 
         unsafe {
             gl_call!(gl::ClearColor(0.14, 0.13, 0.15, 1.0));
@@ -524,6 +588,24 @@ impl GameState {
 
                 gl::DrawArrays(gl::TRIANGLES, 0, 36);
             }
+
+            if self.paused {
+                self.window.set_cursor_mode(glfw::CursorMode::Normal);
+
+                {
+                    let io = self.imgui.io_mut();
+                    io.display_size = [self.window_width as f32, self.window_height as f32];
+                    io.delta_time   = self.delta_time as f32;
+                }
+
+                let ui = self.imgui.frame();
+                ui.show_demo_window(&mut true);
+                self.renderer.render(&mut self.imgui);
+
+            } else {
+                self.window.set_cursor_mode(glfw::CursorMode::Disabled);
+            }
+
 
             self.window.swap_buffers();
             self.glfw.poll_events()
