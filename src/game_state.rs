@@ -1,12 +1,10 @@
+use std::{collections::HashMap, ffi::c_void, mem};
 
-use std::{collections::HashMap, ffi::{c_void, CString}, mem};
-
-use gl::TEXTURE_CUBE_MAP;
 use glam::{vec3, vec4, Mat4};
 use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent};
 use image::GenericImageView;
 
-use crate::{camera::Camera, enums_types::{EboType, ShaderType, VaoType, VboType}, gl_call, shaders::{self, Shader}, some_data::{CUBE_POSITIONS, FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}};
+use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{ShaderType, VaoType}, gl_call, lights::Lights, shaders::Shader, some_data::{BISEXUAL_BLUE, BISEXUAL_BLUE_SCALE, BISEXUAL_PINK, BISEXUAL_PINK_SCALE, BISEXUAL_PURPLE, BISEXUAL_PURPLE_SCALE, CUBE_POSITIONS, FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES, WHITE}};
 
 pub struct GameState {
     pub delta_time: f64,
@@ -20,14 +18,15 @@ pub struct GameState {
     pub events: GlfwReceiver<(f64, WindowEvent)>,
     pub window: PWindow,
 
-    pub shaders: HashMap<ShaderType, u32>, // TODO: make this an enum
+    pub shaders: HashMap<ShaderType, Shader>, // TODO: make this an enum
     pub vaos: HashMap<VaoType, u32>,
-    pub vbos: HashMap<VboType, u32>,
-    pub ebos: HashMap<EboType, u32>,
 
     pub container_diffuse: u32,
     pub container_specular: u32,
     pub cubemap_texture: u32,
+
+    pub entity_manager: EntityManager,
+    pub light_manager: Lights,
 }
 
 impl GameState {
@@ -63,12 +62,43 @@ impl GameState {
 
         let mut shaders = HashMap::new();
         let mut vaos = HashMap::new();
-        let mut vbos = HashMap::new();
-        let mut ebos = HashMap::new();
 
-        let main_shader = Shader::new("resources/shaders/shader.vs", "resources/shaders/shader.fs");
-        let skybox_shader = Shader::new("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
-        let debug_light_shader = Shader::new("resources/shaders/point_light.vs", "resources/shaders/point_light.fs");
+        let mut main_shader = Shader::new("resources/shaders/shader.vs", "resources/shaders/shader.fs");
+        main_shader.store_uniform_location("model");
+        main_shader.store_uniform_location("view");
+        main_shader.store_uniform_location("projection");
+        main_shader.store_uniform_location("point_light_color");
+        main_shader.store_uniform_location("normal_color");
+        main_shader.store_uniform_location("material.diffuse");
+        main_shader.store_uniform_location("material.specular");
+        main_shader.store_uniform_location("material.shininess");
+        for i in 0..4 {
+            main_shader.store_uniform_location(format!("point_lights[{}].position", i).as_str());
+            main_shader.store_uniform_location(format!("point_lights[{}].ambient", i).as_str());
+            main_shader.store_uniform_location(format!("point_lights[{}].diffuse",i).as_str());
+            main_shader.store_uniform_location(format!("point_lights[{}].specular",i).as_str());
+            main_shader.store_uniform_location(format!("point_lights[{}].constant",i).as_str());
+            main_shader.store_uniform_location(format!("point_lights[{}].linear",i).as_str());
+            main_shader.store_uniform_location(format!("point_lights[{}].quadratic",i).as_str());
+        }
+        main_shader.store_uniform_location("dir_light.direction");
+        main_shader.store_uniform_location("dir_light.ambient");
+        main_shader.store_uniform_location("dir_light.diffuse");
+        main_shader.store_uniform_location("dir_light.specular");
+        main_shader.store_uniform_location("ViewPosition");
+
+        let mut skybox_shader = Shader::new("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
+
+        skybox_shader.store_uniform_location("view");
+        skybox_shader.store_uniform_location("projection");
+        skybox_shader.store_uniform_location("skybox");
+        
+        let mut debug_light_shader = Shader::new("resources/shaders/point_light.vs", "resources/shaders/point_light.fs");
+        debug_light_shader.store_uniform_location("model");
+        debug_light_shader.store_uniform_location("view");
+        debug_light_shader.store_uniform_location("projection");
+        debug_light_shader.store_uniform_location("LightColor");
+
 
         let mut vao = 0;
         let mut vbo = 0;
@@ -80,13 +110,12 @@ impl GameState {
         // Skybox memes
         // =============================================================
         unsafe {
+            skybox_shader.activate();
             gl_call!(gl::GenVertexArrays(1, &mut vao));
             gl_call!(gl::GenBuffers(1, &mut vbo));
             gl_call!(gl::GenBuffers(1, &mut ebo));
 
             vaos.insert(VaoType::Skybox, vao);
-            vbos.insert(VboType::Skybox, vbo);
-            ebos.insert(EboType::Skybox, ebo);
 
             println!("vao skybox: {}", vao);
 
@@ -133,7 +162,10 @@ impl GameState {
             gl_call!(gl::TexParameteri(gl::TEXTURE_CUBE_MAP, gl::TEXTURE_WRAP_R, gl::CLAMP_TO_EDGE as i32));
 
             for i in 0..FACES_CUBEMAP.len() {
-                let img = image::open(FACES_CUBEMAP[i]).unwrap();
+                let img = match image::open(FACES_CUBEMAP[i]) {
+                    Ok(img) => img,
+                    _=> panic!("Error opening {}", FACES_CUBEMAP[i]),
+                };
                 let (img_width, img_height) = img.dimensions();
                 let rgba = img.to_rgb8();
                 let raw = rgba.as_raw();
@@ -157,11 +189,11 @@ impl GameState {
         // Setup vertex data
         // =============================================================
         unsafe {
+            main_shader.activate();
             gl_call!(gl::GenVertexArrays(1, &mut vao));
             gl_call!(gl::GenBuffers(1, &mut vbo));
 
             vaos.insert(VaoType::Cube, vao);
-            vbos.insert(VboType::Cube, vbo);
 
             println!("vao is now: {}", vao);
 
@@ -244,11 +276,8 @@ impl GameState {
 
             gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));
 
-            let diffuse_c = CString::new("material.diffuse").unwrap();
-
             main_shader.activate();
-
-            gl_call!(gl::Uniform1i(gl::GetUniformLocation(main_shader, diffuse_c.as_ptr()), 0));
+            main_shader.set_int("material.diffuse", 0);
             gl_call!(gl::ActiveTexture(gl::TEXTURE0));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, container_diffuse));
         }
@@ -281,13 +310,10 @@ impl GameState {
                 raw.as_ptr() as *const c_void
                 //raw.as_ptr() as *const c_void
             ));
-
             gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));
 
-            let specular_c = CString::new("material.specular").unwrap();
-
-            gl::UseProgram(main_shader);
-            gl_call!(gl::Uniform1i(gl::GetUniformLocation(main_shader, specular_c.as_ptr()), 1));
+            main_shader.activate();
+            main_shader.set_int("material.specular", 1);
             gl_call!(gl::ActiveTexture(gl::TEXTURE0));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, container_specular));
         }
@@ -296,11 +322,12 @@ impl GameState {
         // Debug point light setup
         // =============================================================
         unsafe {
+            debug_light_shader.activate();
+
             gl_call!(gl::GenVertexArrays(1, &mut vao));
             gl_call!(gl::GenBuffers(1, &mut vbo));
 
             vaos.insert(VaoType::DebugLight, vao);
-            vbos.insert(VboType::DebugLight, vbo);
 
             gl_call!(gl::BindVertexArray(vao));
 
@@ -334,6 +361,12 @@ impl GameState {
             ));
             gl_call!(gl::EnableVertexAttribArray(1));
         }
+        shaders.insert(ShaderType::Main, main_shader);
+        shaders.insert(ShaderType::Skybox, skybox_shader);
+        shaders.insert(ShaderType::DebugLight, debug_light_shader);
+
+        let entity_manager = EntityManager::new(10_000);
+        let light_manager = Lights::new(50);
         
 
         Self {
@@ -349,12 +382,13 @@ impl GameState {
 
             shaders,
             vaos, 
-            vbos,
-            ebos,
 
             container_diffuse,
             container_specular,
             cubemap_texture,
+
+            entity_manager,
+            light_manager,
         }
     }
 
@@ -385,6 +419,9 @@ impl GameState {
         self.delta_time = current_frame - self.last_frame;
         self.last_frame = current_frame;
 
+        self.entity_manager.update(&self.delta_time);
+        self.light_manager.update(&self.delta_time);
+
         self.camera.update();
     }
 
@@ -395,13 +432,9 @@ impl GameState {
             gl_call!(gl::ClearColor(0.14, 0.13, 0.15, 1.0));
             gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT));
 
-            let projection_c_string = CString::new("projection").unwrap();
-            let view_c_string = CString::new("view").unwrap();
-            let model_c_string = CString::new("model").unwrap();
-
-            let main_shader_prog = *self.shaders.get(&ShaderType::Main).unwrap();
-            let skybox_shader_prog = *self.shaders.get(&ShaderType::Skybox).unwrap();
-            let debug_light_shader = *self.shaders.get(&ShaderType::DebugLight).unwrap();
+            let main_shader_prog = self.shaders.get(&ShaderType::Main).unwrap();
+            let skybox_shader_prog = self.shaders.get(&ShaderType::Skybox).unwrap();
+            let debug_light_shader = self.shaders.get(&ShaderType::DebugLight).unwrap();
 
             // =============================================================
             // Skybox
@@ -414,23 +447,11 @@ impl GameState {
             };
             gl_call!(gl::DepthFunc(gl::LEQUAL));
         
-            gl_call!(gl::UseProgram(skybox_shader_prog));
+            skybox_shader_prog.activate();
+            skybox_shader_prog.set_mat4("view", view_no_translation);
+            skybox_shader_prog.set_mat4("projection", self.camera.projection);
 
-            gl_call!(gl::UniformMatrix4fv(
-                gl::GetUniformLocation(skybox_shader_prog, view_c_string.as_ptr()),
-                1,
-                gl::FALSE,
-                view_no_translation.to_cols_array().as_ptr(),
-            ));
-
-            gl_call!(gl::UniformMatrix4fv(
-                gl_call!(gl::GetUniformLocation(skybox_shader_prog, projection_c_string.as_ptr())),
-                1,
-                gl::FALSE,
-                self.camera.projection.to_cols_array().as_ptr(),
-            ));
             gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::Skybox).unwrap()));
-
             gl_call!(gl::ActiveTexture(gl::TEXTURE0));
             gl_call!(gl::BindTexture(gl::TEXTURE_CUBE_MAP, self.cubemap_texture));
             gl_call!(gl::DrawElements(gl::TRIANGLES, 36, gl::UNSIGNED_INT, 0 as *const _));
@@ -441,17 +462,19 @@ impl GameState {
             // Draw Debug Lights
             // =============================================================
             
-            gl_call!(gl::UseProgram(debug_light_shader));
-            gl_call!(gl::UniformMatrix4fv(gl::GetUniformLocation(debug_light_shader, view_c_string.as_ptr()), 1, gl::FALSE, self.camera.view.to_cols_array().as_ptr()));
-            gl_call!(gl::UniformMatrix4fv(gl::GetUniformLocation(debug_light_shader, projection_c_string.as_ptr()), 1, gl::FALSE, self.camera.projection.to_cols_array().as_ptr()));
+            debug_light_shader.activate();
+            debug_light_shader.set_mat4("view", self.camera.view);
+            debug_light_shader.set_mat4("projection", self.camera.projection);
 
             gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::DebugLight).unwrap()));
             for i in 0..POINT_LIGHT_POSITIONS.len() {
                 self.camera.model = Mat4::IDENTITY;
                 self.camera.model *= Mat4::from_translation(POINT_LIGHT_POSITIONS[i]);
                 self.camera.model *= Mat4::from_scale(vec3(0.2, 0.2, 0.2)); 
-                gl_call!(gl::UniformMatrix4fv(gl::GetUniformLocation(debug_light_shader, model_c_string.as_ptr()), 1, gl::FALSE, self.camera.model.to_cols_array().as_ptr()));  
-                gl_call!(gl::Uniform3f(gl::GetUniformLocation(debug_light_shader, LightColor_c_string.as_ptr()), 1.0, 1.0, 1.0));
+
+                debug_light_shader.set_mat4("model", self.camera.model);
+                debug_light_shader.set_vec3("LightColor", vec3(1.0, 1.0, 1.0));
+
                 gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 36));
             }
 
@@ -469,28 +492,21 @@ impl GameState {
             gl_call!(gl::ActiveTexture(gl::TEXTURE1));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.container_specular));
 
-            gl_call!(gl::UseProgram(main_shader_prog));
+            main_shader_prog.activate();
+            main_shader_prog.set_int("material.diffuse", 0);
+            main_shader_prog.set_mat4("projection", self.camera.projection);
+            main_shader_prog.set_mat4("view", self.camera.view);
+            main_shader_prog.set_float("material.shininess", 64.0);
 
-            let diffuse_c_str = CString::new("material.diffuse").unwrap();
-            gl_call!(gl::Uniform1i(gl::GetUniformLocation(main_shader_prog, diffuse_c_str.as_ptr()), 0));
-
-
-            gl_call!(gl::UniformMatrix4fv(
-                gl_call!(gl::GetUniformLocation(main_shader_prog, projection_c_string.as_ptr())),
-                1,
-                gl::FALSE,
-                self.camera.projection.to_cols_array().as_ptr(),
-            ));
-
-            gl_call!(gl::UniformMatrix4fv(
-                gl::GetUniformLocation(main_shader_prog, view_c_string.as_ptr()),
-                1,
-                gl::FALSE,
-                self.camera.view.to_cols_array().as_ptr(),
-            ));
-
-            let shininess_c = CString::new("material.shininess").unwrap();
-		    gl_call!(gl::Uniform1f(gl::GetUniformLocation(main_shader_prog, shininess_c.as_ptr()), 64.0));
+            for i in 0..4 {
+                main_shader_prog.set_vec3(format!("point_lights[{}].position",i).as_str(), POINT_LIGHT_POSITIONS[i]);
+                main_shader_prog.set_vec3(format!("point_lights[{}].ambient",i).as_str(), BISEXUAL_BLUE_SCALE);
+                main_shader_prog.set_vec3(format!("point_lights[{}].diffuse",i).as_str(), BISEXUAL_PURPLE_SCALE);
+                main_shader_prog.set_vec3(format!("point_lights[{}].specular",i).as_str(), BISEXUAL_PINK_SCALE);
+                main_shader_prog.set_float(format!("point_lights[{}].constant",i).as_str(), 1.0);
+                main_shader_prog.set_float(format!("point_lights[{}].linear",i).as_str(), 0.09);
+                main_shader_prog.set_float(format!("point_lights[{}].quadratic",i).as_str(), 0.0032);
+            }
 
             gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::Cube).unwrap()));
             self.camera.model = Mat4::IDENTITY;
@@ -504,12 +520,8 @@ impl GameState {
                 let axis = vec3(1.0, 0.3, 0.5).normalize();
                 self.camera.model *= Mat4::from_axis_angle(axis, angle);
 
-                gl::UniformMatrix4fv(
-                    gl::GetUniformLocation(main_shader_prog, model_c_string.as_ptr()),
-                    1,
-                    gl::FALSE,
-                    self.camera.model.to_cols_array().as_ptr(),
-                );
+                main_shader_prog.set_mat4("model", self.camera.model);
+
                 gl::DrawArrays(gl::TRIANGLES, 0, 36);
             }
 

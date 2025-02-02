@@ -52,8 +52,23 @@ pub const UNIT_CUBE_VERTICES: [f32; 6 * 6 * 8] = [
 ];
 
 pub const BISEXUAL_PINK:Vec3 = vec3(0.72941176, 0.11372549, 0.43529412);
+pub const BISEXUAL_PINK_SCALE: Vec3 = vec3(
+    1.0,
+    0.15591398,
+    0.59677416,
+);
 pub const BISEXUAL_PURPLE:Vec3 = vec3(0.54901961, 0.31764706, 0.58431373);
+pub const BISEXUAL_PURPLE_SCALE: Vec3 = vec3(
+    0.9395973,
+    0.54362416,
+    1.0,
+);
 pub const BISEXUAL_BLUE:Vec3 = vec3(0.19215686, 0.26666667, 0.6);
+pub const BISEXUAL_BLUE_SCALE: Vec3 = vec3(
+    0.32026142,
+    0.44444445,
+    1.0,
+);
 pub const CYBERPUNK_ORANGE:Vec3 = vec3(1.0,0.27058823,0.0);
 pub const WHITE:Vec3 = vec3(1.0, 1.0, 1.0);
 
@@ -70,14 +85,40 @@ pub const CUBE_POSITIONS: [Vec3; 10] = [
     Vec3::new(-1.3,  1.0, -1.5),  
 ];
 
+// pub const FACES_CUBEMAP:[&str; 6] = [
+//     "resources/textures/sky_box/Cartoon Base Skywave_Cam_2_Left+X.png",
+//     "resources/textures/sky_box/Cartoon Base Skywave_Cam_3_Right-X.png",
+//     "resources/textures/sky_box/Cartoon Base Skywave_Cam_4_Up+Y.png",
+//     "resources/textures/sky_box/Cartoon Base Skywave_Cam_5_Down-Y.png",
+//     "resources/textures/sky_box/Cartoon Base Skywave_Cam_0_Front+Z.png",
+//     "resources/textures/sky_box/Cartoon Base Skywave_Cam_1_Back-Z.png",
+// ];
+
 pub const FACES_CUBEMAP:[&str; 6] = [
-    "resources/textures/sky_box/Anime Night_Cam_2_Left+X.png",
-    "resources/textures/sky_box/Anime Night_Cam_3_Right-X.png",
-    "resources/textures/sky_box/Anime Night_Cam_4_Up+Y.png",
-    "resources/textures/sky_box/Anime Night_Cam_5_Down-Y.png",
-    "resources/textures/sky_box/Anime Night_Cam_0_Front+Z.png",
-    "resources/textures/sky_box/Anime Night_Cam_1_Back-Z.png"
+    "resources/textures/sky_box2/CosmicCoolCloudLeft.png",
+    "resources/textures/sky_box2/CosmicCoolCloudRight.png",
+    "resources/textures/sky_box2/CosmicCoolCloudTop.png",
+    "resources/textures/sky_box2/CosmicCoolCloudBottom.png",
+    "resources/textures/sky_box2/CosmicCoolCloudFront.png",
+    "resources/textures/sky_box2/CosmicCoolCloudBack.png",
 ];
+
+//pub const FACES_CUBEMAP:[&str; 6] = [
+//    "resources/textures/sky_box/AllSky_Space_Neon_Starless_Cam_2_Left+X.png",
+//    "resources/textures/sky_box/AllSky_Space_Neon_Starless_Cam_3_Right-X.png",
+//    "resources/textures/sky_box/AllSky_Space_Neon_Starless_Cam_4_Up+Y.png",
+//    "resources/textures/sky_box/AllSky_Space_Neon_Starless_Cam_5_Down-Y.png",
+//    "resources/textures/sky_box/AllSky_Space_Neon_Starless_Cam_0_Front+Z.png",
+//    "resources/textures/sky_box/AllSky_Space_Neon_Starless_Cam_1_Back-Z.png",
+//];
+// pub const FACES_CUBEMAP:[&str; 6] = [
+//     "resources/textures/sky_box/Anime Night_Cam_2_Left+X.png",
+//     "resources/textures/sky_box/Anime Night_Cam_3_Right-X.png",
+//     "resources/textures/sky_box/Anime Night_Cam_4_Up+Y.png",
+//     "resources/textures/sky_box/Anime Night_Cam_5_Down-Y.png",
+//     "resources/textures/sky_box/Anime Night_Cam_0_Front+Z.png",
+//     "resources/textures/sky_box/Anime Night_Cam_1_Back-Z.png"
+// ];
 
 pub const SKYBOX_VERTICES:[f32; 24] = [
 		-1.0, -1.0,  1.0,

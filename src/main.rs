@@ -6,9 +6,12 @@ mod macros;
 mod enums_types;
 mod sparse_set;
 mod uniforms;
+mod entity_manager;
+mod lights;
+mod math_utils;
 
 use game_state::GameState;
-use sparse_set::SparseSet;
+// use sparse_set::SparseSet;
 
 fn main() {
     // let mut sparse_set:SparseSet<String> = SparseSet::with_capacity(100);

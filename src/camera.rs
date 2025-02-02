@@ -1,5 +1,5 @@
 use glam::{vec3, Mat4, Vec3};
-use glfw::{Action, Glfw, Key, PWindow, Window, WindowEvent};
+use glfw::{Action, Key, PWindow, WindowEvent};
 
 pub struct Camera {
     pub yaw: f64,

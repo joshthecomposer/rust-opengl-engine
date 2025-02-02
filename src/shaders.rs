@@ -53,6 +53,14 @@ impl Shader {
             unsafe { gl_call!(gl::Uniform1i(location, value as i32)) };
         }
     }
+
+    pub fn set_float(&self, name: &str, value: f32) {
+        let location = self.get_uniform_location(name);
+        if location != -1 {
+            unsafe { gl_call!(gl::Uniform1f(location, value)) };
+        }
+    }
+
 }
 
 pub fn init_shader_program(vs: &str, fs: &str) -> u32 {
