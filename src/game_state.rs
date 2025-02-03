@@ -1,11 +1,11 @@
-use std::{collections::HashMap, ffi::c_void, mem};
+use std::{collections::HashMap, ffi::c_void, mem, ptr::null_mut};
 
 use glam::{vec3, vec4, Mat4};
 use glfw::{Action, Context, Glfw, GlfwReceiver, MouseButton, PWindow, WindowEvent};
 use image::GenericImageView;
 use imgui::{Ui};
 
-use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{ShaderType, VaoType}, gl_call, lights::Lights, shaders::Shader, some_data::{BISEXUAL_BLUE, BISEXUAL_BLUE_SCALE, BISEXUAL_PINK, BISEXUAL_PINK_SCALE, BISEXUAL_PURPLE, BISEXUAL_PURPLE_SCALE, CUBE_POSITIONS, FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES, WHITE}};
+use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, VaoType}, gl_call, lights::{DirLight, Lights}, shaders::Shader, some_data::{BISEXUAL_BLUE, BISEXUAL_BLUE_SCALE, BISEXUAL_PINK, BISEXUAL_PINK_SCALE, BISEXUAL_PURPLE, BISEXUAL_PURPLE_SCALE, CUBE_POSITIONS, FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES, WHITE}};
 
 pub struct GameState {
     pub delta_time: f64,
@@ -21,10 +21,13 @@ pub struct GameState {
 
     pub shaders: HashMap<ShaderType, Shader>, // TODO: make this an enum
     pub vaos: HashMap<VaoType, u32>,
+    pub fbos: HashMap<FboType, u32>,
 
     pub container_diffuse: u32,
     pub container_specular: u32,
     pub cubemap_texture: u32,
+    pub depth_map: u32,
+    pub wood_floor_texture: u32,
 
     pub entity_manager: EntityManager,
     pub light_manager: Lights,
@@ -75,6 +78,7 @@ impl GameState {
 
         let mut shaders = HashMap::new();
         let mut vaos = HashMap::new();
+        let mut fbos = HashMap::new();
 
         let mut main_shader = Shader::new("resources/shaders/shader.vs", "resources/shaders/shader.fs");
         main_shader.store_uniform_location("model");
@@ -99,6 +103,7 @@ impl GameState {
         main_shader.store_uniform_location("dir_light.diffuse");
         main_shader.store_uniform_location("dir_light.specular");
         main_shader.store_uniform_location("ViewPosition");
+        main_shader.store_uniform_location("shadow_map");
 
         let mut skybox_shader = Shader::new("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
 
@@ -112,6 +117,9 @@ impl GameState {
         debug_light_shader.store_uniform_location("projection");
         debug_light_shader.store_uniform_location("LightColor");
 
+        let mut depth_shader = Shader::new("resources/shaders/depth_shader.vs","resources/shaders/depth_shader.fs");
+
+
 
         let mut vao = 0;
         let mut vbo = 0;
@@ -119,6 +127,7 @@ impl GameState {
         let mut container_diffuse = 0;
         let mut container_specular = 0;
         let mut cubemap_texture = 0;
+        let mut wood_container_texture = 0;
         // =============================================================
         // Skybox memes
         // =============================================================
@@ -374,12 +383,75 @@ impl GameState {
             ));
             gl_call!(gl::EnableVertexAttribArray(1));
         }
+        // =============================================================
+        // Load wood floor texture
+        // =============================================================
+        unsafe {
+            gl_call!(gl::GenTextures(1, &mut wood_container_texture));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, wood_container_texture));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32));
+
+            let img = image::open("resources/textures/container2_specular.png").unwrap();
+            let (img_width, img_height) = img.dimensions();
+            let rgba = img.to_rgba8();
+            let raw = rgba.as_raw();
+
+            gl_call!(gl::TexImage2D(
+                gl::TEXTURE_2D, 
+                0, 
+                gl::RGBA as i32, 
+                img_width as i32, 
+                img_height as i32, 
+                0, 
+                gl::RGBA, 
+                gl::UNSIGNED_BYTE, 
+                raw.as_ptr() as *const c_void
+                //raw.as_ptr() as *const c_void
+            ));
+            gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));
+
+            main_shader.activate();
+            main_shader.set_int("material.specular", 1);
+            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, container_specular));
+        }
+
+        // =============================================================
+        // Shadow Mapping
+        // =============================================================
+        // The general idea is that we need to create a depth map rendered 
+        // from the perspective of the light source. In this case one 
+        // directional light.
+        // We can do this using a "framebuffer". We have been using a 
+        // framebuffer all along, just the "default" one given to us.
+        let mut fbo = 0;
+        let mut depth_map = 0;
+        unsafe {
+            main_shader.activate();
+            gl_call!(gl::GenFramebuffers(1, &mut fbo));
+
+            gl_call!(gl::GenTextures(1, &mut depth_map));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, depth_map));
+            gl_call!(gl::TexImage2D(gl::TEXTURE_2D, 0, gl::DEPTH_COMPONENT as i32, SHADOW_WIDTH, SHADOW_HEIGHT, 0, gl::DEPTH_COMPONENT, gl::FLOAT, null_mut()));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32));
+        }
+
+        
+
         shaders.insert(ShaderType::Main, main_shader);
         shaders.insert(ShaderType::Skybox, skybox_shader);
         shaders.insert(ShaderType::DebugLight, debug_light_shader);
+        shaders.insert(ShaderType::Depth, depth_shader);
 
         let entity_manager = EntityManager::new(10_000);
-        let light_manager = Lights::new(50);
+        let mut light_manager = Lights::new(50);
+        light_manager.dir_light = DirLight::default_white();
         
 
         Self {
@@ -395,10 +467,13 @@ impl GameState {
 
             shaders,
             vaos, 
+            fbos,
 
             container_diffuse,
             container_specular,
             cubemap_texture,
+            depth_map,
+            wood_floor_texture,
 
             entity_manager,
             light_manager,
@@ -492,6 +567,7 @@ impl GameState {
             let main_shader_prog = self.shaders.get(&ShaderType::Main).unwrap();
             let skybox_shader_prog = self.shaders.get(&ShaderType::Skybox).unwrap();
             let debug_light_shader = self.shaders.get(&ShaderType::DebugLight).unwrap();
+            let depth_shader_prog = self.shaders.get(&ShaderType::Depth).unwrap()
 
             // =============================================================
             // Skybox
@@ -536,7 +612,21 @@ impl GameState {
             }
 
             gl_call!(gl::BindVertexArray(0));
-            
+            // =============================================================
+            // Depth from light's perspective
+            // =============================================================
+            let near_plane = 1.0;
+            let far_plane = 7.5;
+            // Ortho works fine for only directional lights, but probably not for point apparently.
+            let mut light_projection = Mat4::orthographic_rh_gl(-10.0, 10.0, -10.0, 10.0, near_plane, far_plane)
+            let mut light_view = Mat4::look_at_rh(self.light_manager.dir_light.view_pos, vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
+            let mut light_space_matrix = light_projection * light_view;
+            depth_shader_prog.activate();
+            depth_shader_prog.set_mat4("light_space_mat", light_space_matrix);
+
+            gl_call!(gl::Viewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT));
+            gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER, *self.fbos.get(&FboType::DepthMap).unwrap()));
+            gl_call!(gl::Clear(gl::DEPTH_BUFFER_BIT));
 
             // =============================================================
             // Draw cubes

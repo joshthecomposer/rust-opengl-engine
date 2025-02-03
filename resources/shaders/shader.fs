@@ -5,9 +5,12 @@ out vec4 FragColor;
 in vec3 FragPos;
 in vec3 Normal;
 in vec2 TexCoords;
+in vec4 FragPosLightSpace;
 
 uniform vec3 point_light_color;
 uniform vec3 normal_color;
+
+uniform sampler2D shadow_map;
 
 struct Material {
 	sampler2D diffuse;
@@ -72,7 +75,6 @@ vec3 calculate_point_light(PointLight light) {
         
     return (ambient + diffuse + specular);
 }
-
 
 vec3 calculate_directional_light() {
 	// Ambient

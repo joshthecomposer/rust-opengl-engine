@@ -22,10 +22,16 @@ pub enum EboType {
 }
 
 #[derive(Debug, Eq, PartialEq, Hash)]
+pub enum FboType {
+    DepthMap,
+}
+
+#[derive(Debug, Eq, PartialEq, Hash)]
 pub enum ShaderType {
     Main,
     Skybox,
-    DebugLight
+    DebugLight,
+    Depth,
 }
 
 pub struct Transform {

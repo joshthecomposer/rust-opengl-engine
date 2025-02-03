@@ -158,3 +158,6 @@ pub const POINT_LIGHT_POSITIONS:[Vec3; 4] = [
     Vec3::new(-4.0, 2.0, -12.0),
     Vec3::new(0.0, 0.0, -3.0),
 ];
+
+pub const SHADOW_WIDTH:i32 = 1024;
+pub const SHADOW_HEIGHT:i32 = 1024;

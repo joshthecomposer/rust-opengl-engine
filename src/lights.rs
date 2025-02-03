@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use glam::Vec3;
+use glam::{vec3, Vec3};
 
-use crate::sparse_set::SparseSet;
+use crate::{some_data::WHITE, sparse_set::SparseSet};
 
 pub struct PointStrength {
     pub constant: f32,
@@ -57,11 +57,53 @@ impl PointLight {
     }
 }
 
+pub struct DirLight {
+    pub direction: Vec3,
+    pub view_pos: Vec3,
+
+    pub ambient: Vec3,
+    pub diffuse: Vec3,
+    pub specular: Vec3,
+}
+
+impl DirLight {
+    pub fn new(
+        direction: Vec3,
+        view_pos: Vec3,
+        ambient: Vec3,
+        diffuse: Vec3,
+        specular: Vec3,
+    ) -> Self {
+        Self {
+            direction,
+            view_pos,
+            ambient, 
+            diffuse,
+            specular
+        }
+    }
+
+    pub fn default_white() -> Self {
+        let direction = vec3(0.0, 0.07071, 0.07071);
+        let view_pos = direction * 500.0;
+        Self {
+            direction,
+            view_pos,
+
+            ambient: WHITE,
+            diffuse: WHITE,
+            specular: WHITE,
+        }
+    }
+}
+
 pub struct Lights {
     next_light_id: usize,
-    point_lights: SparseSet<PointLight>,
-    velocities: SparseSet<Vec3>,
-    point_strengths: HashMap<u32, PointStrength>,
+    pub point_lights: SparseSet<PointLight>,
+    pub velocities: SparseSet<Vec3>,
+    pub point_strengths: HashMap<u32, PointStrength>,
+
+    pub dir_light: DirLight,
 }
 
 impl Lights {

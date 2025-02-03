@@ -5,8 +5,8 @@ fn main() {
     println!("cargo:rustc-link-search=native=lib");
     println!("cargo:rustc-link-lib=static=glfw3");
 
-    println!("cargo:rustc-link-search=native=lib");
-    println!("cargo:rustc-link-lib=static=assimp");
+   // println!("cargo:rustc-link-search=native=lib");
+   // println!("cargo:rustc-link-lib=static=assimp");
     
     let resource_script_path = "./copy_files.sh";
 
