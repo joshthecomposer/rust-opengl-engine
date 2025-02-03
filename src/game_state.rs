@@ -422,16 +422,12 @@ impl GameState {
                     }
                 },
                 glfw:: WindowEvent::Key(glfw::Key::Escape, _, glfw::Action::Press, _) => {
-                    // self.window.set_should_close(true);
-                    self.paused = !self.paused;
+                    self.window.set_should_close(true);
+                    // self.paused = !self.paused;
 
                 },
                 _ => {
-                    if self.paused {
-                        self.handle_imgui_event(&event);
-                    } else {
                         self.camera.process_mouse_input(&self.window, &event);
-                    }
                 },
             }
         }
@@ -489,9 +485,6 @@ impl GameState {
 
     pub fn render(&mut self) {
         self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
-
-
-
         unsafe {
             gl_call!(gl::ClearColor(0.14, 0.13, 0.15, 1.0));
             gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT));
@@ -522,10 +515,10 @@ impl GameState {
             gl_call!(gl::BindVertexArray(0));
 
             gl_call!(gl::DepthFunc(gl::LESS));
+
             // =============================================================
             // Draw Debug Lights
             // =============================================================
-            
             debug_light_shader.activate();
             debug_light_shader.set_mat4("view", self.camera.view);
             debug_light_shader.set_mat4("projection", self.camera.projection);
@@ -589,22 +582,22 @@ impl GameState {
                 gl::DrawArrays(gl::TRIANGLES, 0, 36);
             }
 
-            if self.paused {
-                self.window.set_cursor_mode(glfw::CursorMode::Normal);
+            // if self.paused {
+            //     self.window.set_cursor_mode(glfw::CursorMode::Normal);
 
-                {
-                    let io = self.imgui.io_mut();
-                    io.display_size = [self.window_width as f32, self.window_height as f32];
-                    io.delta_time   = self.delta_time as f32;
-                }
+            //     {
+            //         let io = self.imgui.io_mut();
+            //         io.display_size = [self.window_width as f32, self.window_height as f32];
+            //         io.delta_time   = self.delta_time as f32;
+            //     }
 
-                let ui = self.imgui.frame();
-                ui.show_demo_window(&mut true);
-                self.renderer.render(&mut self.imgui);
+            //     let ui = self.imgui.frame();
+            //     ui.show_demo_window(&mut true);
+            //     self.renderer.render(&mut self.imgui);
 
-            } else {
-                self.window.set_cursor_mode(glfw::CursorMode::Disabled);
-            }
+            // } else {
+            //     self.window.set_cursor_mode(glfw::CursorMode::Disabled);
+            // }
 
 
             self.window.swap_buffers();
