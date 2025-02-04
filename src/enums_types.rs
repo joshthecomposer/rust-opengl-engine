@@ -4,7 +4,8 @@ use glam::{Mat4, Vec3};
 pub enum VaoType {
     Cube,
     Skybox,
-    DebugLight
+    DebugLight,
+    GroundPlane
 }
 
 #[derive(Debug, Eq, PartialEq, Hash)]
@@ -12,6 +13,7 @@ pub enum VboType {
     Cube,
     Skybox,
     DebugLight,
+    GroundPlane,
 }
 
 #[derive(Debug, Eq, PartialEq, Hash)]
@@ -32,6 +34,7 @@ pub enum ShaderType {
     Skybox,
     DebugLight,
     Depth,
+    GroundPlane
 }
 
 pub struct Transform {

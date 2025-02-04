@@ -11,7 +11,6 @@ uniform vec3 point_light_color;
 uniform vec3 normal_color;
 
 uniform sampler2D shadow_map;
-uniform sampler2D plane_texture;
 
 struct Material {
 	sampler2D diffuse;

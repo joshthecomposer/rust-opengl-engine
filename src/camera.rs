@@ -24,6 +24,7 @@ pub struct Camera {
     pub projection: Mat4,
     pub view: Mat4,
     pub model: Mat4,
+    pub light_space: Mat4,
 }
 
 impl Camera {
@@ -50,6 +51,7 @@ impl Camera {
             projection: Mat4::IDENTITY,
             view: Mat4::IDENTITY,
             model: Mat4::IDENTITY,
+            light_space: Mat4::IDENTITY,
         }
     }
 
