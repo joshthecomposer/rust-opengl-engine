@@ -127,7 +127,7 @@ impl GameState {
         let mut container_diffuse = 0;
         let mut container_specular = 0;
         let mut cubemap_texture = 0;
-        let mut wood_container_texture = 0;
+        let mut wood_floor_texture = 0;
         // =============================================================
         // Skybox memes
         // =============================================================
@@ -387,8 +387,8 @@ impl GameState {
         // Load wood floor texture
         // =============================================================
         unsafe {
-            gl_call!(gl::GenTextures(1, &mut wood_container_texture));
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, wood_container_texture));
+            gl_call!(gl::GenTextures(1, &mut wood_floor_texture));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, wood_floor_texture));
             gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32));
             gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32));
             gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32));

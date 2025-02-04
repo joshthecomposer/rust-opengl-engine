@@ -114,6 +114,8 @@ impl Lights {
             point_lights: SparseSet::with_capacity(max_lights),
             velocities: SparseSet::with_capacity(max_lights),
             point_strengths,
+
+            dir_light: DirLight::default_white()
         }
     }
 

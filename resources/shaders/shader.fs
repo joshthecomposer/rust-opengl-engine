@@ -11,6 +11,7 @@ uniform vec3 point_light_color;
 uniform vec3 normal_color;
 
 uniform sampler2D shadow_map;
+uniform sampler2D plane_texture;
 
 struct Material {
 	sampler2D diffuse;
@@ -57,6 +58,7 @@ vec3 calculate_point_light(PointLight light) {
     // ambient
 	vec3 ambient = light.ambient * vec3(texture(material.diffuse, TexCoords));
   	
+	
     // diffuse 
     vec3 norm = normalize(Normal);
     vec3 lightDir = normalize(light.position - FragPos);
