@@ -56,7 +56,7 @@ impl Camera {
     }
 
     pub fn update(&mut self) {
-        self.position.y = 1.75;
+        // self.position.y = 1.75;
     }
 
     pub fn get_view_matrix(&mut self) {

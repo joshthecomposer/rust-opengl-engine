@@ -34,7 +34,8 @@ pub enum ShaderType {
     Skybox,
     DebugLight,
     Depth,
-    GroundPlane
+    GroundPlane,
+    DebugShadowMap,
 }
 
 pub struct Transform {

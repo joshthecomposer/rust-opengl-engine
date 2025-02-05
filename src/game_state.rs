@@ -63,6 +63,7 @@ impl GameState {
             gl_call!(gl::Enable(gl::TEXTURE_CUBE_MAP_SEAMLESS));
             gl_call!(gl::Viewport(0, 0, width, height));
             gl_call!(gl::Enable(gl::DEPTH_TEST));
+            gl::Enable(gl::DEBUG_OUTPUT);
         }
 
         // =============================================================
@@ -585,6 +586,8 @@ impl GameState {
         self.light_manager.update(&self.delta_time);
 
         self.camera.update();
+
+        // self.camera.position = self.light_manager.dir_light.view_pos;
     }
 
     pub fn render(&mut self) {
@@ -598,10 +601,13 @@ impl GameState {
             let depth_shader_prog = self.shaders.get(&ShaderType::Depth).unwrap();
 
             self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
-            let near_plane = 1.0;
-            let far_plane = 7.5;
+            let near_plane = 0.01;
+            let far_plane = 100.0;
             // Ortho works fine for only directional lights, but probably not for point apparently.
-            let mut light_projection = Mat4::orthographic_rh_gl(-10.0, 10.0, -10.0, 10.0, near_plane, far_plane);
+            // correct let mut light_projection = Mat4::orthographic_rh_gl(-20.0, 20.0, -20.0, 20.0, near_plane, far_plane);
+            let mut light_projection = Mat4::orthographic_rh_gl(20.0, -20.0, 20.0, -20.0, near_plane, far_plane);
+
+            // self.light_manager.dir_light.view_pos = vec3(5.0, 10.0, 5.0);
             let mut light_view = Mat4::look_at_rh(self.light_manager.dir_light.view_pos, vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
             self.camera.light_space = light_projection * light_view;
             depth_shader_prog.activate();
@@ -611,6 +617,11 @@ impl GameState {
             gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER, *self.fbos.get(&FboType::DepthMap).unwrap()));
             gl_call!(gl::Clear(gl::DEPTH_BUFFER_BIT));
             // Render scene
+
+            let status = gl::CheckFramebufferStatus(gl::FRAMEBUFFER);
+            if status != gl::FRAMEBUFFER_COMPLETE {
+                println!("Framebuffer incomplete: {}", status);
+            }
             self.render_sample_depth();
 
             gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER,0));
@@ -619,6 +630,12 @@ impl GameState {
             // =============================================================
             // Skybox
             // =============================================================
+            self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
+
+            let status = gl::CheckFramebufferStatus(gl::FRAMEBUFFER);
+            if status != gl::FRAMEBUFFER_COMPLETE {
+                println!("Framebuffer incomplete: {}", status);
+            }
             let skybox_shader_prog = self.shaders.get(&ShaderType::Skybox).unwrap();
 
             gl_call!(gl::ClearColor(0.14, 0.13, 0.15, 1.0));
@@ -669,6 +686,11 @@ impl GameState {
             // =============================================================
             // Render scene normally
             // =============================================================
+
+let status = gl::CheckFramebufferStatus(gl::FRAMEBUFFER);
+if status != gl::FRAMEBUFFER_COMPLETE {
+    println!("Framebuffer incomplete: {}", status);
+}
             self.render_sample();
 
             self.window.swap_buffers();
@@ -729,14 +751,14 @@ impl GameState {
         // =============================================================
         floor_shader.activate();
             unsafe {
-            gl_call!(gl::ActiveTexture(gl::TEXTURE2));
+            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-            floor_shader.set_int("shadow_map", 2);
+            floor_shader.set_int("shadow_map", 0);
         }
 
         self.camera.model = Mat4::IDENTITY;
         floor_shader.set_mat4("model", self.camera.model);
-        floor_shader.set_vec3("ground_color", vec3(1.0, 0.0, 0.0));
+        floor_shader.set_vec3("ground_color", vec3(0.67, 0.67, 0.67));
         floor_shader.set_mat4("view", self.camera.view);
         floor_shader.set_mat4("projection", self.camera.projection);
         floor_shader.set_mat4("light_space_mat", self.camera.light_space);
@@ -759,9 +781,14 @@ impl GameState {
 
             gl_call!(gl::ActiveTexture(gl::TEXTURE1));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.container_specular));
+
+            gl_call!(gl::ActiveTexture(gl::TEXTURE2));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
         }
 
         main_shader.activate();
+
+        main_shader.set_int("shadow_map", 2);
         main_shader.set_int("material.diffuse", 0);
         main_shader.set_mat4("projection", self.camera.projection);
         main_shader.set_mat4("view", self.camera.view);
