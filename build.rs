@@ -2,11 +2,10 @@ use std::{path::Path, process::Command};
 
 fn main() {
     // Link against the GLFW static library
-    println!("cargo:rustc-link-search=native=lib");
+    println!("cargo:rustc-link-search=native=libs");
+    println!("cargo:rustc-link-lib=static=libclang");
     println!("cargo:rustc-link-lib=static=glfw3");
-
-   // println!("cargo:rustc-link-search=native=lib");
-   // println!("cargo:rustc-link-lib=static=assimp");
+    println!("cargo:rustc-link-lib=static=assimp");
     
     let resource_script_path = "./copy_files.sh";
 

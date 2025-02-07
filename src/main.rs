@@ -9,8 +9,12 @@ mod uniforms;
 mod entity_manager;
 mod lights;
 mod math_utils;
+mod model;
+mod mesh;
 
 use game_state::GameState;
+use russimp::scene::{Scene, PostProcess};
+use russimp::Russult;
 // use sparse_set::SparseSet;
 
 fn main() {
@@ -27,14 +31,45 @@ fn main() {
     // println!("{:?}", sparse_set.sparse);
     // println!("{:?}", sparse_set.dense);
 
-    // println!("{}", sparse_set.get(0).unwrap());
-    
+    //let flags = vec![
+    //    PostProcess::Triangulate,
+    //    PostProcess::JoinIdenticalVertices,
+    //];
+
+    //let scene = Scene::from_file(
+    //    "resources/models/TD 3D Low Poly Pack/fbx/Full/_archer_tower_LVL_1.fbx", 
+    //    flags
+    //).unwrap();
+
+    //println!("Imported scene has:");
+    //println!(" {} meshes", scene.meshes.len());
+    //println!(" {} materials", scene.materials.len());
+    //println!(" {} animations", scene.animations.len());
+    //println!(" {} lights", scene.lights.len());
+
+    //for (i, mesh) in scene.meshes.iter().enumerate() {
+    //    println!(
+    //        "Mesh #{} has {} vertices and {} faces.",
+    //        i,
+    //        mesh.vertices.len(),
+    //        mesh.faces.len()
+    //    );
+    //}
+
+    //for (i, mat) in scene.materials.iter().enumerate() {
+    //    println!(
+    //        "{:?}",
+    //        mat
+    //    );
+    //}
+
+
     let mut state = GameState::new();
-       while !state.window.should_close() {
-           state.process_events();
-           state.update();
-           state.render();
-       }
+    while !state.window.should_close() {
+        state.process_events();
+        state.update();
+        state.render();
+    }
 }
 
 
