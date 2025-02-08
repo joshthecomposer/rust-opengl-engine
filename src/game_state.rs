@@ -13,6 +13,8 @@ pub struct GameState {
     pub camera: Camera,
     pub window_width: u32,
     pub window_height: u32,
+    pub fb_width: u32,
+    pub fb_height: u32,
 
     // GLFW context
     pub glfw: Glfw,
@@ -57,6 +59,10 @@ impl GameState {
         window.set_cursor_pos_polling(true);
         window.set_cursor_mode(glfw::CursorMode::Disabled);
         window.make_current();
+
+        let (fb_width, fb_height) = window.get_framebuffer_size();
+
+        println!("Framebuffer size: {}x{}", fb_width, fb_height);
 
         gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
 
@@ -458,12 +464,12 @@ impl GameState {
         // =============================================================
         // Model
         // =============================================================
-        let model = Model::load("resources/models/my_obj/tower.obj");
-        for mesh in model.meshes.iter() {
-            for vertex in mesh.vertices.iter() {
-                dbg!(vertex.normal);
-            }
-        }
+        let model = Model::load("resources/models/backpack/backpack.obj");
+        // for mesh in model.meshes.iter() {
+        //     for vertex in mesh.vertices.iter() {
+        //         dbg!(vertex.normal);
+        //     }
+        // }
 
         // =============================================================
         // Shadow Mapping
@@ -519,6 +525,8 @@ impl GameState {
             camera: Camera::new(),
             window_width: width as u32,
             window_height: height as u32,
+            fb_width:  fb_width as u32,
+            fb_height: fb_height as u32,
 
             glfw,
             events,
@@ -654,7 +662,7 @@ impl GameState {
             self.render_sample_depth();
 
             gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER,0));
-            // gl_call!(gl::Viewport(0, 0, self.window_width as i32, self.window_height as i32));
+            gl_call!(gl::Viewport(0, 0, self.fb_width as i32, self.fb_height as i32));
 
             // =============================================================
             // Skybox

@@ -72,9 +72,8 @@ vec3 calculate_directional_light() {
 	vec3 ambient = dir_light.ambient * diffuseColor;
 
 	// Diffuse
-	// vec3 norm = normalize(Normal);
-	vec3 norm = Normal;
-	vec3 lightDir = -dir_light.direction;
+	vec3 norm = -normalize(Normal);
+	vec3 lightDir = normalize(dir_light.direction);
 	float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = dir_light.diffuse * diff * diffuseColor;
 
@@ -82,7 +81,8 @@ vec3 calculate_directional_light() {
 	vec3 viewDir = normalize(ViewPosition - FragPos);
     vec3 reflectDir = reflect(-lightDir, norm);  
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 64.0);
-    // vec3 specular = dir_light.specular * spec * texture(material.specular, TexCoords).rgb; 
+    vec3 specular = dir_light.specular * spec * diffuseColor; 
+
 	// float shadow = ShadowCalculation(FragPosLightSpace);
 
 	// return (ambient + (1.0 - shadow) * (diffuse)) * texture(texture_diffuse1, TexCoords).rgb;
