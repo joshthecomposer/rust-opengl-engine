@@ -90,7 +90,7 @@ impl DirLight {
             direction,
             view_pos,
 
-            ambient: WHITE * 0.2,
+            ambient: WHITE * 0.001,
             diffuse: WHITE,
             specular: WHITE,
         }
