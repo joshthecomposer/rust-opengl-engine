@@ -140,6 +140,9 @@ impl GameState {
         ground_plane_shader.store_uniform_location("light_space_mat");
 
         let mut model_test_shader = Shader::new("resources/shaders/model_test.vs", "resources/shaders/model_test.fs");
+        model_test_shader.store_uniform_location("model");
+        model_test_shader.store_uniform_location("view");
+        model_test_shader.store_uniform_location("projection");
 
         let mut vao = 0;
         let mut vbo = 0;
@@ -703,8 +706,8 @@ impl GameState {
                 println!("Framebuffer incomplete: {}", status);
             }
             self.render_sample();
-
-            self.model.draw(self.shaders.get_mut(&ShaderType::ModelTest).unwrap());
+            
+            self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
 
             self.window.swap_buffers();
             self.glfw.poll_events()
@@ -714,6 +717,26 @@ impl GameState {
     pub fn render_sample_depth(&mut self) {
         let depth_shader = self.shaders.get(&ShaderType::Depth).unwrap();
         depth_shader.activate();
+        // =========================
+        // Render Tower For Shadows
+        // =========================
+        let model_model = Mat4::IDENTITY;
+        for mesh in self.model.meshes.iter() {
+            unsafe {
+                gl::BindVertexArray(mesh.vao);
+            }
+            depth_shader.set_mat4("model", model_model);
+            unsafe {
+                gl_call!(gl::DrawElements(
+                    gl::TRIANGLES, 
+                    mesh.indices.len() as i32, 
+                    gl::UNSIGNED_INT, 
+                    0 as *const _
+                ));
+
+            gl_call!(gl::BindVertexArray(0));
+            }
+        }
 
         // =========================
         // Render floor for shadows
@@ -841,7 +864,14 @@ impl GameState {
 
             unsafe { gl::DrawArrays(gl::TRIANGLES, 0, 36); }
         }
+        
+        self.camera.model = Mat4::IDENTITY;
+        let model_test_shader = self.shaders.get_mut(&ShaderType::ModelTest).unwrap();
+        model_test_shader.activate();
+        model_test_shader.set_mat4("model", self.camera.model);
+        model_test_shader.set_mat4("view", self.camera.view);
+        model_test_shader.set_mat4("projection", self.camera.projection);
 
-
+        self.model.draw(model_test_shader);
     }
 }

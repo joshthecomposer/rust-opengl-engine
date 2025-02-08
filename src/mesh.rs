@@ -110,6 +110,10 @@ impl Mesh {
                 offset_of!(Vertex, tex_coords) as *const _
             );
 
+            self.vao = vao;
+            self.vbo = vbo;
+            self.ebo = ebo;
+
             gl::BindVertexArray(0);
         }
     }
@@ -140,17 +144,17 @@ impl Mesh {
             unsafe {
                 gl_call!(gl::BindTexture(gl::TEXTURE_2D, texture.id));
             }
-
         }
 
         unsafe {
             gl_call!(gl::BindVertexArray(self.vao));
-            gl::DrawElements(
+
+            gl_call!(gl::DrawElements(
                 gl::TRIANGLES, 
                 self.indices.len() as i32, 
                 gl::UNSIGNED_INT, 
                 0 as *const _
-            );
+            ));
             gl_call!(gl::BindVertexArray(0));
         }
     }

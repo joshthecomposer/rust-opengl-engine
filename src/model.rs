@@ -2,7 +2,7 @@ use std::{ffi::c_void, path::Path};
 
 use glam::vec3;
 use image::GenericImageView;
-use russimp::{material::TextureType, material::Material as RMaterial, mesh::Mesh as RMesh, node::Node, scene::{PostProcess, Scene}};
+use russimp::{material::{Material as RMaterial, PropertyTypeInfo, TextureType}, mesh::Mesh as RMesh, node::Node, scene::{PostProcess, Scene}};
 use russimp_sys::AI_SCENE_FLAGS_INCOMPLETE;
 
 use crate::{gl_call, mesh::{Mesh, Texture, Vertex}, shaders::Shader};
@@ -33,17 +33,15 @@ impl Model {
                 PostProcess::Triangulate,
                 // PostProcess::GenerateSmoothNormals,
                 PostProcess::FlipUVs,
-                // PostProcess::FlipWindingOrder,
+                PostProcess::FlipWindingOrder,
                 PostProcess::JoinIdenticalVertices,
-                // PostProcess::OptimizeGraph,
+                PostProcess::OptimizeGraph,
             ],
         ).unwrap();
 
         if !scene.root.is_some() {
             panic!("Scene had no root node :/");
         }
-
-        dbg!(&scene.materials);
 
         let directory = Path::new(path).parent().unwrap().to_str().unwrap();
 
@@ -101,8 +99,6 @@ impl Model {
 
         // Materials
         let material_index = ai_mesh.material_index;
-        println!("material_index = {}", material_index);
-        
         // if material_index >= 0 {
             if let Some(ai_mat) = scene.materials.get(material_index as usize) {
                 let mut diffuse_textures = self.load_material_textures(ai_mat, TextureType::Diffuse, "texture_diffuse".to_string());
@@ -122,24 +118,37 @@ impl Model {
     }
 
     pub fn load_material_textures(&self, ai_mat: &RMaterial, texture_type: TextureType, my_type: String) -> Vec<Texture> {
-        dbg!("beginning to load textures");
         let mut textures: Vec<Texture> = vec![];
         if let Some(ai_texes_cell) = ai_mat.textures.get(&texture_type) {
             let ai_tex = ai_texes_cell.borrow();
             let tex_id = Self::texture_from_file(self, ai_tex.filename.clone());
             textures.push(Texture {id: tex_id, _type: my_type});
-            dbg!(ai_tex.filename.clone());
-            dbg!(tex_id);
         } else {
-            dbg!(&ai_mat.textures);
+            if texture_type == TextureType::Diffuse {
+                if let Some(found_path) = Self::try_parse_diffuse_texture_path(ai_mat) {
+                    let tex_id = Self::texture_from_file(self, found_path);
+                    dbg!(tex_id);
+                    textures.push(Texture {id: tex_id, _type: my_type});
+                }
+            }
         }
         textures
     }
 
+    pub fn try_parse_diffuse_texture_path(ai_mat: &RMaterial) -> Option<String> {
+        for prop in ai_mat.properties.iter() {
+            if prop.key == "$tex.file" && prop.semantic == TextureType::Diffuse {
+                if let PropertyTypeInfo::String(ref filename) = prop.data {
+                    return Some(filename.clone());
+                }
+            }
+        }
+        None
+    }
+
     pub fn texture_from_file(model: &Model, path: String) -> u32 {
         let file_name = model.directory.clone() + "/" + path.as_str();
-        dbg!(&file_name);
-        
+
         let mut texture_id = 0;
         unsafe {
             gl_call!(gl::GenTextures(1, &mut texture_id));
