@@ -488,6 +488,7 @@ impl GameState {
         shaders.insert(ShaderType::DebugLight, debug_light_shader);
         shaders.insert(ShaderType::Depth, depth_shader);
         shaders.insert(ShaderType::GroundPlane, ground_plane_shader);
+        shaders.insert(ShaderType::ModelTest, model_test_shader);
 
         let entity_manager = EntityManager::new(10_000);
         let mut light_manager = Lights::new(50);
@@ -703,7 +704,7 @@ impl GameState {
             }
             self.render_sample();
 
-            self.model.draw(self.shaders.get_mut(&ShaderType::Main).unwrap());
+            self.model.draw(self.shaders.get_mut(&ShaderType::ModelTest).unwrap());
 
             self.window.swap_buffers();
             self.glfw.poll_events()

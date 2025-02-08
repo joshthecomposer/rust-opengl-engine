@@ -82,7 +82,7 @@ impl Model {
             vertex.normal = vec3(ai_norm.x, ai_norm.y, ai_norm.z);
 
             if let Some(tex_coord_list) = ai_mesh.texture_coords.get(0).unwrap() {
-                if let Some(ai_tex_coord) = tex_coord_list.first() {
+                if let Some(ai_tex_coord) = tex_coord_list.get(i) {
                     let tex_coord = glam::Vec2 {x: ai_tex_coord.x, y: ai_tex_coord.y};
                     vertex.tex_coords = tex_coord;
                 }
@@ -107,7 +107,7 @@ impl Model {
                 mesh.textures.append(&mut specular_textures);
             }
         }
-        mesh.setup_mesh();
+
         mesh
     }
 
