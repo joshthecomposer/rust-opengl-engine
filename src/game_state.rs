@@ -140,9 +140,17 @@ impl GameState {
         ground_plane_shader.store_uniform_location("light_space_mat");
 
         let mut model_test_shader = Shader::new("resources/shaders/model_test.vs", "resources/shaders/model_test.fs");
-        model_test_shader.store_uniform_location("model");
-        model_test_shader.store_uniform_location("view");
         model_test_shader.store_uniform_location("projection");
+        model_test_shader.store_uniform_location("view");
+        model_test_shader.store_uniform_location("model");
+        model_test_shader.store_uniform_location("shadow_map");
+        model_test_shader.store_uniform_location("dir_light.direction");
+        model_test_shader.store_uniform_location("dir_light.view_pos");
+        model_test_shader.store_uniform_location("dir_light.ambient");
+        model_test_shader.store_uniform_location("dir_light.diffuse");
+        model_test_shader.store_uniform_location("dir_light.specular");
+        model_test_shader.store_uniform_location("ViewPosition");
+        model_test_shader.store_uniform_location("light_space_mat");
 
         let mut vao = 0;
         let mut vbo = 0;
@@ -871,6 +879,16 @@ impl GameState {
         model_test_shader.set_mat4("model", self.camera.model);
         model_test_shader.set_mat4("view", self.camera.view);
         model_test_shader.set_mat4("projection", self.camera.projection);
+        model_test_shader.set_vec3("dir_light.view_pos", self.light_manager.dir_light.view_pos);
+        model_test_shader.set_vec3("dir_light.ambient", self.light_manager.dir_light.ambient);
+        model_test_shader.set_vec3("dir_light.diffuse", self.light_manager.dir_light.diffuse);
+        model_test_shader.set_vec3("dir_light.specular", self.light_manager.dir_light.specular);
+
+        unsafe {
+            gl_call!(gl::ActiveTexture(gl::TEXTURE2)); 
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+        }
+        model_test_shader.set_int("shadow_map", 2);
 
         self.model.draw(model_test_shader);
     }
