@@ -89,6 +89,7 @@ void main() {
 	vec3 result = vec3(0.0f, 0.0f, 0.0f); 
 
 	result += calculate_directional_light();
-
-    FragColor = vec4(result, 1.0);
+    // vec3 n = normalize(Normal);
+    // FragColor = vec4(n * 0.5 + 0.5, 1.0); 
+   FragColor = vec4(result, 1.0);
 }
