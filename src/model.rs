@@ -33,9 +33,6 @@ impl Model {
                 PostProcess::Triangulate,
                 // PostProcess::GenerateSmoothNormals,
                 PostProcess::FlipUVs,
-                PostProcess::FlipWindingOrder,
-                PostProcess::JoinIdenticalVertices,
-                PostProcess::OptimizeGraph,
             ],
         ).unwrap();
 

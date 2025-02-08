@@ -137,8 +137,8 @@ vec3 calculate_directional_light() {
 
 	float shadow = ShadowCalculation(FragPosLightSpace);
 
-	return (ambient + (1.0 - shadow) * (diffuse + specular)) * texture(material.diffuse, TexCoords).rgb;
-	// return (ambient + diffuse + specular) * texture(material.diffuse, TexCoords).rgb;
+	// return (ambient + (1.0 - shadow) * (diffuse + specular)) * texture(material.diffuse, TexCoords).rgb;
+	return (ambient + diffuse + specular) * texture(material.diffuse, TexCoords).rgb;
 }
 
 void main() {

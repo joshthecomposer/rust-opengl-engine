@@ -123,6 +123,8 @@ impl Mesh {
         let mut diffuse_nr = 1;
         let mut specular_nr = 1;
 
+        shader.activate();
+
         for (i, texture) in self.textures.iter().enumerate() {
             unsafe {
                 gl_call!(gl::ActiveTexture(gl::TEXTURE0 + i as u32));

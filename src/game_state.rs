@@ -66,6 +66,8 @@ impl GameState {
             gl_call!(gl::Viewport(0, 0, width, height));
             gl_call!(gl::Enable(gl::DEPTH_TEST));
             gl::Enable(gl::DEBUG_OUTPUT);
+            // gl::Enable(gl::CULL_FACE);  
+            // gl::CullFace(gl::BACK);  
         }
 
         // =============================================================
@@ -457,6 +459,11 @@ impl GameState {
         // Model
         // =============================================================
         let model = Model::load("resources/models/my_obj/tower.obj");
+        for mesh in model.meshes.iter() {
+            for vertex in mesh.vertices.iter() {
+                dbg!(vertex.normal);
+            }
+        }
 
         // =============================================================
         // Shadow Mapping
@@ -647,7 +654,7 @@ impl GameState {
             self.render_sample_depth();
 
             gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER,0));
-            gl_call!(gl::Viewport(0, 0, self.window_width as i32, self.window_height as i32));
+            // gl_call!(gl::Viewport(0, 0, self.window_width as i32, self.window_height as i32));
 
             // =============================================================
             // Skybox
@@ -888,7 +895,7 @@ impl GameState {
             gl_call!(gl::ActiveTexture(gl::TEXTURE2)); 
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
         }
-        model_test_shader.set_int("shadow_map", 2);
+        // model_test_shader.set_int("shadow_map", );
 
         self.model.draw(model_test_shader);
     }

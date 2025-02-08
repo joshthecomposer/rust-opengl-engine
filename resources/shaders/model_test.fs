@@ -34,8 +34,8 @@ float ShadowCalculation(vec4 fragPosLightSpace) {
     float currentDepth = projCoords.z;
     // calculate bias (based on depth map resolution and slope)
     vec3 normal = normalize(Normal);
-    vec3 lightDir = normalize(dir_light.view_pos - FragPos);
-	// vec3 lightDir = normalize(-dir_light.direction);
+   	vec3 lightDir = normalize(dir_light.view_pos - FragPos);
+	//vec3 lightDir = normalize(-dir_light.direction);
 	float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.0005);
     // float bias = 1.0;
     // check whether current frag pos is in shadow
@@ -72,8 +72,9 @@ vec3 calculate_directional_light() {
 	vec3 ambient = dir_light.ambient * diffuseColor;
 
 	// Diffuse
-	vec3 norm = normalize(Normal);
-	vec3 lightDir = normalize(dir_light.direction);
+	// vec3 norm = normalize(Normal);
+	vec3 norm = Normal;
+	vec3 lightDir = -dir_light.direction;
 	float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = dir_light.diffuse * diff * diffuseColor;
 
@@ -82,10 +83,10 @@ vec3 calculate_directional_light() {
     vec3 reflectDir = reflect(-lightDir, norm);  
     float spec = pow(max(dot(viewDir, reflectDir), 0.0), 64.0);
     // vec3 specular = dir_light.specular * spec * texture(material.specular, TexCoords).rgb; 
-	float shadow = ShadowCalculation(FragPosLightSpace);
+	// float shadow = ShadowCalculation(FragPosLightSpace);
 
 	// return (ambient + (1.0 - shadow) * (diffuse)) * texture(texture_diffuse1, TexCoords).rgb;
-	 return (ambient + diffuse);
+	 return (ambient + diffuse) * diffuseColor;
 }
 
 void main() {    
@@ -94,5 +95,6 @@ void main() {
 	result += calculate_directional_light();
     // vec3 n = normalize(Normal);
     // FragColor = vec4(n * 0.5 + 0.5, 1.0); 
+	// FragColor = vec4(0.0, 0.0, 1.0, 1.0);
    FragColor = vec4(result, 1.0);
 }
