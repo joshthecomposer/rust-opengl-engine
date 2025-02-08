@@ -5,7 +5,7 @@ use glfw::{Action, Context, Glfw, GlfwReceiver, MouseButton, PWindow, WindowEven
 use image::GenericImageView;
 use imgui::{Ui};
 
-use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, VaoType}, gl_call, lights::{DirLight, Lights}, shaders::Shader, some_data::{BISEXUAL_BLUE, BISEXUAL_BLUE_SCALE, BISEXUAL_PINK, BISEXUAL_PINK_SCALE, BISEXUAL_PURPLE, BISEXUAL_PURPLE_SCALE, CUBE_POSITIONS, FACES_CUBEMAP, GROUND_PLANE, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES, WHITE}};
+use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, VaoType}, gl_call, lights::{DirLight, Lights}, model::Model, shaders::Shader, some_data::{BISEXUAL_BLUE, BISEXUAL_BLUE_SCALE, BISEXUAL_PINK, BISEXUAL_PINK_SCALE, BISEXUAL_PURPLE, BISEXUAL_PURPLE_SCALE, CUBE_POSITIONS, FACES_CUBEMAP, GROUND_PLANE, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES, WHITE}};
 
 pub struct GameState {
     pub delta_time: f64,
@@ -33,6 +33,8 @@ pub struct GameState {
     pub imgui: imgui::Context,
     pub renderer: imgui_opengl_renderer::Renderer,
     pub paused: bool,
+
+    pub model: Model,
 }
 
 impl GameState {
@@ -136,6 +138,8 @@ impl GameState {
         ground_plane_shader.store_uniform_location("ViewPosition");
         ground_plane_shader.store_uniform_location("ground_color");
         ground_plane_shader.store_uniform_location("light_space_mat");
+
+        let mut model_test_shader = Shader::new("resources/shaders/model_test.vs", "resources/shaders/model_test.fs");
 
         let mut vao = 0;
         let mut vbo = 0;
@@ -439,6 +443,11 @@ impl GameState {
             gl::BindVertexArray(0);
         }
         // =============================================================
+        // Model
+        // =============================================================
+        let model = Model::load("resources/models/TD 3D Low Poly Pack/fbx/Full/_archer_tower_LVL_1.fbx");
+
+        // =============================================================
         // Shadow Mapping
         // =============================================================
         // The general idea is that we need to create a depth map rendered 
@@ -510,6 +519,7 @@ impl GameState {
             imgui,
             renderer,
             paused: false,
+            model,
         }
     }
 
@@ -687,11 +697,13 @@ impl GameState {
             // Render scene normally
             // =============================================================
 
-let status = gl::CheckFramebufferStatus(gl::FRAMEBUFFER);
-if status != gl::FRAMEBUFFER_COMPLETE {
-    println!("Framebuffer incomplete: {}", status);
-}
+            let status = gl::CheckFramebufferStatus(gl::FRAMEBUFFER);
+            if status != gl::FRAMEBUFFER_COMPLETE {
+                println!("Framebuffer incomplete: {}", status);
+            }
             self.render_sample();
+
+            self.model.draw(self.shaders.get_mut(&ShaderType::Main).unwrap());
 
             self.window.swap_buffers();
             self.glfw.poll_events()
@@ -750,7 +762,7 @@ if status != gl::FRAMEBUFFER_COMPLETE {
         // Render floor
         // =============================================================
         floor_shader.activate();
-            unsafe {
+        unsafe {
             gl_call!(gl::ActiveTexture(gl::TEXTURE0));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
             floor_shader.set_int("shadow_map", 0);
@@ -809,7 +821,7 @@ if status != gl::FRAMEBUFFER_COMPLETE {
         main_shader.set_vec3("dir_light.ambient", self.light_manager.dir_light.ambient);
         main_shader.set_vec3("dir_light.diffuse", self.light_manager.dir_light.diffuse);
         main_shader.set_vec3("dir_light.specular", self.light_manager.dir_light.specular);
-        
+
         unsafe {
             gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::Cube).unwrap()));
         }
@@ -825,7 +837,7 @@ if status != gl::FRAMEBUFFER_COMPLETE {
             self.camera.model *= Mat4::from_axis_angle(axis, angle);
 
             main_shader.set_mat4("model", self.camera.model);
-            
+
             unsafe { gl::DrawArrays(gl::TRIANGLES, 0, 36); }
         }
 
