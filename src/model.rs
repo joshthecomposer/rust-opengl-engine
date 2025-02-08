@@ -32,7 +32,7 @@ impl Model {
             vec![
                 PostProcess::Triangulate,
                 // PostProcess::GenerateSmoothNormals,
-                // PostProcess::FlipUVs,
+                PostProcess::FlipUVs,
                 // PostProcess::FlipWindingOrder,
                 PostProcess::JoinIdenticalVertices,
                 // PostProcess::OptimizeGraph,
@@ -42,6 +42,8 @@ impl Model {
         if !scene.root.is_some() {
             panic!("Scene had no root node :/");
         }
+
+        dbg!(&scene.materials);
 
         let directory = Path::new(path).parent().unwrap().to_str().unwrap();
 
@@ -61,7 +63,7 @@ impl Model {
     fn traverse_nodes(&mut self, node: &Node, scene: &Scene) {
         for mesh_index in node.meshes.clone() {
             let ai_mesh = &scene.meshes[mesh_index as usize];
-            let mesh = self.process_mesh(ai_mesh, scene);
+            let mut mesh = self.process_mesh(ai_mesh, scene);
             self.meshes.push(mesh);
         }
 
@@ -99,30 +101,44 @@ impl Model {
 
         // Materials
         let material_index = ai_mesh.material_index;
-        if material_index >= 0 {
+        println!("material_index = {}", material_index);
+        
+        // if material_index >= 0 {
             if let Some(ai_mat) = scene.materials.get(material_index as usize) {
                 let mut diffuse_textures = self.load_material_textures(ai_mat, TextureType::Diffuse, "texture_diffuse".to_string());
+                let mut more_textures = self.load_material_textures(ai_mat, TextureType::None, "texture_diffuse".to_string());
+                let mut base_color = self.load_material_textures(ai_mat, TextureType::BaseColor, "texture_diffuse".to_string());
+                let mut unknown = self.load_material_textures(ai_mat, TextureType::Unknown, "texture_diffuse".to_string());
                 let mut specular_textures = self.load_material_textures(ai_mat, TextureType::Specular, "texture_specular".to_string());
                 mesh.textures.append(&mut diffuse_textures);
+                mesh.textures.append(&mut more_textures);
+                mesh.textures.append(&mut base_color);
+                mesh.textures.append(&mut unknown);
                 mesh.textures.append(&mut specular_textures);
             }
-        }
-
+        // }
+        mesh.setup_mesh();
         mesh
     }
 
     pub fn load_material_textures(&self, ai_mat: &RMaterial, texture_type: TextureType, my_type: String) -> Vec<Texture> {
+        dbg!("beginning to load textures");
         let mut textures: Vec<Texture> = vec![];
         if let Some(ai_texes_cell) = ai_mat.textures.get(&texture_type) {
             let ai_tex = ai_texes_cell.borrow();
             let tex_id = Self::texture_from_file(self, ai_tex.filename.clone());
             textures.push(Texture {id: tex_id, _type: my_type});
+            dbg!(ai_tex.filename.clone());
+            dbg!(tex_id);
+        } else {
+            dbg!(&ai_mat.textures);
         }
         textures
     }
 
     pub fn texture_from_file(model: &Model, path: String) -> u32 {
         let file_name = model.directory.clone() + "/" + path.as_str();
+        dbg!(&file_name);
         
         let mut texture_id = 0;
         unsafe {
@@ -157,9 +173,6 @@ impl Model {
     }
 
     pub fn draw(&self, shader: &mut Shader) {
-        println!("====================================================");
-        println!("BEGIN DRAWL");
-        println!("====================================================");
         for mesh in self.meshes.iter() {
             mesh.draw(shader);
         }

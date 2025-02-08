@@ -64,6 +64,7 @@ fn main() {
     //    );
     //}
 
+    //let model = Model::load("resources/models/my_obj/tower.obj");
 
      let mut state = GameState::new();
      while !state.window.should_close() {

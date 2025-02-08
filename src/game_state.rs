@@ -445,7 +445,7 @@ impl GameState {
         // =============================================================
         // Model
         // =============================================================
-        let model = Model::load("resources/models/TD 3D Low Poly Pack/fbx/Full/_archer_tower_LVL_1.fbx");
+        let model = Model::load("resources/models/my_obj/tower.obj");
 
         // =============================================================
         // Shadow Mapping

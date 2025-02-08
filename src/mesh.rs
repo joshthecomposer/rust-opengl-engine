@@ -67,7 +67,7 @@ impl Mesh {
             
             gl::BufferData(
                 gl::ARRAY_BUFFER, 
-                self.vertices.len() as isize,
+                (mem::size_of::<Vertex>() * self.vertices.len()) as isize,
                 self.vertices.as_ptr().cast(),
                 gl::STATIC_DRAW,
             );
@@ -75,7 +75,7 @@ impl Mesh {
             gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
             gl::BufferData(
                 gl::ELEMENT_ARRAY_BUFFER,
-                self.indices.len() as isize,
+                (mem::size_of::<u32>() * self.indices.len()) as isize,
                 self.indices.as_ptr().cast(),
                 gl::STATIC_DRAW
             );
@@ -145,7 +145,12 @@ impl Mesh {
 
         unsafe {
             gl_call!(gl::BindVertexArray(self.vao));
-            gl_call!(gl::DrawElements(gl::TRIANGLES, self.indices.len() as i32, gl::UNSIGNED_INT, 0 as *const _));
+            gl::DrawElements(
+                gl::TRIANGLES, 
+                self.indices.len() as i32, 
+                gl::UNSIGNED_INT, 
+                0 as *const _
+            );
             gl_call!(gl::BindVertexArray(0));
         }
     }
