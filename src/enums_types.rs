@@ -36,7 +36,7 @@ pub enum ShaderType {
     Depth,
     GroundPlane,
     DebugShadowMap,
-    ModelTest,
+    Model,
 }
 
 pub struct Transform {

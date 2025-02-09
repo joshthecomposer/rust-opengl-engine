@@ -25,8 +25,6 @@ pub struct GameState {
     pub vaos: HashMap<VaoType, u32>,
     pub fbos: HashMap<FboType, u32>,
 
-    pub container_diffuse: u32,
-    pub container_specular: u32,
     pub cubemap_texture: u32,
     pub depth_map: u32,
 
@@ -91,30 +89,6 @@ impl GameState {
         let mut vaos = HashMap::new();
         let mut fbos = HashMap::new();
 
-        let mut main_shader = Shader::new("resources/shaders/shader.vs", "resources/shaders/shader.fs");
-        main_shader.store_uniform_location("model");
-        main_shader.store_uniform_location("view");
-        main_shader.store_uniform_location("projection");
-        main_shader.store_uniform_location("point_light_color");
-        main_shader.store_uniform_location("normal_color");
-        main_shader.store_uniform_location("material.diffuse");
-        main_shader.store_uniform_location("material.specular");
-        main_shader.store_uniform_location("material.shininess");
-        for i in 0..4 {
-            main_shader.store_uniform_location(format!("point_lights[{}].position", i).as_str());
-            main_shader.store_uniform_location(format!("point_lights[{}].ambient", i).as_str());
-            main_shader.store_uniform_location(format!("point_lights[{}].diffuse",i).as_str());
-            main_shader.store_uniform_location(format!("point_lights[{}].specular",i).as_str());
-            main_shader.store_uniform_location(format!("point_lights[{}].constant",i).as_str());
-            main_shader.store_uniform_location(format!("point_lights[{}].linear",i).as_str());
-            main_shader.store_uniform_location(format!("point_lights[{}].quadratic",i).as_str());
-        }
-        main_shader.store_uniform_location("dir_light.direction");
-        main_shader.store_uniform_location("dir_light.ambient");
-        main_shader.store_uniform_location("dir_light.diffuse");
-        main_shader.store_uniform_location("dir_light.specular");
-        main_shader.store_uniform_location("ViewPosition");
-        main_shader.store_uniform_location("shadow_map");
 
         let mut skybox_shader = Shader::new("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
 
@@ -131,41 +105,15 @@ impl GameState {
         let mut depth_shader = Shader::new("resources/shaders/depth_shader.vs","resources/shaders/depth_shader.fs");
         depth_shader.store_uniform_location("light_space_mat");
         depth_shader.store_uniform_location("model");
-        
-        let mut ground_plane_shader = Shader::new("resources/shaders/ground_plane.vs", "resources/shaders/ground_plane.fs");
 
-        ground_plane_shader.store_uniform_location("model");
-        ground_plane_shader.store_uniform_location("view");
-        ground_plane_shader.store_uniform_location("projection");
-        ground_plane_shader.store_uniform_location("point_light_color");
-        ground_plane_shader.store_uniform_location("shadow_map");
-        ground_plane_shader.store_uniform_location("dir_light.direction");
-        ground_plane_shader.store_uniform_location("dir_light.view_pos");
-        ground_plane_shader.store_uniform_location("dir_light.ambient");
-        ground_plane_shader.store_uniform_location("dir_light.diffuse");
-        ground_plane_shader.store_uniform_location("dir_light.specular");
-        ground_plane_shader.store_uniform_location("ViewPosition");
-        ground_plane_shader.store_uniform_location("ground_color");
-        ground_plane_shader.store_uniform_location("light_space_mat");
-
-        let mut model_test_shader = Shader::new("resources/shaders/model_test.vs", "resources/shaders/model_test.fs");
-        model_test_shader.store_uniform_location("projection");
-        model_test_shader.store_uniform_location("view");
-        model_test_shader.store_uniform_location("model");
-        model_test_shader.store_uniform_location("shadow_map");
-        model_test_shader.store_uniform_location("dir_light.direction");
-        model_test_shader.store_uniform_location("dir_light.view_pos");
-        model_test_shader.store_uniform_location("dir_light.ambient");
-        model_test_shader.store_uniform_location("dir_light.diffuse");
-        model_test_shader.store_uniform_location("dir_light.specular");
-        model_test_shader.store_uniform_location("ViewPosition");
-        model_test_shader.store_uniform_location("light_space_mat");
+        let mut model_shader = Shader::new("resources/shaders/model_test.vs", "resources/shaders/model_test.fs");
+        model_shader.store_uniform_location("projection");
+        model_shader.store_uniform_location("view");
+        model_shader.store_uniform_location("model");
 
         let mut vao = 0;
         let mut vbo = 0;
         let mut ebo = 0;
-        let mut container_diffuse = 0;
-        let mut container_specular = 0;
         let mut cubemap_texture = 0;
         // =============================================================
         // Skybox memes
@@ -245,140 +193,6 @@ impl GameState {
             }
         }
 
-
-        // =============================================================
-        // Setup vertex data
-        // =============================================================
-        unsafe {
-            main_shader.activate();
-            gl_call!(gl::GenVertexArrays(1, &mut vao));
-            gl_call!(gl::GenBuffers(1, &mut vbo));
-
-            vaos.insert(VaoType::Cube, vao);
-
-            println!("vao is now: {}", vao);
-
-            gl_call!(gl::BindVertexArray(vao));
-
-            gl_call!(gl::BindBuffer(gl::ARRAY_BUFFER, vbo));
-
-            gl_call!(gl::BufferData(
-                gl::ARRAY_BUFFER, 
-                (mem::size_of::<f32>() * UNIT_CUBE_VERTICES.len()) as isize, 
-                UNIT_CUBE_VERTICES.as_ptr().cast(), 
-                gl::STATIC_DRAW
-            ));
-            // Position 
-            gl_call!(gl::VertexAttribPointer(
-                0,
-                3,
-                gl::FLOAT,
-                gl::FALSE,
-                8 * mem::size_of::<f32>() as i32,
-                0 as *const _
-            ));
-            gl_call!(gl::EnableVertexAttribArray(0));
-            
-            // Tex Coords
-            gl_call!(gl::VertexAttribPointer(
-                1, 
-                2, 
-                gl::FLOAT, 
-                gl::FALSE, 
-                8 * mem::size_of::<f32>() as i32,
-                (3 * mem::size_of::<f32>()) as *const c_void
-            ));
-
-            gl_call!(gl::EnableVertexAttribArray(1));
-            
-            // Normal
-            gl_call!(gl::VertexAttribPointer(
-                2,
-                3,
-                gl::FLOAT,
-                gl::FALSE,
-                8 * mem::size_of::<f32>() as i32,
-                (5 * mem::size_of::<f32>()) as *const c_void
-            ));
-            gl_call!(gl::EnableVertexAttribArray(2));
-        }
-
-        // =============================================================
-        // Container Diffuse Texture
-        // =============================================================
-        unsafe {
-
-            gl_call!(gl::GenTextures(1, &mut container_diffuse));
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, container_diffuse));
-
-            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32));
-            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as i32));
-
-            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32));
-            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32));
-
-            let img = image::open("resources/textures/container2.png").unwrap();
-            let (img_width, img_height) = img.dimensions();
-            let rgba = img.to_rgba8();
-            let raw = rgba.as_raw();
-
-            gl_call!(gl::TexImage2D(
-                gl::TEXTURE_2D, 
-                0, 
-                gl::RGBA as i32, 
-                img_width as i32, 
-                img_height as i32, 
-                0, 
-                gl::RGBA, 
-                gl::UNSIGNED_BYTE, 
-                raw.as_ptr() as *const c_void
-                //raw.as_ptr() as *const c_void
-            ));
-
-            gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));
-
-            main_shader.activate();
-            main_shader.set_int("material.diffuse", 0);
-            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, container_diffuse));
-        }
-
-        // =============================================================
-        // Container Specular
-        // =============================================================
-        unsafe {
-            gl_call!(gl::GenTextures(1, &mut container_specular));
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, container_specular));
-            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32));
-            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as i32));
-            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32));
-            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32));
-
-            let img = image::open("resources/textures/container2_specular.png").unwrap();
-            let (img_width, img_height) = img.dimensions();
-            let rgba = img.to_rgba8();
-            let raw = rgba.as_raw();
-
-            gl_call!(gl::TexImage2D(
-                gl::TEXTURE_2D, 
-                0, 
-                gl::RGBA as i32, 
-                img_width as i32, 
-                img_height as i32, 
-                0, 
-                gl::RGBA, 
-                gl::UNSIGNED_BYTE, 
-                raw.as_ptr() as *const c_void
-                //raw.as_ptr() as *const c_void
-            ));
-            gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));
-
-            main_shader.activate();
-            main_shader.set_int("material.specular", 1);
-            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, container_specular));
-        }
-
         // =============================================================
         // Debug point light setup
         // =============================================================
@@ -423,46 +237,6 @@ impl GameState {
             gl_call!(gl::EnableVertexAttribArray(1));
         } 
         // =============================================================
-        // Ground Vao
-        // =============================================================
-        unsafe {
-            gl_call!(gl::GenVertexArrays(1, &mut vao));
-            gl_call!(gl::GenBuffers(1, &mut vbo));
-            gl_call!(gl::BindVertexArray(vao));
-            gl_call!(gl::BindBuffer(gl::ARRAY_BUFFER, vbo));
-            gl_call!(gl::BufferData(
-                gl::ARRAY_BUFFER,
-                (mem::size_of::<f32>() * GROUND_PLANE.len()) as isize, 
-                GROUND_PLANE.as_ptr().cast(), 
-                gl::STATIC_DRAW
-            ));
-
-            vaos.insert(VaoType::GroundPlane, vao);
-            
-            // Positions
-            gl_call!(gl::VertexAttribPointer(
-                0, 
-                3, 
-                gl::FLOAT, 
-                gl::FALSE,
-                6 * mem::size_of::<f32>() as i32,
-                0 as *const _,
-            ));
-            gl_call!(gl::EnableVertexAttribArray(0));
-            
-            // Normals
-            gl_call!(gl::VertexAttribPointer(
-                1, 
-                3, 
-                gl::FLOAT, 
-                gl::FALSE,
-                6 * mem::size_of::<f32>() as i32,
-                (3 * mem::size_of::<f32>()) as *const c_void
-            ));
-            gl_call!(gl::EnableVertexAttribArray(1));
-            gl::BindVertexArray(0);
-        }
-        // =============================================================
         // Model
         // =============================================================
         let model = Model::load("resources/models/backpack/backpack.obj");
@@ -484,7 +258,7 @@ impl GameState {
         let mut fbo = 0;
         let mut depth_map = 0;
         unsafe {
-            main_shader.activate();
+            model_shader.activate();
             gl_call!(gl::GenFramebuffers(1, &mut fbo));
 
             fbos.insert(FboType::DepthMap, fbo);
@@ -509,12 +283,10 @@ impl GameState {
             gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER, 0));
         }
 
-        shaders.insert(ShaderType::Main, main_shader);
         shaders.insert(ShaderType::Skybox, skybox_shader);
         shaders.insert(ShaderType::DebugLight, debug_light_shader);
         shaders.insert(ShaderType::Depth, depth_shader);
-        shaders.insert(ShaderType::GroundPlane, ground_plane_shader);
-        shaders.insert(ShaderType::ModelTest, model_test_shader);
+        shaders.insert(ShaderType::Model, model_shader);
 
         let entity_manager = EntityManager::new(10_000);
         let mut light_manager = Lights::new(50);
@@ -538,8 +310,6 @@ impl GameState {
             vaos, 
             fbos,
 
-            container_diffuse,
-            container_specular,
             cubemap_texture,
             depth_map,
 
@@ -645,10 +415,10 @@ impl GameState {
             let far_plane = 100.0;
             // Ortho works fine for only directional lights, but probably not for point apparently.
             // correct let mut light_projection = Mat4::orthographic_rh_gl(-20.0, 20.0, -20.0, 20.0, near_plane, far_plane);
-            let mut light_projection = Mat4::orthographic_rh_gl(20.0, -20.0, 20.0, -20.0, near_plane, far_plane);
+            let light_projection = Mat4::orthographic_rh_gl(20.0, -20.0, 20.0, -20.0, near_plane, far_plane);
 
             // self.light_manager.dir_light.view_pos = vec3(5.0, 10.0, 5.0);
-            let mut light_view = Mat4::look_at_rh(self.light_manager.dir_light.view_pos, vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
+            let light_view = Mat4::look_at_rh(self.light_manager.dir_light.view_pos, vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
             self.camera.light_space = light_projection * light_view;
             depth_shader_prog.activate();
             depth_shader_prog.set_mat4("light_space_mat", self.camera.light_space);
@@ -764,143 +534,17 @@ impl GameState {
             }
         }
 
-        // =========================
-        // Render floor for shadows
-        // =========================
-        unsafe {
-            gl::BindVertexArray(*self.vaos.get(&VaoType::GroundPlane).unwrap());
-            // Because we only need positions for the depth pass,
-            // we typically only set the `model` matrix (and in the shader
-            // multiply by `light_space_mat`). Normals & materials aren’t needed.
-        }
-        let model_floor = Mat4::IDENTITY;
-        depth_shader.set_mat4("model", model_floor);
-
-        // draw the floor
-        unsafe {
-            gl::DrawArrays(gl::TRIANGLES, 0, 6);
-        }
-        // =========================
-        // Render cubes for shadows
-        // =========================
-        unsafe {
-            gl::BindVertexArray(*self.vaos.get(&VaoType::Cube).unwrap());
-        }
-
-        for (i, &cube_pos) in CUBE_POSITIONS.iter().enumerate() {
-            let mut model_cube = Mat4::IDENTITY;
-            model_cube = Mat4::from_translation(cube_pos);
-
-            // rotate the cube
-            let angle = 20.0 * i as f32;
-            let axis  = vec3(1.0, 0.3, 0.5).normalize();
-            model_cube *= Mat4::from_axis_angle(axis, angle);
-
-            depth_shader.set_mat4("model", model_cube);
-
-            unsafe { gl::DrawArrays(gl::TRIANGLES, 0, 36); }
-        }
 
         unsafe { gl::BindVertexArray(0); }
     }
 
     pub fn render_sample(&mut self) {
-        let floor_shader = self.shaders.get(&ShaderType::GroundPlane).unwrap();
-        let main_shader = self.shaders.get(&ShaderType::Main).unwrap();
-
-        // =============================================================
-        // Render floor
-        // =============================================================
-        floor_shader.activate();
-        unsafe {
-            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-            floor_shader.set_int("shadow_map", 0);
-        }
-
-        self.camera.model = Mat4::IDENTITY;
-        floor_shader.set_mat4("model", self.camera.model);
-        floor_shader.set_vec3("ground_color", vec3(0.67, 0.67, 0.67));
-        floor_shader.set_mat4("view", self.camera.view);
-        floor_shader.set_mat4("projection", self.camera.projection);
-        floor_shader.set_mat4("light_space_mat", self.camera.light_space);
-        floor_shader.set_vec3("dir_light.direction", self.light_manager.dir_light.direction);
-        floor_shader.set_vec3("dir_light.view_pos", self.light_manager.dir_light.view_pos);
-        floor_shader.set_vec3("dir_light.ambient", self.light_manager.dir_light.ambient);
-        floor_shader.set_vec3("dir_light.diffuse", self.light_manager.dir_light.diffuse);
-        floor_shader.set_vec3("dir_light.specular", self.light_manager.dir_light.specular);
-
-        unsafe {
-            gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::GroundPlane).unwrap()));
-            gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 6));
-        }
-        // =============================================================
-        // Render cubes
-        // =============================================================
-        unsafe {
-            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.container_diffuse));
-
-            gl_call!(gl::ActiveTexture(gl::TEXTURE1));
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.container_specular));
-
-            gl_call!(gl::ActiveTexture(gl::TEXTURE2));
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-        }
-
-        main_shader.activate();
-
-        main_shader.set_int("shadow_map", 2);
-        main_shader.set_int("material.diffuse", 0);
-        main_shader.set_mat4("projection", self.camera.projection);
-        main_shader.set_mat4("view", self.camera.view);
-        main_shader.set_float("material.shininess", 64.0);
-
-        for i in 0..4 {
-            main_shader.set_vec3(format!("point_lights[{}].position",i).as_str(), POINT_LIGHT_POSITIONS[i]);
-            main_shader.set_vec3(format!("point_lights[{}].ambient",i).as_str(), BISEXUAL_BLUE_SCALE);
-            main_shader.set_vec3(format!("point_lights[{}].diffuse",i).as_str(), BISEXUAL_PURPLE_SCALE);
-            main_shader.set_vec3(format!("point_lights[{}].specular",i).as_str(), BISEXUAL_PINK_SCALE);
-            main_shader.set_float(format!("point_lights[{}].constant",i).as_str(), 1.0);
-            main_shader.set_float(format!("point_lights[{}].linear",i).as_str(), 0.09);
-            main_shader.set_float(format!("point_lights[{}].quadratic",i).as_str(), 0.0032);
-        }
-
-        main_shader.set_vec3("dir_light.direction", self.light_manager.dir_light.direction);
-        main_shader.set_vec3("dir_light.view_pos", self.light_manager.dir_light.view_pos);
-        main_shader.set_vec3("dir_light.ambient", self.light_manager.dir_light.ambient);
-        main_shader.set_vec3("dir_light.diffuse", self.light_manager.dir_light.diffuse);
-        main_shader.set_vec3("dir_light.specular", self.light_manager.dir_light.specular);
-
-        unsafe {
-            gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::Cube).unwrap()));
-        }
-        self.camera.model = Mat4::IDENTITY;
-
-        for i in 0..CUBE_POSITIONS.len() {
-            self.camera.model = Mat4::IDENTITY;
-            self.camera.model = Mat4::from_translation(CUBE_POSITIONS[i]);
-
-            // rotate the cube
-            let angle = 20.0 * i as f32;
-            let axis = vec3(1.0, 0.3, 0.5).normalize();
-            self.camera.model *= Mat4::from_axis_angle(axis, angle);
-
-            main_shader.set_mat4("model", self.camera.model);
-
-            unsafe { gl::DrawArrays(gl::TRIANGLES, 0, 36); }
-        }
-        
         self.camera.model = Mat4::IDENTITY * Mat4::from_translation(self.model_pos);
-        let model_test_shader = self.shaders.get_mut(&ShaderType::ModelTest).unwrap();
-        model_test_shader.activate();
-        model_test_shader.set_mat4("model", self.camera.model);
-        model_test_shader.set_mat4("view", self.camera.view);
-        model_test_shader.set_mat4("projection", self.camera.projection);
-        model_test_shader.set_vec3("dir_light.view_pos", self.light_manager.dir_light.view_pos);
-        model_test_shader.set_vec3("dir_light.ambient", self.light_manager.dir_light.ambient);
-        model_test_shader.set_vec3("dir_light.diffuse", self.light_manager.dir_light.diffuse);
-        model_test_shader.set_vec3("dir_light.specular", self.light_manager.dir_light.specular);
+        let model_shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
+        model_shader.activate();
+        model_shader.set_mat4("model", self.camera.model);
+        model_shader.set_mat4("view", self.camera.view);
+        model_shader.set_mat4("projection", self.camera.projection);
 
         unsafe {
             gl_call!(gl::ActiveTexture(gl::TEXTURE2)); 
@@ -908,6 +552,6 @@ impl GameState {
         }
         // model_test_shader.set_int("shadow_map", );
 
-        self.model.draw(model_test_shader);
+        self.model.draw(model_shader);
     }
 }
