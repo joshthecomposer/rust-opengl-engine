@@ -33,7 +33,7 @@ impl Model {
             vec![
                  PostProcess::Triangulate,
                 // PostProcess::GenerateSmoothNormals,
-                // PostProcess::FlipUVs,
+                PostProcess::FlipUVs,
             ],
         ).unwrap();
 
@@ -123,6 +123,7 @@ impl Model {
             } else {
                 dbg!("Didn't find it");
                 dbg!(&path);
+                return vec![];
             }
         }
         

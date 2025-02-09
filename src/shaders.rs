@@ -64,6 +64,8 @@ impl Shader {
 }
 
 pub fn init_shader_program(vs: &str, fs: &str) -> u32 {
+    println!("Loading vs: {}", vs);
+    println!("Loading fs: {}", fs);
     let vs_source = read_to_string(vs).unwrap();
     let fs_source = read_to_string(fs).unwrap();
 

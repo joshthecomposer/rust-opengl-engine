@@ -465,8 +465,9 @@ impl GameState {
         // =============================================================
         // Model
         // =============================================================
-        let model = Model::load("resources/models/backpack/backpack.obj");
-        let model_pos = vec3(-5.0, 3.0, -15.0);
+       // let model = Model::load("resources/models/backpack/backpack.obj");
+        let model = Model::load("resources/models/my_obj/tower.obj");
+        let model_pos = vec3(-5.0, 0.0, -15.0);
         // for mesh in model.meshes.iter() {
         //     for vertex in mesh.vertices.iter() {
         //         dbg!(vertex.normal);
@@ -897,6 +898,7 @@ impl GameState {
         model_test_shader.set_mat4("model", self.camera.model);
         model_test_shader.set_mat4("view", self.camera.view);
         model_test_shader.set_mat4("projection", self.camera.projection);
+        model_test_shader.set_vec3("dir_light.direction", self.light_manager.dir_light.direction);
         model_test_shader.set_vec3("dir_light.view_pos", self.light_manager.dir_light.view_pos);
         model_test_shader.set_vec3("dir_light.ambient", self.light_manager.dir_light.ambient);
         model_test_shader.set_vec3("dir_light.diffuse", self.light_manager.dir_light.diffuse);
