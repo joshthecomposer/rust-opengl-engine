@@ -40,6 +40,11 @@ pub enum ShaderType {
 
 pub struct Transform {
     position: Vec3,
-    rotiation: Mat4,
+    rotation: Mat4,
     scale: Vec3,
+}
+
+pub enum EntityType {
+    Donut,
+    ArcherTower_01,
 }

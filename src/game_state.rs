@@ -130,8 +130,6 @@ impl GameState {
         model_shader.store_uniform_location("projection");
         model_shader.store_uniform_location("view");
         model_shader.store_uniform_location("model");
-        model_shader.store_uniform_location("shadow_map");
-        model_shader.store_uniform_location("light_space_mat");
         model_shader.store_dir_light_location("dir_light");
 
         let mut vao = 0;
@@ -685,8 +683,6 @@ impl GameState {
 
     pub fn render_sample(&mut self) {
         let floor_shader = self.shaders.get(&ShaderType::GroundPlane).unwrap();
-        // let main_shader = self.shaders.get(&ShaderType::Main).unwrap();
-
         // =============================================================
         // Render floor
         // =============================================================
@@ -699,8 +695,6 @@ impl GameState {
 
         self.camera.model = Mat4::IDENTITY;
         floor_shader.set_mat4("model", self.camera.model);
-
-        // floor_shader.set_vec3("ground_color", vec3(102.0 / 255.0,213.0 / 255.0,157.0 / 255.0));
         floor_shader.set_vec3("ground_color", vec3(0.60, 0.70, 0.60));
         floor_shader.set_mat4("view", self.camera.view);
         floor_shader.set_mat4("projection", self.camera.projection);
@@ -712,6 +706,9 @@ impl GameState {
             gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 6));
         }
 
+        // =============================================================
+        // Render Model
+        // =============================================================
         self.camera.model = Mat4::IDENTITY * Mat4::from_translation(self.model_pos);
         let model_shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
         model_shader.activate();
@@ -720,35 +717,16 @@ impl GameState {
         model_shader.set_mat4("projection", self.camera.projection);
         model_shader.set_dir_light("dir_light", &self.light_manager.dir_light);
 
-        unsafe {
-
-            gl_call!(gl::ActiveTexture(gl::TEXTURE1)); 
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-            model_shader.set_int("shadow_map", 1);
-        }
-        // model_shader.set_int("shadow_map", );
         self.model.draw(model_shader);
 
         self.camera.model = Mat4::IDENTITY  * Mat4::from_translation(self.donut_pos) * Mat4::from_scale(vec3(15.0, 15.0, 15.0));
         let model_shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
         model_shader.set_mat4("model", self.camera.model);
-
-        unsafe {
-            gl_call!(gl::ActiveTexture(gl::TEXTURE2)); 
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-        }
-
         self.donut.draw(model_shader);
 
         self.camera.model = Mat4::IDENTITY  * Mat4::from_translation(self.donut2_pos) * Mat4::from_scale(vec3(8.0, 8.0, 8.0));
         let model_shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
         model_shader.set_mat4("model", self.camera.model);
-
-        unsafe {
-            gl_call!(gl::ActiveTexture(gl::TEXTURE2)); 
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-        }
-
         self.donut2.draw(model_shader);
 
     }
