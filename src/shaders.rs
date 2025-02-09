@@ -3,7 +3,7 @@ use std::{collections::HashMap, ffi::CString, fs::read_to_string, ptr};
 use gl::types::{GLint, GLuint};
 use glam::{Mat4, Vec3};
 
-use crate::gl_call;
+use crate::{gl_call, lights::{DirLight, PointLight}};
 
 pub struct Shader {
     pub id: GLuint,
@@ -27,6 +27,24 @@ impl Shader {
         let c_name = CString::new(name).unwrap();
         let location = unsafe { gl_call!(gl::GetUniformLocation(self.id, c_name.as_ptr())) };
         self.uniform_locations.insert(name.to_string(), location);
+    }
+
+    pub fn store_dir_light_location(&mut self, name: &str) {
+        self.store_uniform_location(format!("{}.direction", name).as_str());
+        self.store_uniform_location(format!("{}.view_pos", name).as_str());
+        self.store_uniform_location(format!("{}.ambient", name).as_str());
+        self.store_uniform_location(format!("{}.diffuse", name).as_str());
+        self.store_uniform_location(format!("{}.specular", name).as_str());
+    }
+
+    pub fn store_point_light_location(&mut self, name: &str) {
+        self.store_uniform_location(format!("{}.position", name).as_str());
+        self.store_uniform_location(format!("{}.ambient", name).as_str());
+        self.store_uniform_location(format!("{}.diffuse", name).as_str());
+        self.store_uniform_location(format!("{}.specular", name).as_str());
+        self.store_uniform_location(format!("{}.constant", name).as_str());
+        self.store_uniform_location(format!("{}.linear", name).as_str());
+        self.store_uniform_location(format!("{}.quadratic", name).as_str());
     }
 
     pub fn get_uniform_location(&self, name: &str) -> GLint {
@@ -58,6 +76,48 @@ impl Shader {
         let location = self.get_uniform_location(name);
         if location != -1 {
             unsafe { gl_call!(gl::Uniform1f(location, value)) };
+        }
+    }
+
+    pub fn set_dir_light(&self, name: &str, value: &DirLight) {
+        let direction = self.get_uniform_location(format!("{}.direction", name).as_str());
+        let view_pos = self.get_uniform_location(format!("{}.view_pos", name).as_str());
+        let ambient = self.get_uniform_location(format!("{}.ambient", name).as_str());
+        let diffuse = self.get_uniform_location(format!("{}.diffuse", name).as_str());
+        let specular = self.get_uniform_location(format!("{}.specular", name).as_str());
+        
+        if direction != -1 || view_pos != -1 || ambient != -1 || diffuse != -1 ||
+            specular != -1 {
+            unsafe { 
+                gl_call!(gl::Uniform3f(direction, value.direction.x, value.direction.y, value.direction.z));
+                gl_call!(gl::Uniform3f(view_pos, value.view_pos.x, value.view_pos.y, value.view_pos.z));
+                gl_call!(gl::Uniform3f(ambient, value.ambient.x, value.ambient.y, value.ambient.z));
+                gl_call!(gl::Uniform3f(diffuse, value.diffuse.x, value.diffuse.y, value.diffuse.z));
+                gl_call!(gl::Uniform3f(specular, value.specular.x, value.specular.y, value.specular.z));
+            }
+        }
+    }
+
+    pub fn set_point_light(&self, name: &str, value: &PointLight) {
+        let position = self.get_uniform_location(format!("{}.position", name).as_str());
+        let ambient = self.get_uniform_location(format!("{}.ambient", name).as_str());
+        let diffuse = self.get_uniform_location(format!("{}.diffuse", name).as_str());
+        let specular = self.get_uniform_location(format!("{}.specular", name).as_str());
+        let constant = self.get_uniform_location(format!("{}.constant", name).as_str());
+        let linear = self.get_uniform_location(format!("{}.linear", name).as_str());
+        let quadratic = self.get_uniform_location(format!("{}.quadratic", name).as_str());
+        
+        if position != -1 || ambient != -1 || diffuse != -1 || specular != -1 ||
+            constant != -1 || linear != -1 || quadratic != -1 {
+            unsafe { 
+                gl_call!(gl::Uniform3f(position, value.position.x, value.position.y, value.position.z));
+                gl_call!(gl::Uniform3f(ambient, value.ambient.x, value.ambient.y, value.ambient.z));
+                gl_call!(gl::Uniform3f(diffuse, value.diffuse.x, value.diffuse.y, value.diffuse.z));
+                gl_call!(gl::Uniform3f(specular, value.specular.x, value.specular.y, value.specular.z));
+                gl_call!(gl::Uniform1f(constant, value.constant));
+                gl_call!(gl::Uniform1f(linear, value.linear));
+                gl_call!(gl::Uniform1f(quadratic, value.quadratic));
+            }
         }
     }
 

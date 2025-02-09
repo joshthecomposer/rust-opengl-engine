@@ -30,13 +30,12 @@ pub enum FboType {
 
 #[derive(Debug, Eq, PartialEq, Hash)]
 pub enum ShaderType {
-    Main,
     Skybox,
     DebugLight,
     Depth,
     GroundPlane,
     DebugShadowMap,
-    ModelTest,
+    Model,
 }
 
 pub struct Transform {
