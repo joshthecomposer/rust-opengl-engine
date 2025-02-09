@@ -24,10 +24,11 @@ impl Vertex {
 }
 
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Texture {
     pub id: u32,
     pub _type: String,
+    pub path: String,
 }
 
 #[repr(C)]

@@ -10,14 +10,15 @@ use crate::{gl_call, mesh::{Mesh, Texture, Vertex}, shaders::Shader};
 pub struct Model {
     pub meshes: Vec<Mesh>,
     pub directory: String,
+    pub textures_loaded: Vec<Texture>,
 }
 
 impl Model {
     fn new() -> Self {
         Self {
-
             meshes: vec![],
             directory: "".to_string(),
+            textures_loaded: vec![],
         }
     }
 
@@ -30,9 +31,9 @@ impl Model {
         let scene = Scene::from_file(
             path, 
             vec![
-                PostProcess::Triangulate,
+                 PostProcess::Triangulate,
                 // PostProcess::GenerateSmoothNormals,
-                PostProcess::FlipUVs,
+                // PostProcess::FlipUVs,
             ],
         ).unwrap();
 
@@ -99,14 +100,8 @@ impl Model {
         // if material_index >= 0 {
             if let Some(ai_mat) = scene.materials.get(material_index as usize) {
                 let mut diffuse_textures = self.load_material_textures(ai_mat, TextureType::Diffuse, "texture_diffuse".to_string());
-                let mut more_textures = self.load_material_textures(ai_mat, TextureType::None, "texture_diffuse".to_string());
-                let mut base_color = self.load_material_textures(ai_mat, TextureType::BaseColor, "texture_diffuse".to_string());
-                let mut unknown = self.load_material_textures(ai_mat, TextureType::Unknown, "texture_diffuse".to_string());
                 let mut specular_textures = self.load_material_textures(ai_mat, TextureType::Specular, "texture_specular".to_string());
                 mesh.textures.append(&mut diffuse_textures);
-                mesh.textures.append(&mut more_textures);
-                mesh.textures.append(&mut base_color);
-                mesh.textures.append(&mut unknown);
                 mesh.textures.append(&mut specular_textures);
             }
         // }
@@ -114,27 +109,45 @@ impl Model {
         mesh
     }
 
-    pub fn load_material_textures(&self, ai_mat: &RMaterial, texture_type: TextureType, my_type: String) -> Vec<Texture> {
+    pub fn load_material_textures(&mut self, ai_mat: &RMaterial, texture_type: TextureType, my_type: String) -> Vec<Texture> {
         let mut textures: Vec<Texture> = vec![];
+        let mut path = "".to_string();
+
         if let Some(ai_texes_cell) = ai_mat.textures.get(&texture_type) {
+            dbg!("found their diffuse");
             let ai_tex = ai_texes_cell.borrow();
-            let tex_id = Self::texture_from_file(self, ai_tex.filename.clone());
-            textures.push(Texture {id: tex_id, _type: my_type});
+            path = ai_tex.filename.clone();
         } else {
-            if texture_type == TextureType::Diffuse {
-                if let Some(found_path) = Self::try_parse_diffuse_texture_path(ai_mat) {
-                    let tex_id = Self::texture_from_file(self, found_path);
-                    dbg!(tex_id);
-                    textures.push(Texture {id: tex_id, _type: my_type});
-                }
+            if let Some(found_path) = Self::try_parse_diffuse_texture_path(ai_mat, texture_type) {
+                path = found_path.clone();
+            } else {
+                dbg!("Didn't find it");
+                dbg!(&path);
             }
         }
+        
+        let mut skip = false;
+        for tex in self.textures_loaded.iter() {
+            if tex.path == path  {
+                textures.push(tex.clone());
+                skip = true;
+                break;
+            }
+        }
+
+        if !skip {
+            let tex_id = Self::texture_from_file(self, path.clone());
+            let texture = Texture {id: tex_id, _type: my_type, path: path.clone()};
+            textures.push(texture.clone());
+            self.textures_loaded.push(texture.clone());
+        }
+
         textures
     }
 
-    pub fn try_parse_diffuse_texture_path(ai_mat: &RMaterial) -> Option<String> {
+    pub fn try_parse_diffuse_texture_path(ai_mat: &RMaterial, tex_type: TextureType) -> Option<String> {
         for prop in ai_mat.properties.iter() {
-            if prop.key == "$tex.file" && prop.semantic == TextureType::Diffuse {
+            if prop.key == "$tex.file" && prop.semantic == tex_type {
                 if let PropertyTypeInfo::String(ref filename) = prop.data {
                     return Some(filename.clone());
                 }
@@ -146,10 +159,11 @@ impl Model {
     pub fn texture_from_file(model: &Model, path: String) -> u32 {
         let file_name = model.directory.clone() + "/" + path.as_str();
 
+        dbg!(&path);
+
         let mut texture_id = 0;
         unsafe {
             gl_call!(gl::GenTextures(1, &mut texture_id));
-
 
             let img = image::open(file_name).unwrap();
             let (img_width, img_height) = img.dimensions();

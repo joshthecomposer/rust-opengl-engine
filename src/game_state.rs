@@ -1,6 +1,6 @@
 use std::{collections::HashMap, ffi::c_void, mem, ptr::null_mut};
 
-use glam::{vec3, vec4, Mat4};
+use glam::{vec3, vec4, Mat4, Vec3};
 use glfw::{Action, Context, Glfw, GlfwReceiver, MouseButton, PWindow, WindowEvent};
 use image::GenericImageView;
 use imgui::{Ui};
@@ -37,6 +37,7 @@ pub struct GameState {
     pub paused: bool,
 
     pub model: Model,
+    pub model_pos: Vec3,
 }
 
 impl GameState {
@@ -465,6 +466,7 @@ impl GameState {
         // Model
         // =============================================================
         let model = Model::load("resources/models/backpack/backpack.obj");
+        let model_pos = vec3(-5.0, 3.0, -15.0);
         // for mesh in model.meshes.iter() {
         //     for vertex in mesh.vertices.iter() {
         //         dbg!(vertex.normal);
@@ -547,6 +549,7 @@ impl GameState {
             renderer,
             paused: false,
             model,
+            model_pos,
         }
     }
 
@@ -741,9 +744,9 @@ impl GameState {
         let depth_shader = self.shaders.get(&ShaderType::Depth).unwrap();
         depth_shader.activate();
         // =========================
-        // Render Tower For Shadows
+        // Render Model For Shadows
         // =========================
-        let model_model = Mat4::IDENTITY;
+        let model_model = Mat4::IDENTITY * Mat4::from_translation(self.model_pos);
         for mesh in self.model.meshes.iter() {
             unsafe {
                 gl::BindVertexArray(mesh.vao);
@@ -888,7 +891,7 @@ impl GameState {
             unsafe { gl::DrawArrays(gl::TRIANGLES, 0, 36); }
         }
         
-        self.camera.model = Mat4::IDENTITY;
+        self.camera.model = Mat4::IDENTITY * Mat4::from_translation(self.model_pos);
         let model_test_shader = self.shaders.get_mut(&ShaderType::ModelTest).unwrap();
         model_test_shader.activate();
         model_test_shader.set_mat4("model", self.camera.model);

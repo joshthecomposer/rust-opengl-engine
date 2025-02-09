@@ -73,7 +73,7 @@ vec3 calculate_directional_light() {
 
 	// Diffuse
 	vec3 norm = -normalize(Normal);
-	vec3 lightDir = normalize(dir_light.direction);
+	vec3 lightDir = -normalize(dir_light.direction);
 	float diff = max(dot(norm, lightDir), 0.0);
     vec3 diffuse = dir_light.diffuse * diff * diffuseColor;
 
@@ -92,9 +92,10 @@ vec3 calculate_directional_light() {
 void main() {    
 	vec3 result = vec3(0.0f, 0.0f, 0.0f); 
 
-	result += calculate_directional_light();
+	// result += calculate_directional_light();
     // vec3 n = normalize(Normal);
     // FragColor = vec4(n * 0.5 + 0.5, 1.0); 
 	// FragColor = vec4(0.0, 0.0, 1.0, 1.0);
-   FragColor = vec4(result, 1.0);
+   // FragColor = vec4(result, 1.0);
+	FragColor = texture(texture_diffuse1, TexCoords);
 }
