@@ -10,6 +10,7 @@ use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{FboType
 pub struct GameState {
     pub delta_time: f64,
     pub last_frame: f64,
+    pub elapsed: f64,
     pub camera: Camera,
     pub window_width: u32,
     pub window_height: u32,
@@ -38,6 +39,11 @@ pub struct GameState {
 
     pub model: Model,
     pub model_pos: Vec3,
+    pub donut: Model,
+    pub donut_pos: Vec3,
+    pub donut2: Model,
+    pub donut2_pos: Vec3,
+
 }
 
 impl GameState {
@@ -467,7 +473,11 @@ impl GameState {
         // =============================================================
        // let model = Model::load("resources/models/backpack/backpack.obj");
         let model = Model::load("resources/models/my_obj/tower.obj");
-        let model_pos = vec3(-5.0, 0.0, -15.0);
+        let donut = Model::load("resources/models/my_obj/donut.obj");
+        let donut2 = Model::load("resources/models/my_obj/donut.obj");
+        let model_pos = vec3(0.0, 0.0, 0.0);
+        let donut_pos = vec3(5.0, 5.0, -10.0);
+        let donut2_pos = vec3(5.0, 5.0, -10.0);
         // for mesh in model.meshes.iter() {
         //     for vertex in mesh.vertices.iter() {
         //         dbg!(vertex.normal);
@@ -525,6 +535,7 @@ impl GameState {
         Self {
             delta_time: 0.0,
             last_frame: 0.0,
+            elapsed: 0.0,
             camera: Camera::new(),
             window_width: width as u32,
             window_height: height as u32,
@@ -551,6 +562,10 @@ impl GameState {
             paused: false,
             model,
             model_pos,
+            donut,
+            donut_pos,
+            donut2,
+            donut2_pos,
         }
     }
 
@@ -621,6 +636,23 @@ impl GameState {
         self.delta_time = current_frame - self.last_frame;
         self.last_frame = current_frame;
 
+        self.elapsed += self.delta_time;
+
+        let radius = 8.0;
+        let speed = 1.0;
+        let angle = (self.elapsed * speed) as f32;
+
+        self.donut_pos.x = radius * angle.cos();
+        self.donut_pos.z = radius * angle.sin();
+        self.donut_pos.y = 5.0;
+
+        let donut2_r = 3.0;
+        let speed2 = 2.0;
+        let angle2 = (self.elapsed * speed2) as f32;
+
+        self.donut2_pos.x = self.donut_pos.x + donut2_r * angle2.cos();
+        self.donut2_pos.z = self.donut_pos.z + donut2_r * angle2.sin();
+        self.donut2_pos.y = 5.0; // Same height as Donut 1
 
         if self.paused { return; }
         self.entity_manager.update(&self.delta_time);
@@ -764,6 +796,41 @@ impl GameState {
             gl_call!(gl::BindVertexArray(0));
             }
         }
+        let model_donut = Mat4::IDENTITY * Mat4::from_translation(self.donut_pos) * Mat4::from_scale(vec3(15.0, 15.0, 15.0));
+        for mesh in self.donut.meshes.iter() {
+            unsafe {
+                gl::BindVertexArray(mesh.vao);
+            }
+            depth_shader.set_mat4("model", model_donut);
+            unsafe {
+                gl_call!(gl::DrawElements(
+                    gl::TRIANGLES, 
+                    mesh.indices.len() as i32, 
+                    gl::UNSIGNED_INT, 
+                    0 as *const _
+                ));
+
+            gl_call!(gl::BindVertexArray(0));
+            }
+        }
+        let model_donut2 = Mat4::IDENTITY * Mat4::from_translation(self.donut2_pos) * Mat4::from_scale(vec3(8.0, 8.0, 8.0));
+        for mesh in self.donut2.meshes.iter() {
+            unsafe {
+                gl::BindVertexArray(mesh.vao);
+            }
+            depth_shader.set_mat4("model", model_donut2);
+            unsafe {
+                gl_call!(gl::DrawElements(
+                    gl::TRIANGLES, 
+                    mesh.indices.len() as i32, 
+                    gl::UNSIGNED_INT, 
+                    0 as *const _
+                ));
+
+            gl_call!(gl::BindVertexArray(0));
+            }
+        }
+
 
         // =========================
         // Render floor for shadows
@@ -781,33 +848,13 @@ impl GameState {
         unsafe {
             gl::DrawArrays(gl::TRIANGLES, 0, 6);
         }
-        // =========================
-        // Render cubes for shadows
-        // =========================
-        unsafe {
-            gl::BindVertexArray(*self.vaos.get(&VaoType::Cube).unwrap());
-        }
-
-        for (i, &cube_pos) in CUBE_POSITIONS.iter().enumerate() {
-            let mut model_cube = Mat4::IDENTITY;
-            model_cube = Mat4::from_translation(cube_pos);
-
-            // rotate the cube
-            let angle = 20.0 * i as f32;
-            let axis  = vec3(1.0, 0.3, 0.5).normalize();
-            model_cube *= Mat4::from_axis_angle(axis, angle);
-
-            depth_shader.set_mat4("model", model_cube);
-
-            unsafe { gl::DrawArrays(gl::TRIANGLES, 0, 36); }
-        }
 
         unsafe { gl::BindVertexArray(0); }
     }
 
     pub fn render_sample(&mut self) {
         let floor_shader = self.shaders.get(&ShaderType::GroundPlane).unwrap();
-        let main_shader = self.shaders.get(&ShaderType::Main).unwrap();
+        // let main_shader = self.shaders.get(&ShaderType::Main).unwrap();
 
         // =============================================================
         // Render floor
@@ -821,7 +868,9 @@ impl GameState {
 
         self.camera.model = Mat4::IDENTITY;
         floor_shader.set_mat4("model", self.camera.model);
-        floor_shader.set_vec3("ground_color", vec3(0.67, 0.67, 0.67));
+
+        // floor_shader.set_vec3("ground_color", vec3(102.0 / 255.0,213.0 / 255.0,157.0 / 255.0));
+        floor_shader.set_vec3("ground_color", vec3(0.60, 0.70, 0.60));
         floor_shader.set_mat4("view", self.camera.view);
         floor_shader.set_mat4("projection", self.camera.projection);
         floor_shader.set_mat4("light_space_mat", self.camera.light_space);
@@ -835,63 +884,7 @@ impl GameState {
             gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::GroundPlane).unwrap()));
             gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 6));
         }
-        // =============================================================
-        // Render cubes
-        // =============================================================
-        unsafe {
-            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.container_diffuse));
 
-            gl_call!(gl::ActiveTexture(gl::TEXTURE1));
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.container_specular));
-
-            gl_call!(gl::ActiveTexture(gl::TEXTURE2));
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-        }
-
-        main_shader.activate();
-
-        main_shader.set_int("shadow_map", 2);
-        main_shader.set_int("material.diffuse", 0);
-        main_shader.set_mat4("projection", self.camera.projection);
-        main_shader.set_mat4("view", self.camera.view);
-        main_shader.set_float("material.shininess", 64.0);
-
-        for i in 0..4 {
-            main_shader.set_vec3(format!("point_lights[{}].position",i).as_str(), POINT_LIGHT_POSITIONS[i]);
-            main_shader.set_vec3(format!("point_lights[{}].ambient",i).as_str(), BISEXUAL_BLUE_SCALE);
-            main_shader.set_vec3(format!("point_lights[{}].diffuse",i).as_str(), BISEXUAL_PURPLE_SCALE);
-            main_shader.set_vec3(format!("point_lights[{}].specular",i).as_str(), BISEXUAL_PINK_SCALE);
-            main_shader.set_float(format!("point_lights[{}].constant",i).as_str(), 1.0);
-            main_shader.set_float(format!("point_lights[{}].linear",i).as_str(), 0.09);
-            main_shader.set_float(format!("point_lights[{}].quadratic",i).as_str(), 0.0032);
-        }
-
-        main_shader.set_vec3("dir_light.direction", self.light_manager.dir_light.direction);
-        main_shader.set_vec3("dir_light.view_pos", self.light_manager.dir_light.view_pos);
-        main_shader.set_vec3("dir_light.ambient", self.light_manager.dir_light.ambient);
-        main_shader.set_vec3("dir_light.diffuse", self.light_manager.dir_light.diffuse);
-        main_shader.set_vec3("dir_light.specular", self.light_manager.dir_light.specular);
-
-        unsafe {
-            gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::Cube).unwrap()));
-        }
-        self.camera.model = Mat4::IDENTITY;
-
-        for i in 0..CUBE_POSITIONS.len() {
-            self.camera.model = Mat4::IDENTITY;
-            self.camera.model = Mat4::from_translation(CUBE_POSITIONS[i]);
-
-            // rotate the cube
-            let angle = 20.0 * i as f32;
-            let axis = vec3(1.0, 0.3, 0.5).normalize();
-            self.camera.model *= Mat4::from_axis_angle(axis, angle);
-
-            main_shader.set_mat4("model", self.camera.model);
-
-            unsafe { gl::DrawArrays(gl::TRIANGLES, 0, 36); }
-        }
-        
         self.camera.model = Mat4::IDENTITY * Mat4::from_translation(self.model_pos);
         let model_test_shader = self.shaders.get_mut(&ShaderType::ModelTest).unwrap();
         model_test_shader.activate();
@@ -909,7 +902,29 @@ impl GameState {
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
         }
         // model_test_shader.set_int("shadow_map", );
-
         self.model.draw(model_test_shader);
+
+        self.camera.model = Mat4::IDENTITY  * Mat4::from_translation(self.donut_pos) * Mat4::from_scale(vec3(15.0, 15.0, 15.0));
+        let model_test_shader = self.shaders.get_mut(&ShaderType::ModelTest).unwrap();
+        model_test_shader.set_mat4("model", self.camera.model);
+
+        unsafe {
+            gl_call!(gl::ActiveTexture(gl::TEXTURE2)); 
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+        }
+
+        self.donut.draw(model_test_shader);
+
+        self.camera.model = Mat4::IDENTITY  * Mat4::from_translation(self.donut2_pos) * Mat4::from_scale(vec3(8.0, 8.0, 8.0));
+        let model_test_shader = self.shaders.get_mut(&ShaderType::ModelTest).unwrap();
+        model_test_shader.set_mat4("model", self.camera.model);
+
+        unsafe {
+            gl_call!(gl::ActiveTexture(gl::TEXTURE2)); 
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+        }
+
+        self.donut2.draw(model_test_shader);
+
     }
 }
