@@ -64,7 +64,7 @@ impl GameState {
         window.set_key_polling(true);
         // window.set_sticky_keys(true); 
         window.set_cursor_pos_polling(true);
-        // window.set_cursor_mode(glfw::CursorMode::En);
+        window.set_cursor_mode(glfw::CursorMode::Disabled);
         window.make_current();
 
         let (fb_width, fb_height) = window.get_framebuffer_size();
@@ -342,7 +342,7 @@ impl GameState {
             gl_call!(gl::TexParameterfv(
                 gl::TEXTURE_2D, 
                 gl::TEXTURE_BORDER_COLOR, 
-                [1.0, 1.0, 1.0].as_ptr().cast() 
+                [1.0, 1.0, 1.0, 1.0].as_ptr().cast() 
             ));
 
             gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER, fbo));
@@ -496,8 +496,6 @@ impl GameState {
         self.light_manager.update(&self.delta_time);
 
         self.camera.update();
-
-        // self.camera.position = self.light_manager.dir_light.view_pos;
     }
 
     pub fn render(&mut self) {
@@ -512,13 +510,9 @@ impl GameState {
 
             self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
             let near_plane = 1.0;
-            let far_plane = 40.0;
-            // Ortho works fine for only directional lights, but probably not for point apparently.
-            // correct let mut light_projection = Mat4::orthographic_rh_gl(-20.0, 20.0, -20.0, 20.0, near_plane, far_plane);
-            let mut light_projection = Mat4::orthographic_rh_gl(14.0, -14.0, 14.0, -14.0, near_plane, far_plane);
-
-            // self.light_manager.dir_light.view_pos = vec3(5.0, 10.0, 5.0);
-            let mut light_view = Mat4::look_at_rh(self.light_manager.dir_light.view_pos, vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
+            let far_plane = 30.0;
+            let light_projection = Mat4::orthographic_rh_gl(-200.0, 200.0, -200.0, 200.0, near_plane, far_plane);
+            let light_view = Mat4::look_at_rh(self.light_manager.dir_light.view_pos, vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
             self.camera.light_space = light_projection * light_view;
             depth_shader_prog.activate();
             depth_shader_prog.set_mat4("light_space_mat", self.camera.light_space);
@@ -527,16 +521,7 @@ impl GameState {
             gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER, *self.fbos.get(&FboType::DepthMap).unwrap()));
             gl_call!(gl::Clear(gl::DEPTH_BUFFER_BIT));
             // Render scene
-
-            let status = gl::CheckFramebufferStatus(gl::FRAMEBUFFER);
-            if status != gl::FRAMEBUFFER_COMPLETE {
-                println!("Framebuffer incomplete: {}", status);
-            }
-            gl_call!(gl::Enable(gl::CULL_FACE));
-            gl_call!(gl::CullFace(gl::FRONT));
             self.render_sample_depth();
-            gl_call!(gl::Disable(gl::CULL_FACE));
-
             gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER,0));
             gl_call!(gl::Viewport(0, 0, self.fb_width as i32, self.fb_height as i32));
 
@@ -641,6 +626,16 @@ impl GameState {
             1.0, -1.0, 0.0,  1.0, 0.0,
             1.0,  1.0, 0.0,  1.0, 1.0
         ];
+        // let quad_vertices: [f32; 30] = [
+        //     // Positions      // Texture Coords (flip Y)
+        //     -1.0,  1.0, 0.0,  0.0, 0.0,  // Change (0,1) -> (0,0)
+        //     -1.0, -1.0, 0.0,  0.0, 1.0,  // Change (0,0) -> (0,1)
+        //     1.0, -1.0, 0.0,  1.0, 1.0,  // Change (1,0) -> (1,1)
+
+        //     -1.0,  1.0, 0.0,  0.0, 0.0,
+        //     1.0, -1.0, 0.0,  1.0, 1.0,
+        //     1.0,  1.0, 0.0,  1.0, 0.0   // Change (1,1) -> (1,0)
+        // ];
 
         unsafe {
             gl_call!(gl::GenVertexArrays(1, &mut vao));
