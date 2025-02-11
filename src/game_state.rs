@@ -758,6 +758,7 @@ impl GameState {
         // =============================================================
         floor_shader.activate();
         unsafe {
+            // gl::Enable(gl::FRAMEBUFFER_SRGB); 
             gl_call!(gl::ActiveTexture(gl::TEXTURE0));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
             floor_shader.set_int("shadow_map", 0);
@@ -765,7 +766,8 @@ impl GameState {
 
         self.camera.model = Mat4::IDENTITY;
         floor_shader.set_mat4("model", self.camera.model);
-        floor_shader.set_vec3("ground_color", vec3(0.60, 0.70, 0.60));
+//(164,183,109)
+        floor_shader.set_vec3("ground_color", vec3(164.0 / 255.0, 183.0 / 255.0, 109.0 / 255.0));
         floor_shader.set_mat4("view", self.camera.view);
         floor_shader.set_mat4("projection", self.camera.projection);
         floor_shader.set_mat4("light_space_mat", self.camera.light_space);
@@ -774,6 +776,7 @@ impl GameState {
         unsafe {
             gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::GroundPlane).unwrap()));
             gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 6));
+            // gl::Disable(gl::FRAMEBUFFER_SRGB); 
         }
 
         // =============================================================

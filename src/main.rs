@@ -11,6 +11,7 @@ mod lights;
 mod math_utils;
 mod model;
 mod mesh;
+mod level;
 
 use game_state::GameState;
 use model::Model;
