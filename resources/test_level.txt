@@ -1,4 +1,4 @@
-0 X T T T T T T T T
+0 S T T T T T T T T
 0 X 0 T T T T T T T
 0 X 0 0 T T T T T T
 0 X 0 0 0 0 0 0 0 T
@@ -7,4 +7,4 @@
 T 0 0 0 0 0 0 X 0 0
 T T 0 0 0 0 0 X 0 0
 T T T T 0 0 0 X 0 0
-T T T T T 0 0 X 0 0
+T T T T T 0 0 E 0 0
