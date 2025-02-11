@@ -84,15 +84,15 @@ impl DirLight {
     }
 
     pub fn default_white() -> Self {
-        let direction = vec3(0.0, 0.07071, 0.07071);
+        let direction = vec3(0.0, 1.0, 1.0);
         // let direction = vec3(0.0, 1.0, 0.0);
         // let view_pos = direction * 32.0;
-        let view_pos = direction * 500.0;
+        let view_pos = direction * 10.0;
         Self {
             direction,
             view_pos,
 
-            ambient: WHITE * 0.2,
+            ambient: vec3(0.2 + 0.3, 0.23 + 0.3, 0.3 + 0.3),
             diffuse: WHITE,
             specular: WHITE,
         }

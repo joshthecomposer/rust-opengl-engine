@@ -131,6 +131,8 @@ impl GameState {
         model_shader.store_uniform_location("view");
         model_shader.store_uniform_location("model");
         model_shader.store_dir_light_location("dir_light");
+        model_shader.store_uniform_location("light_space_mat");
+        model_shader.store_uniform_location("shadow_map");
 
         let mut vao = 0;
         let mut vbo = 0;
@@ -326,7 +328,6 @@ impl GameState {
         let mut fbo = 0;
         let mut depth_map = 0;
         unsafe {
-            model_shader.activate();
             gl_call!(gl::GenFramebuffers(1, &mut fbo));
 
             fbos.insert(FboType::DepthMap, fbo);
@@ -341,7 +342,7 @@ impl GameState {
             gl_call!(gl::TexParameterfv(
                 gl::TEXTURE_2D, 
                 gl::TEXTURE_BORDER_COLOR, 
-                [1.0, 1.0, 1.0].as_ptr().cast() 
+                [1.0, 1.0, 1.0, 1.0].as_ptr().cast() 
             ));
 
             gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER, fbo));
@@ -351,11 +352,18 @@ impl GameState {
             gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER, 0));
         }
 
+        let mut debug_depth_quad = Shader::new("resources/shaders/debug_depth_quad.vs","resources/shaders/debug_depth_quad.fs");
+
+        debug_depth_quad.activate();
+        debug_depth_quad.store_uniform_location("depth_map");
+        debug_depth_quad.set_int("depth_map", 0);
+
         shaders.insert(ShaderType::Model, model_shader);
         shaders.insert(ShaderType::Skybox, skybox_shader);
         shaders.insert(ShaderType::DebugLight, debug_light_shader);
         shaders.insert(ShaderType::Depth, depth_shader);
         shaders.insert(ShaderType::GroundPlane, ground_plane_shader);
+        shaders.insert(ShaderType::DebugShadowMap, debug_depth_quad);
 
         let entity_manager = EntityManager::new(10_000);
         let mut light_manager = Lights::new(50);
@@ -488,8 +496,6 @@ impl GameState {
         self.light_manager.update(&self.delta_time);
 
         self.camera.update();
-
-        // self.camera.position = self.light_manager.dir_light.view_pos;
     }
 
     pub fn render(&mut self) {
@@ -503,14 +509,10 @@ impl GameState {
             let depth_shader_prog = self.shaders.get(&ShaderType::Depth).unwrap();
 
             self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
-            let near_plane = 0.01;
-            let far_plane = 100.0;
-            // Ortho works fine for only directional lights, but probably not for point apparently.
-            // correct let mut light_projection = Mat4::orthographic_rh_gl(-20.0, 20.0, -20.0, 20.0, near_plane, far_plane);
-            let mut light_projection = Mat4::orthographic_rh_gl(20.0, -20.0, 20.0, -20.0, near_plane, far_plane);
-
-            // self.light_manager.dir_light.view_pos = vec3(5.0, 10.0, 5.0);
-            let mut light_view = Mat4::look_at_rh(self.light_manager.dir_light.view_pos, vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
+            let near_plane = 1.0;
+            let far_plane = 30.0;
+            let light_projection = Mat4::orthographic_rh_gl(-200.0, 200.0, -200.0, 200.0, near_plane, far_plane);
+            let light_view = Mat4::look_at_rh(self.light_manager.dir_light.view_pos, vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
             self.camera.light_space = light_projection * light_view;
             depth_shader_prog.activate();
             depth_shader_prog.set_mat4("light_space_mat", self.camera.light_space);
@@ -519,86 +521,154 @@ impl GameState {
             gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER, *self.fbos.get(&FboType::DepthMap).unwrap()));
             gl_call!(gl::Clear(gl::DEPTH_BUFFER_BIT));
             // Render scene
-
-            let status = gl::CheckFramebufferStatus(gl::FRAMEBUFFER);
-            if status != gl::FRAMEBUFFER_COMPLETE {
-                println!("Framebuffer incomplete: {}", status);
-            }
             self.render_sample_depth();
-
             gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER,0));
             gl_call!(gl::Viewport(0, 0, self.fb_width as i32, self.fb_height as i32));
 
-            // =============================================================
-            // Skybox
-            // =============================================================
-            self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
+            let do_debug = false;
+            if do_debug {
+                // =============================================================
+                // Render debug depth quad
+                // =============================================================
+                gl_call!(gl::ClearColor(0.0, 0.0, 0.0, 1.0));
+                gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT));
+                let depth_debug_quad = self.shaders.get(&ShaderType::DebugShadowMap).unwrap();
+                depth_debug_quad.activate();
+                gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+                gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+                self.render_quad();
+            } else {
+                // =============================================================
+                // Skybox
+                // =============================================================
+                self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
 
-            let status = gl::CheckFramebufferStatus(gl::FRAMEBUFFER);
-            if status != gl::FRAMEBUFFER_COMPLETE {
-                println!("Framebuffer incomplete: {}", status);
+                let status = gl::CheckFramebufferStatus(gl::FRAMEBUFFER);
+                if status != gl::FRAMEBUFFER_COMPLETE {
+                    println!("Framebuffer incomplete: {}", status);
+                }
+                let skybox_shader_prog = self.shaders.get(&ShaderType::Skybox).unwrap();
+
+                gl_call!(gl::ClearColor(0.14, 0.13, 0.15, 1.0));
+                gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT));
+
+                let view_no_translation = Mat4 {
+                    x_axis: self.camera.view.x_axis.clone(),
+                    y_axis: self.camera.view.y_axis.clone(),
+                    z_axis: self.camera.view.z_axis.clone(),
+                    w_axis: vec4(0.0, 0.0, 0.0, 1.0),
+                };
+                gl_call!(gl::DepthFunc(gl::LEQUAL));
+
+                skybox_shader_prog.activate();
+                skybox_shader_prog.set_mat4("view", view_no_translation);
+                skybox_shader_prog.set_mat4("projection", self.camera.projection);
+
+                gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::Skybox).unwrap()));
+                gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+                gl_call!(gl::BindTexture(gl::TEXTURE_CUBE_MAP, self.cubemap_texture));
+                gl_call!(gl::DrawElements(gl::TRIANGLES, 36, gl::UNSIGNED_INT, 0 as *const _));
+                gl_call!(gl::BindVertexArray(0));
+
+                gl_call!(gl::DepthFunc(gl::LESS));
+
+                // =============================================================
+                // Draw Debug Lights
+                // =============================================================
+                let debug_light_shader = self.shaders.get(&ShaderType::DebugLight).unwrap();
+                debug_light_shader.activate();
+                debug_light_shader.set_mat4("view", self.camera.view);
+                debug_light_shader.set_mat4("projection", self.camera.projection);
+
+                gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::DebugLight).unwrap()));
+                for i in 0..POINT_LIGHT_POSITIONS.len() {
+                    self.camera.model = Mat4::IDENTITY;
+                    self.camera.model *= Mat4::from_translation(POINT_LIGHT_POSITIONS[i]);
+                    self.camera.model *= Mat4::from_scale(vec3(0.2, 0.2, 0.2)); 
+
+                    debug_light_shader.set_mat4("model", self.camera.model);
+                    debug_light_shader.set_vec3("LightColor", vec3(1.0, 1.0, 1.0));
+
+                    gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 36));
+                }
+
+                gl_call!(gl::BindVertexArray(0));
+
+                // =============================================================
+                // Render scene normally
+                // =============================================================
+
+                let status = gl::CheckFramebufferStatus(gl::FRAMEBUFFER);
+                if status != gl::FRAMEBUFFER_COMPLETE {
+                    println!("Framebuffer incomplete: {}", status);
+                }
+                self.render_sample();
+
+                self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
             }
-            let skybox_shader_prog = self.shaders.get(&ShaderType::Skybox).unwrap();
-
-            gl_call!(gl::ClearColor(0.14, 0.13, 0.15, 1.0));
-            gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT));
-
-            let view_no_translation = Mat4 {
-                x_axis: self.camera.view.x_axis.clone(),
-                y_axis: self.camera.view.y_axis.clone(),
-                z_axis: self.camera.view.z_axis.clone(),
-                w_axis: vec4(0.0, 0.0, 0.0, 1.0),
-            };
-            gl_call!(gl::DepthFunc(gl::LEQUAL));
-        
-            skybox_shader_prog.activate();
-            skybox_shader_prog.set_mat4("view", view_no_translation);
-            skybox_shader_prog.set_mat4("projection", self.camera.projection);
-
-            gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::Skybox).unwrap()));
-            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-            gl_call!(gl::BindTexture(gl::TEXTURE_CUBE_MAP, self.cubemap_texture));
-            gl_call!(gl::DrawElements(gl::TRIANGLES, 36, gl::UNSIGNED_INT, 0 as *const _));
-            gl_call!(gl::BindVertexArray(0));
-
-            gl_call!(gl::DepthFunc(gl::LESS));
-
-            // =============================================================
-            // Draw Debug Lights
-            // =============================================================
-            let debug_light_shader = self.shaders.get(&ShaderType::DebugLight).unwrap();
-            debug_light_shader.activate();
-            debug_light_shader.set_mat4("view", self.camera.view);
-            debug_light_shader.set_mat4("projection", self.camera.projection);
-
-            gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::DebugLight).unwrap()));
-            for i in 0..POINT_LIGHT_POSITIONS.len() {
-                self.camera.model = Mat4::IDENTITY;
-                self.camera.model *= Mat4::from_translation(POINT_LIGHT_POSITIONS[i]);
-                self.camera.model *= Mat4::from_scale(vec3(0.2, 0.2, 0.2)); 
-
-                debug_light_shader.set_mat4("model", self.camera.model);
-                debug_light_shader.set_vec3("LightColor", vec3(1.0, 1.0, 1.0));
-
-                gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 36));
-            }
-
-            gl_call!(gl::BindVertexArray(0));
-
-            // =============================================================
-            // Render scene normally
-            // =============================================================
-
-            let status = gl::CheckFramebufferStatus(gl::FRAMEBUFFER);
-            if status != gl::FRAMEBUFFER_COMPLETE {
-                println!("Framebuffer incomplete: {}", status);
-            }
-            self.render_sample();
-            
-            self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
 
             self.window.swap_buffers();
             self.glfw.poll_events()
+        }
+    }
+
+    pub fn render_quad(&self) {
+        let mut vao = 0;
+        let mut vbo = 0;
+
+        let quad_vertices: [f32; 30] = [
+            // Positions      // Texture Coords
+            -1.0,  1.0, 0.0,  0.0, 1.0,
+            -1.0, -1.0, 0.0,  0.0, 0.0,
+            1.0, -1.0, 0.0,  1.0, 0.0,
+
+            -1.0,  1.0, 0.0,  0.0, 1.0,
+            1.0, -1.0, 0.0,  1.0, 0.0,
+            1.0,  1.0, 0.0,  1.0, 1.0
+        ];
+        // let quad_vertices: [f32; 30] = [
+        //     // Positions      // Texture Coords (flip Y)
+        //     -1.0,  1.0, 0.0,  0.0, 0.0,  // Change (0,1) -> (0,0)
+        //     -1.0, -1.0, 0.0,  0.0, 1.0,  // Change (0,0) -> (0,1)
+        //     1.0, -1.0, 0.0,  1.0, 1.0,  // Change (1,0) -> (1,1)
+
+        //     -1.0,  1.0, 0.0,  0.0, 0.0,
+        //     1.0, -1.0, 0.0,  1.0, 1.0,
+        //     1.0,  1.0, 0.0,  1.0, 0.0   // Change (1,1) -> (1,0)
+        // ];
+
+        unsafe {
+            gl_call!(gl::GenVertexArrays(1, &mut vao));
+            gl_call!(gl::GenBuffers(1, &mut vbo));
+            gl_call!(gl::BindVertexArray(vao));
+
+            gl_call!(gl::BindBuffer(gl::ARRAY_BUFFER, vbo));
+            gl_call!(gl::BufferData(
+                gl::ARRAY_BUFFER,
+                (quad_vertices.len() * std::mem::size_of::<f32>()) as isize,
+                quad_vertices.as_ptr() as *const _,
+                gl::STATIC_DRAW
+            ));
+
+            let stride = (5 * std::mem::size_of::<f32>()) as i32;
+
+            // Position Attribute
+            gl_call!(gl::EnableVertexAttribArray(0));
+            gl_call!(gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, stride, std::ptr::null()));
+
+            // Texture Coordinate Attribute
+            gl_call!(gl::EnableVertexAttribArray(1));
+            gl_call!(gl::VertexAttribPointer(1, 2, gl::FLOAT, gl::FALSE, stride, (3 * std::mem::size_of::<f32>()) as *const _));
+
+            gl_call!(gl::BindBuffer(gl::ARRAY_BUFFER, 0));
+            gl_call!(gl::BindVertexArray(0));
+        }
+
+        // Draw the quad
+        unsafe {
+            gl_call!(gl::BindVertexArray(vao));
+            gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 6));
+            gl_call!(gl::BindVertexArray(0));
         }
     }
 
@@ -622,7 +692,7 @@ impl GameState {
                     0 as *const _
                 ));
 
-            gl_call!(gl::BindVertexArray(0));
+                gl_call!(gl::BindVertexArray(0));
             }
         }
         let model_donut = Mat4::IDENTITY * Mat4::from_translation(self.donut_pos) * Mat4::from_scale(vec3(15.0, 15.0, 15.0));
@@ -639,7 +709,7 @@ impl GameState {
                     0 as *const _
                 ));
 
-            gl_call!(gl::BindVertexArray(0));
+                gl_call!(gl::BindVertexArray(0));
             }
         }
         let model_donut2 = Mat4::IDENTITY * Mat4::from_translation(self.donut2_pos) * Mat4::from_scale(vec3(8.0, 8.0, 8.0));
@@ -656,7 +726,7 @@ impl GameState {
                     0 as *const _
                 ));
 
-            gl_call!(gl::BindVertexArray(0));
+                gl_call!(gl::BindVertexArray(0));
             }
         }
 
@@ -715,17 +785,23 @@ impl GameState {
         model_shader.set_mat4("model", self.camera.model);
         model_shader.set_mat4("view", self.camera.view);
         model_shader.set_mat4("projection", self.camera.projection);
+        model_shader.set_mat4("light_space_mat", self.camera.light_space);
         model_shader.set_dir_light("dir_light", &self.light_manager.dir_light);
+
+        unsafe {
+            // TODO: This could clash, we need to make sure we reserve texture0 in our dynamic shader code.
+            gl_call!(gl::ActiveTexture(gl::TEXTURE2));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+            model_shader.set_int("shadow_map", 2);
+        }
 
         self.model.draw(model_shader);
 
         self.camera.model = Mat4::IDENTITY  * Mat4::from_translation(self.donut_pos) * Mat4::from_scale(vec3(15.0, 15.0, 15.0));
-        let model_shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
         model_shader.set_mat4("model", self.camera.model);
         self.donut.draw(model_shader);
 
         self.camera.model = Mat4::IDENTITY  * Mat4::from_translation(self.donut2_pos) * Mat4::from_scale(vec3(8.0, 8.0, 8.0));
-        let model_shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
         model_shader.set_mat4("model", self.camera.model);
         self.donut2.draw(model_shader);
 
