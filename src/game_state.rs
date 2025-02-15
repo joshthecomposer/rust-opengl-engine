@@ -5,7 +5,7 @@ use glfw::{Action, Context, Glfw, GlfwReceiver, MouseButton, PWindow, WindowEven
 use image::GenericImageView;
 use imgui::{Ui};
 
-use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, VaoType}, gl_call, lights::{DirLight, Lights}, model::Model, shaders::Shader, some_data::{BISEXUAL_BLUE, BISEXUAL_BLUE_SCALE, BISEXUAL_PINK, BISEXUAL_PINK_SCALE, BISEXUAL_PURPLE, BISEXUAL_PURPLE_SCALE, CUBE_POSITIONS, FACES_CUBEMAP, GROUND_PLANE, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES, WHITE}};
+use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, VaoType}, gl_call, grid::Grid, lights::{DirLight, Lights}, model::Model, shaders::Shader, some_data::{BISEXUAL_BLUE, BISEXUAL_BLUE_SCALE, BISEXUAL_PINK, BISEXUAL_PINK_SCALE, BISEXUAL_PURPLE, BISEXUAL_PURPLE_SCALE, CUBE_POSITIONS, FACES_CUBEMAP, GROUND_PLANE, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES, WHITE}};
 
 pub struct GameState {
     pub delta_time: f64,
@@ -73,12 +73,16 @@ impl GameState {
 
         gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
 
+    
+        Grid::generate_grid_mesh(10, 10, 500.0);
+
         unsafe {
             gl_call!(gl::Enable(gl::BLEND));
             gl_call!(gl::Enable(gl::TEXTURE_CUBE_MAP_SEAMLESS));
             gl_call!(gl::Viewport(0, 0, width, height));
             gl_call!(gl::Enable(gl::DEPTH_TEST));
             gl::Enable(gl::DEBUG_OUTPUT);
+            // gl_call!(gl::Enable(gl::FRAMEBUFFER_SRGB)); 
             // gl::Enable(gl::CULL_FACE);  
             // gl::CullFace(gl::BACK);  
         }
@@ -758,7 +762,6 @@ impl GameState {
         // =============================================================
         floor_shader.activate();
         unsafe {
-            // gl::Enable(gl::FRAMEBUFFER_SRGB); 
             gl_call!(gl::ActiveTexture(gl::TEXTURE0));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
             floor_shader.set_int("shadow_map", 0);

@@ -53,6 +53,7 @@ impl Mesh {
             ebo: 0,
         }
     }
+
     pub fn setup_mesh(&mut self) {
         let mut vao = 0;
         let mut vbo = 0;

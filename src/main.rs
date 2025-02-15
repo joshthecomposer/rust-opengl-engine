@@ -12,8 +12,10 @@ mod math_utils;
 mod model;
 mod mesh;
 mod level;
+mod grid;
 
 use game_state::GameState;
+use grid::Grid;
 use model::Model;
 use russimp::scene::{Scene, PostProcess};
 use russimp::Russult;
