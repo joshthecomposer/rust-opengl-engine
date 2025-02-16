@@ -58,13 +58,13 @@ impl Grid {
             *pixel = Rgb([c_gray, c_gray, c_gray]);
         }
 
-        imgbuf.save("./light.png").expect("Failed to save grid texture");
+        imgbuf.save("resources/textures/grid_light.png").expect("Failed to save grid texture");
 
         for (x, y, pixel) in imgbuf.enumerate_pixels_mut() {
             *pixel = Rgb([c_dark, c_dark, c_dark]);
         }
 
-        imgbuf.save("./dark.png").expect("Failed to save dark grid texture");
+        imgbuf.save("resources/textures/grid_dark.png").expect("Failed to save dark grid texture");
         for row in 0..grid_height {
             for col in 0..grid_width {
                 let x = -(col as f32 * cell_size);
