@@ -483,21 +483,21 @@ impl GameState {
 
         self.elapsed += self.delta_time;
 
-        let radius = 8.0;
+        let radius = 0.5;
         let speed = 1.0;
         let angle = (self.elapsed * speed) as f32;
 
         self.donut_pos.x = radius * angle.cos();
         self.donut_pos.z = radius * angle.sin();
-        self.donut_pos.y = 5.0;
+        self.donut_pos.y = 1.0;
 
-        let donut2_r = 3.0;
+        let donut2_r = 0.2;
         let speed2 = 2.0;
         let angle2 = (self.elapsed * speed2) as f32;
 
         self.donut2_pos.x = self.donut_pos.x + donut2_r * angle2.cos();
         self.donut2_pos.z = self.donut_pos.z + donut2_r * angle2.sin();
-        self.donut2_pos.y = 5.0; // Same height as Donut 1
+        self.donut2_pos.y = 1.0; // Same height as Donut 1
 
         if self.paused { return; }
         self.entity_manager.update(&self.delta_time);
@@ -518,8 +518,8 @@ impl GameState {
 
             self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
             let near_plane = 1.0;
-            let far_plane = 30.0;
-            let light_projection = Mat4::orthographic_rh_gl(-200.0, 200.0, -200.0, 200.0, near_plane, far_plane);
+            let far_plane = 10.0;
+            let light_projection = Mat4::orthographic_rh_gl(-10.0, 10.0, -10.0, 10.0, near_plane, far_plane);
             let light_view = Mat4::look_at_rh(self.light_manager.dir_light.view_pos, vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
             self.camera.light_space = light_projection * light_view;
             depth_shader_prog.activate();
@@ -686,7 +686,7 @@ impl GameState {
         // =========================
         // Render Model For Shadows
         // =========================
-        let model_model = Mat4::IDENTITY * Mat4::from_translation(self.model_pos);
+        let model_model = Mat4::IDENTITY * Mat4::from_translation(self.model_pos) * Mat4::from_scale(Vec3::splat(0.2));
         for mesh in self.model.meshes.iter() {
             unsafe {
                 gl::BindVertexArray(mesh.vao);
@@ -703,7 +703,7 @@ impl GameState {
                 gl_call!(gl::BindVertexArray(0));
             }
         }
-        let model_donut = Mat4::IDENTITY * Mat4::from_translation(self.donut_pos) * Mat4::from_scale(vec3(15.0, 15.0, 15.0));
+        let model_donut = Mat4::IDENTITY * Mat4::from_translation(self.donut_pos) * Mat4::from_scale(Vec3::splat(1.0));
         for mesh in self.donut.meshes.iter() {
             unsafe {
                 gl::BindVertexArray(mesh.vao);
@@ -720,7 +720,7 @@ impl GameState {
                 gl_call!(gl::BindVertexArray(0));
             }
         }
-        let model_donut2 = Mat4::IDENTITY * Mat4::from_translation(self.donut2_pos) * Mat4::from_scale(vec3(8.0, 8.0, 8.0));
+        let model_donut2 = Mat4::IDENTITY * Mat4::from_translation(self.donut2_pos) * Mat4::from_scale(Vec3::splat(0.35));
         for mesh in self.donut2.meshes.iter() {
             unsafe {
                 gl::BindVertexArray(mesh.vao);
@@ -789,7 +789,7 @@ impl GameState {
         // =============================================================
         // Render Model
         // =============================================================
-        self.camera.model = Mat4::IDENTITY * Mat4::from_translation(self.model_pos);
+        self.camera.model = Mat4::IDENTITY * Mat4::from_translation(self.model_pos) * Mat4::from_scale(Vec3::splat(0.2));
         let model_shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
         model_shader.activate();
         model_shader.set_mat4("model", self.camera.model);
@@ -807,11 +807,11 @@ impl GameState {
 
         self.model.draw(model_shader);
 
-        self.camera.model = Mat4::IDENTITY  * Mat4::from_translation(self.donut_pos) * Mat4::from_scale(vec3(15.0, 15.0, 15.0));
+        self.camera.model = Mat4::IDENTITY  * Mat4::from_translation(self.donut_pos) * Mat4::from_scale(Vec3::splat(1.0));
         model_shader.set_mat4("model", self.camera.model);
         self.donut.draw(model_shader);
 
-        self.camera.model = Mat4::IDENTITY  * Mat4::from_translation(self.donut2_pos) * Mat4::from_scale(vec3(8.0, 8.0, 8.0));
+        self.camera.model = Mat4::IDENTITY  * Mat4::from_translation(self.donut2_pos) * Mat4::from_scale(Vec3::splat(0.35));
         model_shader.set_mat4("model", self.camera.model);
         self.donut2.draw(model_shader);
 
