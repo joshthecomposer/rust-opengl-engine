@@ -101,6 +101,10 @@ impl GameState {
             window.get_proc_address(s) as *const _
         });
 
+        // =============================================================
+        // Setup Shaders
+        // =============================================================
+
         let mut shaders = HashMap::new();
         let mut vaos = HashMap::new();
         let mut fbos = HashMap::new();
@@ -354,7 +358,7 @@ impl GameState {
             paused: false,
             model,
             model_pos,
-            model_scale: vec3(0.2, 0.1, 0.2),
+            model_scale: vec3(0.2, 0.13, 0.2),
             donut,
             donut_pos,
             donut2,
