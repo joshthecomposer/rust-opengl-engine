@@ -44,6 +44,7 @@ pub struct GameState {
     pub donut2: Model,
     pub donut2_pos: Vec3,
 
+    pub grid: Grid,
 }
 
 impl GameState {
@@ -73,8 +74,9 @@ impl GameState {
 
         gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
 
-    
-        Grid::generate_grid_mesh(10, 10, 500.0);
+
+        let mut grid = Grid::new();
+        grid.generate();
 
         unsafe {
             gl_call!(gl::Enable(gl::BLEND));
@@ -407,6 +409,8 @@ impl GameState {
             donut_pos,
             donut2,
             donut2_pos,
+
+            grid,
         }
     }
 
@@ -756,31 +760,31 @@ impl GameState {
     }
 
     pub fn render_sample(&mut self) {
-        let floor_shader = self.shaders.get(&ShaderType::GroundPlane).unwrap();
-        // =============================================================
-        // Render floor
-        // =============================================================
-        floor_shader.activate();
-        unsafe {
-            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-            floor_shader.set_int("shadow_map", 0);
-        }
+        // let floor_shader = self.shaders.get(&ShaderType::GroundPlane).unwrap();
+        // // =============================================================
+        // // Render floor
+        // // =============================================================
+        // floor_shader.activate();
+        // unsafe {
+        //     gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+        //     gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+        //     floor_shader.set_int("shadow_map", 0);
+        // }
 
-        self.camera.model = Mat4::IDENTITY;
-        floor_shader.set_mat4("model", self.camera.model);
-//(164,183,109)
-        floor_shader.set_vec3("ground_color", vec3(164.0 / 255.0, 183.0 / 255.0, 109.0 / 255.0));
-        floor_shader.set_mat4("view", self.camera.view);
-        floor_shader.set_mat4("projection", self.camera.projection);
-        floor_shader.set_mat4("light_space_mat", self.camera.light_space);
-        floor_shader.set_dir_light("dir_light", &self.light_manager.dir_light);
+        // self.camera.model = Mat4::IDENTITY;
+        // floor_shader.set_mat4("model", self.camera.model);
+//(164,1// 83,109)
+        // floor_shader.set_vec3("ground_color", vec3(164.0 / 255.0, 183.0 / 255.0, 109.0 / 255.0));
+        // floor_shader.set_mat4("view", self.camera.view);
+        // floor_shader.set_mat4("projection", self.camera.projection);
+        // floor_shader.set_mat4("light_space_mat", self.camera.light_space);
+        // floor_shader.set_dir_light("dir_light", &self.light_manager.dir_light);
 
-        unsafe {
-            gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::GroundPlane).unwrap()));
-            gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 6));
-            // gl::Disable(gl::FRAMEBUFFER_SRGB); 
-        }
+        // unsafe {
+        //     gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::GroundPlane).unwrap()));
+        //     gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 6));
+        //     // gl::Disable(gl::FRAMEBUFFER_SRGB); 
+        // }
 
         // =============================================================
         // Render Model
@@ -811,5 +815,19 @@ impl GameState {
         model_shader.set_mat4("model", self.camera.model);
         self.donut2.draw(model_shader);
 
+
+        // =============================================================
+        // Render Grid
+        // =============================================================
+        self.camera.model = Mat4::IDENTITY * Mat4::from_translation(self.model_pos);
+        let model_shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
+        model_shader.activate();
+        model_shader.set_mat4("model", self.camera.model);
+        model_shader.set_mat4("view", self.camera.view);
+        model_shader.set_mat4("projection", self.camera.projection);
+        model_shader.set_mat4("light_space_mat", self.camera.light_space);
+        model_shader.set_dir_light("dir_light", &self.light_manager.dir_light);
+        
+        self.grid.draw(model_shader);
     }
 }
