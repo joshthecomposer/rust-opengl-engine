@@ -9,7 +9,7 @@ use crate::{mesh::{Mesh, Texture, Vertex}, model::Model, shaders::Shader};
 pub struct GridCell {
     pub id: usize,
     pub position:  Vec3,
-    pub width: f32,
+    pub width: f32, // TODO: We don't need width because we have cell_size on the grid itself.
     // used to determine if this is traversable in A*
     pub blocked: bool,
     // used to precalculate the neighbors for A*
@@ -29,10 +29,10 @@ impl Grid {
     pub fn new() -> Grid {
         Grid {
             cells: HashMap::new(),
-            next_cell_id: 0,
+            next_cell_id: 1,
             model: Model::new(),
             cell_size: 0.0,
-            num_cells_x: 0,
+            num_cells_x: 0, // TODO: I can't remember why I added these fields, remove?
             num_cells_z: 0,
         }
     }
@@ -43,7 +43,8 @@ impl Grid {
     }
 
     fn generate_model(&mut self) {
-        let mut mesh = Self::generate_grid_mesh(10, 10, 1.0);
+        // TODO: This only works with even numbered grid sizes, fix
+        let mut mesh = self.generate_grid_mesh(6, 6, 1.0);
         self.model.directory = "resources/textures".to_string();
 
         let tex_id = Model::texture_from_file(&self.model, "half_dark_half_light.png".to_string());
@@ -60,14 +61,14 @@ impl Grid {
         self.model.textures_loaded.push(tex);
     }
 
-    fn generate_grid_mesh(grid_width: usize, grid_height: usize, cell_size: f32) -> Mesh {
+    fn generate_grid_mesh(&mut self, grid_width: isize, grid_height: isize, cell_size: f32) -> Mesh {
         let mut vertices = Vec::<Vertex>::new();
         let mut indices = Vec::<u32>::new();
         let mut mesh = Mesh::new();
         let mut dark = false;
 
-        for row in 0..grid_height {
-            for col in 0..grid_width {
+        for row in -grid_height..grid_height {
+            for col in -grid_width..grid_width {
                 let x = -(col as f32 * cell_size);
                 let z = -(row as f32 * cell_size);
 
@@ -92,6 +93,7 @@ impl Grid {
 
                 let base_index = vertices.len() as u32;
 
+
                 // Add vertices for the cell
                 vertices.push(Vertex { position: vec3(x, 0.0, z), normal: vec3(0.0, 1.0, 0.0), tex_coords: bl });
                 vertices.push(Vertex { position: vec3(x + cell_size, 0.0, z), normal: vec3(0.0, 1.0, 0.0), tex_coords: br });
@@ -105,11 +107,29 @@ impl Grid {
                 indices.push(base_index);
                 indices.push(base_index + 2);
                 indices.push(base_index + 3);
+
+                // =============================================================
+                // Create cell object
+                // =============================================================
+                let cell = GridCell {
+                    id: self.next_cell_id,
+                    position: vec3(x + (cell_size / 2.0), 0.0, z + (cell_size / 2.0)),
+                    width: cell_size, 
+                    blocked: false,
+                    adjacent_cells: vec![],
+                };
+
+                self.cells.insert(cell.id, cell);
+                self.next_cell_id += 1;
+
+
             }
 
             if grid_width % 2 == 0 {
                 dark = !dark;
             }
+
+
         }
 
         mesh.vertices.append(&mut vertices);
