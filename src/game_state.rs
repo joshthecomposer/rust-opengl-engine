@@ -75,7 +75,7 @@ impl GameState {
         gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
 
 
-        let mut grid = Grid::new();
+        let mut grid = Grid::new(10, 10);
         grid.generate();
 
         unsafe {
