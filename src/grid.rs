@@ -21,19 +21,19 @@ pub struct Grid {
     pub next_cell_id: usize,
     pub model: Model,
     pub cell_size: f32,
-    pub num_cells_x: usize,
-    pub num_cells_z: usize,
+    pub width: usize,
+    pub height: usize,
 }
 
 impl Grid {
-    pub fn new() -> Grid {
+    pub fn new(width: usize, height: usize) -> Grid {
         Grid {
             cells: HashMap::new(),
             next_cell_id: 1,
             model: Model::new(),
             cell_size: 0.0,
-            num_cells_x: 0, // TODO: I can't remember why I added these fields, remove?
-            num_cells_z: 0,
+            width,
+            height,
         }
     }
 
@@ -44,7 +44,7 @@ impl Grid {
 
     fn generate_model(&mut self) {
         // TODO: This only works with even numbered grid sizes, fix
-        let mut mesh = self.generate_grid_mesh(6, 6, 1.0);
+        let mut mesh = self.generate_grid_mesh(1.0);
         self.model.directory = "resources/textures".to_string();
 
         let tex_id = Model::texture_from_file(&self.model, "half_dark_half_light.png".to_string());
@@ -61,16 +61,19 @@ impl Grid {
         self.model.textures_loaded.push(tex);
     }
 
-    fn generate_grid_mesh(&mut self, grid_width: isize, grid_height: isize, cell_size: f32) -> Mesh {
+    fn generate_grid_mesh(&mut self, cell_size: f32) -> Mesh {
         let mut vertices = Vec::<Vertex>::new();
         let mut indices = Vec::<u32>::new();
         let mut mesh = Mesh::new();
         let mut dark = false;
 
-        for row in -grid_height..grid_height {
-            for col in -grid_width..grid_width {
-                let x = -(col as f32 * cell_size);
-                let z = -(row as f32 * cell_size);
+        let total_width = self.width as f32 * cell_size;
+        let total_height = self.height as f32 * cell_size;
+
+        for row in 0..self.width {
+            for col in 0..self.height {
+                let x = (col as f32 * cell_size) - (total_width / 2.0);
+                let z = (row as f32 * cell_size) - (total_height / 2.0);
 
 
                 let (bl, br, tr, tl) = if dark {
@@ -124,12 +127,10 @@ impl Grid {
 
 
             }
-
-            if grid_width % 2 == 0 {
+            
+            if self.width % 2 == 0 {
                 dark = !dark;
-            }
-
-
+            } 
         }
 
         mesh.vertices.append(&mut vertices);
@@ -160,7 +161,19 @@ impl Grid {
             .expect("Failed to save half dark / half light texture");
     }
 
+    pub fn get_cell_from_position(&self, input: Vec3) -> Option<&GridCell> {
+        let cell_x = (input.x / self.cell_size).floor() as usize;
+        let cell_z = (input.z / self.cell_size).floor() as usize;
+
+        // TODO: If you are out of bounds do something else, like a -1 or something to signify.
+        let cell_id = cell_z * self.width + cell_x + 1;
+        
+        self.cells.get(&cell_id)
+    }
+
     pub fn draw(&mut self, shader: &mut Shader) {
         self.model.draw(shader);
     }
+
+
 }
