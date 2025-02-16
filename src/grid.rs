@@ -43,7 +43,7 @@ impl Grid {
     }
 
     fn generate_model(&mut self) {
-        let mut mesh = Self::generate_grid_mesh(10, 10, 5.0);
+        let mut mesh = Self::generate_grid_mesh(10, 10, 1.0);
         self.model.directory = "resources/textures".to_string();
 
         let tex_id = Model::texture_from_file(&self.model, "half_dark_half_light.png".to_string());

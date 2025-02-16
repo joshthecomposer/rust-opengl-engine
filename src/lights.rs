@@ -87,7 +87,7 @@ impl DirLight {
         let direction = vec3(0.0, 1.0, 1.0);
         // let direction = vec3(0.0, 1.0, 0.0);
         // let view_pos = direction * 32.0;
-        let view_pos = direction * 10.0;
+        let view_pos = direction * 6.0;
         Self {
             direction,
             view_pos,
