@@ -21,53 +21,6 @@ use russimp::Russult;
 // use sparse_set::SparseSet;
 
 fn main() {
-    // let mut sparse_set:SparseSet<String> = SparseSet::with_capacity(100);
-    // sparse_set.insert(0, "Poop".to_string());
-    // sparse_set.insert(1, "Butts".to_string());
-    // sparse_set.insert(2, "Pee".to_string());
-    // sparse_set.remove(1);
-    // sparse_set.insert(1, "Asses".to_string());
-    // sparse_set.insert(3, "Ronald".to_string());
-    // sparse_set.insert(4, "McDonald".to_string());
-    // sparse_set.remove(0);
-    // sparse_set.insert(0, "Barney".to_string());
-    // println!("{:?}", sparse_set.sparse);
-    // println!("{:?}", sparse_set.dense);
-
-    //let flags = vec![
-    //    PostProcess::Triangulate,
-    //    PostProcess::JoinIdenticalVertices,
-    //];
-
-    //let scene = Scene::from_file(
-    //    "resources/models/TD 3D Low Poly Pack/fbx/Full/_archer_tower_LVL_1.fbx", 
-    //    flags
-    //).unwrap();
-
-    //println!("Imported scene has:");
-    //println!(" {} meshes", scene.meshes.len());
-    //println!(" {} materials", scene.materials.len());
-    //println!(" {} animations", scene.animations.len());
-    //println!(" {} lights", scene.lights.len());
-
-    //for (i, mesh) in scene.meshes.iter().enumerate() {
-    //    println!(
-    //        "Mesh #{} has {} vertices and {} faces.",
-    //        i,
-    //        mesh.vertices.len(),
-    //        mesh.faces.len()
-    //    );
-    //}
-
-    //for (i, mat) in scene.materials.iter().enumerate() {
-    //    println!(
-    //        "{:?}",
-    //        mat
-    //    );
-    //}
-
-    //let model = Model::load("resources/models/my_obj/tower.obj");
-
      let mut state = GameState::new();
      while !state.window.should_close() {
          state.process_events();
