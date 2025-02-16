@@ -39,6 +39,7 @@ pub struct GameState {
 
     pub model: Model,
     pub model_pos: Vec3,
+    pub model_scale: Vec3,
     pub donut: Model,
     pub donut_pos: Vec3,
     pub donut2: Model,
@@ -353,6 +354,7 @@ impl GameState {
             paused: false,
             model,
             model_pos,
+            model_scale: vec3(0.2, 0.1, 0.2),
             donut,
             donut_pos,
             donut2,
@@ -634,7 +636,7 @@ impl GameState {
         // =========================
         // Render Model For Shadows
         // =========================
-        let model_model = Mat4::IDENTITY * Mat4::from_translation(self.model_pos) * Mat4::from_scale(Vec3::splat(0.2));
+        let model_model = Mat4::IDENTITY * Mat4::from_translation(self.model_pos) * Mat4::from_scale(self.model_scale);
         for mesh in self.model.meshes.iter() {
             unsafe {
                 gl::BindVertexArray(mesh.vao);
@@ -693,7 +695,7 @@ impl GameState {
         // =============================================================
         // Render Model
         // =============================================================
-        self.camera.model = Mat4::IDENTITY * Mat4::from_translation(self.model_pos) * Mat4::from_scale(Vec3::splat(0.2));
+        self.camera.model = Mat4::IDENTITY * Mat4::from_translation(self.model_pos) * Mat4::from_scale(self.model_scale);
         let model_shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
         model_shader.activate();
         model_shader.set_mat4("model", self.camera.model);
