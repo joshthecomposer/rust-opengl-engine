@@ -113,12 +113,12 @@ pub const CUBE_POSITIONS: [Vec3; 10] = [
 //];
 
 pub const FACES_CUBEMAP:[&str; 6] = [
-    "resources/textures/sky_box/Anime Night_Cam_3_Right-X.png",
     "resources/textures/sky_box/Anime Night_Cam_2_Left+X.png",
+    "resources/textures/sky_box/Anime Night_Cam_3_Right-X.png",
     "resources/textures/sky_box/Anime Night_Cam_4_Up+Y.png",
     "resources/textures/sky_box/Anime Night_Cam_5_Down-Y.png",
-    "resources/textures/sky_box/Anime Night_Cam_1_Back-Z.png",
     "resources/textures/sky_box/Anime Night_Cam_0_Front+Z.png",
+    "resources/textures/sky_box/Anime Night_Cam_1_Back-Z.png",
 ];
 
 pub const SKYBOX_VERTICES:[f32; 24] = [
