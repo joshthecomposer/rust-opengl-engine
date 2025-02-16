@@ -118,19 +118,6 @@ impl GameState {
         let mut depth_shader = Shader::new("resources/shaders/depth_shader.vs","resources/shaders/depth_shader.fs");
         depth_shader.store_uniform_location("light_space_mat");
         depth_shader.store_uniform_location("model");
-        
-        let mut ground_plane_shader = Shader::new("resources/shaders/ground_plane.vs", "resources/shaders/ground_plane.fs");
-
-        ground_plane_shader.store_uniform_location("model");
-        ground_plane_shader.store_uniform_location("view");
-        ground_plane_shader.store_uniform_location("projection");
-        ground_plane_shader.store_uniform_location("point_light_color");
-        ground_plane_shader.store_uniform_location("shadow_map");
-        ground_plane_shader.store_uniform_location("ViewPosition");
-        ground_plane_shader.store_uniform_location("ground_color");
-        ground_plane_shader.store_uniform_location("light_space_mat");
-
-        ground_plane_shader.store_dir_light_location("dir_light");
 
         let mut model_shader = Shader::new("resources/shaders/model.vs", "resources/shaders/model.fs");
         model_shader.store_uniform_location("projection");
@@ -267,46 +254,7 @@ impl GameState {
             ));
             gl_call!(gl::EnableVertexAttribArray(1));
         } 
-        // =============================================================
-        // Ground Vao
-        // =============================================================
-        unsafe {
-            gl_call!(gl::GenVertexArrays(1, &mut vao));
-            gl_call!(gl::GenBuffers(1, &mut vbo));
-            gl_call!(gl::BindVertexArray(vao));
-            gl_call!(gl::BindBuffer(gl::ARRAY_BUFFER, vbo));
-            gl_call!(gl::BufferData(
-                gl::ARRAY_BUFFER,
-                (mem::size_of::<f32>() * GROUND_PLANE.len()) as isize, 
-                GROUND_PLANE.as_ptr().cast(), 
-                gl::STATIC_DRAW
-            ));
 
-            vaos.insert(VaoType::GroundPlane, vao);
-            
-            // Positions
-            gl_call!(gl::VertexAttribPointer(
-                0, 
-                3, 
-                gl::FLOAT, 
-                gl::FALSE,
-                6 * mem::size_of::<f32>() as i32,
-                0 as *const _,
-            ));
-            gl_call!(gl::EnableVertexAttribArray(0));
-            
-            // Normals
-            gl_call!(gl::VertexAttribPointer(
-                1, 
-                3, 
-                gl::FLOAT, 
-                gl::FALSE,
-                6 * mem::size_of::<f32>() as i32,
-                (3 * mem::size_of::<f32>()) as *const c_void
-            ));
-            gl_call!(gl::EnableVertexAttribArray(1));
-            gl::BindVertexArray(0);
-        }
         // =============================================================
         // Model
         // =============================================================
@@ -368,7 +316,6 @@ impl GameState {
         shaders.insert(ShaderType::Skybox, skybox_shader);
         shaders.insert(ShaderType::DebugLight, debug_light_shader);
         shaders.insert(ShaderType::Depth, depth_shader);
-        shaders.insert(ShaderType::GroundPlane, ground_plane_shader);
         shaders.insert(ShaderType::DebugShadowMap, debug_depth_quad);
 
         let entity_manager = EntityManager::new(10_000);
@@ -738,54 +685,10 @@ impl GameState {
             }
         }
 
-
-        // =========================
-        // Render floor for shadows
-        // =========================
-        unsafe {
-            gl::BindVertexArray(*self.vaos.get(&VaoType::GroundPlane).unwrap());
-            // Because we only need positions for the depth pass,
-            // we typically only set the `model` matrix (and in the shader
-            // multiply by `light_space_mat`). Normals & materials aren’t needed.
-        }
-        let model_floor = Mat4::IDENTITY;
-        depth_shader.set_mat4("model", model_floor);
-
-        // draw the floor
-        unsafe {
-            gl::DrawArrays(gl::TRIANGLES, 0, 6);
-        }
-
-        unsafe { gl::BindVertexArray(0); }
+        unsafe { gl_call!(gl::BindVertexArray(0)); }
     }
 
     pub fn render_sample(&mut self) {
-        // let floor_shader = self.shaders.get(&ShaderType::GroundPlane).unwrap();
-        // // =============================================================
-        // // Render floor
-        // // =============================================================
-        // floor_shader.activate();
-        // unsafe {
-        //     gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-        //     gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-        //     floor_shader.set_int("shadow_map", 0);
-        // }
-
-        // self.camera.model = Mat4::IDENTITY;
-        // floor_shader.set_mat4("model", self.camera.model);
-//(164,1// 83,109)
-        // floor_shader.set_vec3("ground_color", vec3(164.0 / 255.0, 183.0 / 255.0, 109.0 / 255.0));
-        // floor_shader.set_mat4("view", self.camera.view);
-        // floor_shader.set_mat4("projection", self.camera.projection);
-        // floor_shader.set_mat4("light_space_mat", self.camera.light_space);
-        // floor_shader.set_dir_light("dir_light", &self.light_manager.dir_light);
-
-        // unsafe {
-        //     gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::GroundPlane).unwrap()));
-        //     gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 6));
-        //     // gl::Disable(gl::FRAMEBUFFER_SRGB); 
-        // }
-
         // =============================================================
         // Render Model
         // =============================================================
