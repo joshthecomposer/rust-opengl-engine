@@ -80,6 +80,7 @@ impl GameState {
 
         unsafe {
             gl_call!(gl::Enable(gl::BLEND));
+            gl_call!(gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA));
             gl_call!(gl::Enable(gl::TEXTURE_CUBE_MAP_SEAMLESS));
             gl_call!(gl::Viewport(0, 0, width, height));
             gl_call!(gl::Enable(gl::DEPTH_TEST));

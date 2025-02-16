@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use glam::{vec2, vec3, Vec3};
-use image::{ImageBuffer, Rgb};
+use image::{ImageBuffer, Rgb, Rgba};
 
 use crate::{mesh::{Mesh, Texture, Vertex}, model::Model, shaders::Shader};
 
@@ -150,9 +150,9 @@ impl Grid {
 
         for (x, _y, pixel) in imgbuf.enumerate_pixels_mut() {
             if x < width / 2 {
-                *pixel = Rgb([color_dark, color_dark, color_dark]);
+                *pixel = Rgba([color_dark, color_dark, color_dark, 100]);
             } else {
-                *pixel = Rgb([color_light, color_light, color_light]);
+                *pixel = Rgba([color_light, color_light, color_light, 100]);
             }
         }
 
