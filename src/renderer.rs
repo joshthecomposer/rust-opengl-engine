@@ -274,6 +274,11 @@ impl Renderer {
         }
 
             model.value.draw(shader);
+
+            unsafe {
+                gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+                gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
+            }
         }
     }
 
