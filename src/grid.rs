@@ -17,7 +17,8 @@ pub struct GridCell {
 }
 
 pub struct Grid {
-    pub cells: HashMap<usize, GridCell>,
+    // pub cells: HashMap<usize, GridCell>,
+    pub cells: Vec<GridCell>,
     pub next_cell_id: usize,
     pub model: Model,
     pub cell_size: f32,
@@ -28,8 +29,8 @@ pub struct Grid {
 impl Grid {
     pub fn new(width: usize, height: usize) -> Grid {
         Grid {
-            cells: HashMap::new(),
-            next_cell_id: 1,
+            cells: Vec::with_capacity(width * height) ,
+            next_cell_id: 0,
             model: Model::new(),
             cell_size: 0.0,
             width,
@@ -122,10 +123,8 @@ impl Grid {
                     adjacent_cells: vec![],
                 };
 
-                self.cells.insert(cell.id, cell);
+                self.cells.push(cell);
                 self.next_cell_id += 1;
-
-
             }
             
             if self.width % 2 == 0 {
@@ -168,12 +167,10 @@ impl Grid {
         // TODO: If you are out of bounds do something else, like a -1 or something to signify.
         let cell_id = cell_z * self.width + cell_x + 1;
         
-        self.cells.get(&cell_id)
+        self.cells.get(cell_id)
     }
 
     pub fn draw(&mut self, shader: &mut Shader) {
         self.model.draw(shader);
     }
-
-
 }

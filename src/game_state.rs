@@ -324,7 +324,8 @@ impl GameState {
         shaders.insert(ShaderType::Depth, depth_shader);
         shaders.insert(ShaderType::DebugShadowMap, debug_depth_quad);
 
-        let entity_manager = EntityManager::new(10_000);
+        let mut entity_manager = EntityManager::new(10_000);
+        entity_manager.populate_floor_tiles(&grid, "resources/models/kenney_platformer-kit/Models/OBJ format/block-grass.obj");
         let mut light_manager = Lights::new(50);
         light_manager.dir_light = DirLight::default_white();
 
@@ -739,5 +740,11 @@ impl GameState {
         model_shader.set_dir_light("dir_light", &self.light_manager.dir_light);
         
         self.grid.draw(model_shader);
+
+        // =============================================================
+        // Entity manager
+        // =============================================================
+
+        self.entity_manager.draw(model_shader, &mut self.camera, &self.light_manager);       
     }
 }
