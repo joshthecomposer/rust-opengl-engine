@@ -238,7 +238,7 @@ impl Renderer {
             gl_call!(gl::ClearColor(0.0, 0.0, 0.0, 1.0));
             gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT));
         }
-        let debug = true;
+        let debug = false;
         if debug {
             unsafe {
                 let depth_debug_quad = self.shaders.get(&ShaderType::DebugShadowMap).unwrap();
@@ -251,12 +251,13 @@ impl Renderer {
         }
         // SHADOW MUST GO FIRST
         self.skybox_pass(camera, fb_width, fb_height);
-        self.debug_light_pass(camera);
+        // self.debug_light_pass(camera);
         self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
-
+        
+        camera.reset_matrices(fb_width as f32 / fb_height as f32);
+        let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
         for model in em.models.iter() {
             let trans = em.transforms.get(model.key()).unwrap();
-            let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
             camera.model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
 
             shader.activate();
@@ -265,6 +266,12 @@ impl Renderer {
             shader.set_mat4("projection", camera.projection);
             shader.set_mat4("light_space_mat", camera.light_space);
             shader.set_dir_light("dir_light", &light_manager.dir_light);
+            unsafe {
+                // TODO: This could clash, we need to make sure we reserve texture0 in our dynamic shader code.
+                gl_call!(gl::ActiveTexture(gl::TEXTURE2));
+                gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+                shader.set_int("shadow_map", 2);
+        }
 
             model.value.draw(shader);
         }

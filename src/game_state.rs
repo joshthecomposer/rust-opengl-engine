@@ -74,7 +74,7 @@ impl GameState {
         }
 
         let mut entity_manager = EntityManager::new(10_000);
-        entity_manager.populate_floor_tiles(&grid, "resources/models/kenney_platformer-kit/Models/OBJ format/block-grass.obj");
+        // entity_manager.populate_floor_tiles(&grid, "resources/models/kenney_platformer-kit/Models/OBJ format/block-grass.obj");
         entity_manager.create_entity(EntityType::ArcherTower_01, vec3(0.0, 0.0, 0.0), vec3(0.2, 0.13, 0.2), "resources/models/my_obj/tower.obj");
 
         let mut light_manager = Lights::new(50);
