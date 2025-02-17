@@ -1,8 +1,8 @@
 use std::{ffi::c_void, path::Path};
 
-use glam::vec3;
-use image::GenericImageView;
-use russimp::{material::{Material as RMaterial, PropertyTypeInfo, TextureType}, mesh::Mesh as RMesh, node::Node, scene::{PostProcess, Scene}};
+use glam::{vec3, Vec3};
+use image::{GenericImageView, ImageBuffer, Rgba};
+use russimp::{material::{Material as RMaterial, MaterialProperty, PropertyTypeInfo, TextureType}, mesh::Mesh as RMesh, node::Node, scene::{PostProcess, Scene}};
 use russimp_sys::AI_SCENE_FLAGS_INCOMPLETE;
 
 use crate::{gl_call, mesh::{Mesh, Texture, Vertex}, shaders::Shader};
@@ -84,6 +84,9 @@ impl Model {
                     let tex_coord = glam::Vec2 {x: ai_tex_coord.x, y: ai_tex_coord.y};
                     vertex.tex_coords = tex_coord;
                 }
+            } else {
+                let tex_coord = glam::Vec2 {x: 0.0, y: 0.0};
+                vertex.tex_coords = tex_coord;
             }
             mesh.vertices.push(vertex);
         }
@@ -112,22 +115,41 @@ impl Model {
     pub fn load_material_textures(&mut self, ai_mat: &RMaterial, texture_type: TextureType, my_type: String) -> Vec<Texture> {
         let mut textures: Vec<Texture> = vec![];
         let mut path = "".to_string();
+        let mut skip = false;
 
         if let Some(ai_texes_cell) = ai_mat.textures.get(&texture_type) {
             dbg!("found their diffuse");
             let ai_tex = ai_texes_cell.borrow();
             path = ai_tex.filename.clone();
-        } else {
-            if let Some(found_path) = Self::try_parse_diffuse_texture_path(ai_mat, texture_type) {
+        } else if let Some(found_path) = Self::try_parse_diffuse_texture_path(ai_mat, texture_type) {
                 path = found_path.clone();
-            } else {
-                dbg!("Didn't find it");
-                dbg!(&path);
-                return vec![];
+        } else if let Some(diffuse_color) = Self::try_parse_diffuse_color(ai_mat) {
+            dbg!("Falling back to diffuse_color");
+            // TODO: This overwrites multiple times potentially, we should check if the texture has already been saved.
+            let mut imgbuf = ImageBuffer::new(1,1);
+
+            let color_u8 = [
+                (diffuse_color.x * 255.0) as u8,
+                (diffuse_color.y * 255.0) as u8,
+                (diffuse_color.z * 255.0) as u8,
+                255,
+            ];
+
+            for pixel in imgbuf.pixels_mut() {
+                *pixel = Rgba(color_u8);
             }
+
+            path = format!("{:.3}-{:.3}-{:.3}.png" ,diffuse_color.x, diffuse_color.y, diffuse_color.z);
+            let save_loc = format!("{}/{:.3}-{:.3}-{:.3}.png", self.directory ,diffuse_color.x, diffuse_color.y, diffuse_color.z);
+
+            imgbuf
+                .save(save_loc)
+                .expect("Failed to save texture image");
+        } else {
+            dbg!("Didn't find a texture and no color found");
+            return vec![];
         }
-        
-        let mut skip = false;
+            
         for tex in self.textures_loaded.iter() {
             if tex.path == path  {
                 textures.push(tex.clone());
@@ -146,6 +168,23 @@ impl Model {
         textures
     }
 
+    pub fn generate_texture_from_color(input: Vec3) -> String {
+        "".to_string()
+    }
+
+    pub fn try_parse_diffuse_color(ai_mat: &RMaterial) -> Option<Vec3> {
+        for prop in ai_mat.properties.iter() {
+            if prop.key == "$clr.diffuse" {
+                if let PropertyTypeInfo::FloatArray(ref data) = prop.data {
+                    if data.len() >= 3 {
+                        return Some(vec3(data[0], data[1], data[2]));
+                    }
+                }
+            }
+        }
+        None
+    }
+
     pub fn try_parse_diffuse_texture_path(ai_mat: &RMaterial, tex_type: TextureType) -> Option<String> {
         for prop in ai_mat.properties.iter() {
             if prop.key == "$tex.file" && prop.semantic == tex_type {
@@ -161,6 +200,7 @@ impl Model {
         let file_name = model.directory.clone() + "/" + path.as_str();
 
         dbg!(&path);
+        dbg!(&file_name);
 
         let mut texture_id = 0;
         unsafe {
