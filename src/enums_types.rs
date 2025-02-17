@@ -48,4 +48,5 @@ pub enum EntityType {
     Donut,
     ArcherTower_01,
     BlockGrass,
+    Tree,
 }
