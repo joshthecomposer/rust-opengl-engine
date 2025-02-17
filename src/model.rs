@@ -198,5 +198,14 @@ impl Model {
             mesh.draw(shader);
         }
     }
+
+    pub fn shadow_pass(&self, shader: &mut Shader) {
+        shader.activate();
+        for mesh in self.meshes.iter() {
+            unsafe {
+                gl_call!(gl::BindVertexArray(mesh.vao));
+            }
+        }
+    }
 }
 
