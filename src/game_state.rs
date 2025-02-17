@@ -1,5 +1,5 @@
 
-use glam::vec3;
+use glam::{vec3, Vec3};
 use glfw::{Action, Context, Glfw, GlfwReceiver, MouseButton, PWindow, WindowEvent};
 use imgui::{Ui};
 
@@ -74,8 +74,9 @@ impl GameState {
         }
 
         let mut entity_manager = EntityManager::new(10_000);
-        // entity_manager.populate_floor_tiles(&grid, "resources/models/kenney_platformer-kit/Models/OBJ format/block-grass.obj");
+        entity_manager.populate_floor_tiles(&grid, "resources/models/kenney_platformer-kit/Models/OBJ format/block-grass.obj");
         entity_manager.create_entity(EntityType::ArcherTower_01, vec3(0.0, 0.0, 0.0), vec3(0.2, 0.13, 0.2), "resources/models/my_obj/tower.obj");
+        entity_manager.create_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(2.0), "resources/models/my_obj/donut.obj");
 
         let mut light_manager = Lights::new(50);
         light_manager.dir_light = DirLight::default_white();
