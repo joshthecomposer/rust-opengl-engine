@@ -256,11 +256,11 @@ impl Renderer {
         
         camera.reset_matrices(fb_width as f32 / fb_height as f32);
         let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
+        shader.activate();
         for model in em.models.iter() {
             let trans = em.transforms.get(model.key()).unwrap();
             camera.model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
 
-            shader.activate();
             shader.set_mat4("model", camera.model);
             shader.set_mat4("view", camera.view);
             shader.set_mat4("projection", camera.projection);
@@ -354,7 +354,8 @@ impl Renderer {
         depth_shader.activate();
 
         for model in em.models.iter() {
-            let model_model = Mat4::IDENTITY * Mat4::from_translation(vec3(0.0, 0.0, 0.0)) * Mat4::from_scale(vec3(0.2, 0.13, 0.2));
+            let trans = em.transforms.get(model.key()).unwrap();
+            let model_model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
             for mesh in model.value().meshes.iter() {
                 unsafe {
                     gl::BindVertexArray(mesh.vao);
