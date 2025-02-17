@@ -21,10 +21,6 @@ uniform DirLight dir_light;
 
 float ShadowCalculation(float dot_light_normal) {
 	vec3 pos = FragPosLightSpace.xyz * 0.5 + 0.5;
-
-	// if (pos.x < 0.0 || pos.x > 1.0 || pos.y < 0.0 || pos.y > 1.0 || pos.z < 0.0 || pos.z > 1.0) {
-	// 	return 1.0;
-	// }
 	if (pos.z > 1.0) {
 		pos.z = 1.0;
 	}

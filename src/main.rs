@@ -13,6 +13,7 @@ mod model;
 mod mesh;
 mod level;
 mod grid;
+mod renderer;
 
 use game_state::GameState;
 use model::Model;

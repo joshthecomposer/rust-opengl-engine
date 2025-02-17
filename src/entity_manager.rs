@@ -1,6 +1,6 @@
 use glam::{vec3, Mat4, Quat, Vec3};
 
-use crate::{camera::Camera, enums_types::{EntityType, Transform}, grid::Grid, lights::Lights, model::Model, shaders::Shader, sparse_set::SparseSet};
+use crate::{camera::Camera, enums_types::{EntityType, Transform}, gl_call, grid::Grid, lights::Lights, model::Model, shaders::Shader, some_data::{SHADOW_HEIGHT, SHADOW_WIDTH}, sparse_set::SparseSet};
 
 pub struct EntityManager {
     pub next_entity_id: usize,
@@ -22,11 +22,11 @@ impl EntityManager {
     pub fn create_unit_cube(&mut self, position: Vec3, rotation: Mat4) {
     }
 
-    pub fn create_entity(&mut self, entity_type: EntityType, position: Vec3, model_path: &str) {
+    pub fn create_entity(&mut self, entity_type: EntityType, position: Vec3, scale: Vec3, model_path: &str) {
         let transform = Transform {
             position,
             rotation: Mat4::IDENTITY,
-            scale: vec3(1.2, 1.0, 1.2),
+            scale,
         };
 
         let model = Model::load(model_path);
@@ -42,27 +42,10 @@ impl EntityManager {
         for cell in grid.cells.iter() {
             let mut pos = cell.position;
             pos.y -= 0.98;
-            self.create_entity(EntityType::BlockGrass, pos, model_path);
+            self.create_entity(EntityType::BlockGrass, pos, vec3(1.2, 1.0, 1.2), model_path);
         }
     }
 
     pub fn update(&mut self, delta: &f64) {
-    }
-
-    pub fn draw(&mut self, shader: &mut Shader, camera: &mut Camera, light_manager: &Lights) {
-        for model in self.models.iter() {
-            let trans = self.transforms.get(model.key()).unwrap();
-
-            camera.model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
-
-            shader.activate();
-            shader.set_mat4("model", camera.model);
-            shader.set_mat4("view", camera.view);
-            shader.set_mat4("projection", camera.projection);
-            shader.set_mat4("light_space_mat", camera.light_space);
-            shader.set_dir_light("dir_light", &light_manager.dir_light);
-
-            model.value.draw(shader);
-        }
     }
 }
