@@ -1,9 +1,9 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs::{read_to_string, File}, io::Read};
 
 use glam::{vec2, vec3, Vec3};
 use image::{ImageBuffer, Rgb, Rgba};
 
-use crate::{mesh::{Mesh, Texture, Vertex}, model::Model, shaders::Shader};
+use crate::{enums_types::{CellType, EntityType}, mesh::{Mesh, Texture, Vertex}, model::Model, shaders::Shader};
 
 #[derive(Debug)]
 pub struct GridCell {
@@ -14,6 +14,7 @@ pub struct GridCell {
     pub blocked: bool,
     // used to precalculate the neighbors for A*
     pub adjacent_cells: Vec<usize>,
+    pub cell_type: CellType,
 }
 
 pub struct Grid {
@@ -27,7 +28,7 @@ pub struct Grid {
 }
 
 impl Grid {
-    pub fn new(width: usize, height: usize) -> Grid {
+    fn new(width: usize, height: usize) -> Grid {
         Grid {
             cells: Vec::with_capacity(width * height) ,
             next_cell_id: 0,
@@ -38,7 +39,34 @@ impl Grid {
         }
     }
 
-    pub fn generate(&mut self) {
+    pub fn parse_grid_data(file_path: &str) -> Grid {
+        let file = read_to_string(file_path).unwrap().replace(' ', "");
+
+        let grid_width = file.lines().last().unwrap().len();
+        let grid_height = file.lines().count();
+
+        let mut grid = Grid::new(grid_width, grid_height);
+        grid.generate();
+
+        for (y, l) in file.lines().enumerate() {
+            for (x, c) in l.char_indices() {
+                let index = y * grid_width + x;
+                let cell = grid.cells.get_mut(index).expect("grid cell didn't exist");
+                match c {
+                    '0'=> { cell.cell_type = CellType::Grass },
+                    'S'=> { cell.cell_type = CellType::Path },
+                    'T'=> { cell.cell_type = CellType::Tree },
+                    'X'=> { cell.cell_type = CellType::Path },
+                    'E'=> { cell.cell_type = CellType::Path },
+                    _  => { cell.cell_type = CellType::Grass },
+                }
+            }
+        }
+
+        grid
+    }
+
+    fn generate(&mut self) {
         Self::generate_texture();
         self.generate_model();
     }
@@ -122,6 +150,7 @@ impl Grid {
                     width: cell_size, 
                     blocked: false,
                     adjacent_cells: vec![],
+                    cell_type: CellType::Grass,
                 };
 
                 self.cells.push(cell);

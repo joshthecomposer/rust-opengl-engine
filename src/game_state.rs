@@ -59,9 +59,7 @@ impl GameState {
 
         gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
 
-
-        let mut grid = Grid::new(10, 10);
-        grid.generate();
+        let mut grid = Grid::parse_grid_data("resources/test_level.txt");
 
         unsafe {
             gl_call!(gl::Enable(gl::BLEND));
@@ -76,48 +74,15 @@ impl GameState {
         }
 
         let mut entity_manager = EntityManager::new(10_000);
+
+        entity_manager.populate_cell_rng(&grid);
         entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/tile_01.obj");
-        entity_manager.create_entity(EntityType::ArcherTower_01, vec3(0.0, 0.0, 0.0), vec3(0.2, 0.13, 0.2), "resources/models/my_obj/tower.obj");
+        entity_manager.create_entity(EntityType::ArcherTower01, vec3(0.0, 0.0, 0.0), vec3(0.2, 0.13, 0.2), "resources/models/my_obj/tower.obj");
         entity_manager.create_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(2.0), "resources/models/my_obj/donut.obj");
 
 //        entity_manager.create_entity(EntityType::Tree, grid.cells.get(5).unwrap().position, Vec3::splat(1.0), "resources/models/obj/tree_default.obj");
 //        entity_manager.create_entity(EntityType::Tree, grid.cells.get(15).unwrap().position, Vec3::splat(1.0), "resources/models/obj/tree_oak.obj");
 //        entity_manager.create_entity(EntityType::Tree, grid.cells.get(7).unwrap().position, Vec3::splat(1.0), "resources/models/obj/tree_oak_dark.obj");
-        let mut rng = ChaCha8Rng::seed_from_u64(1);
-         let grasses = [
-             "resources/models/my_obj/ground_07.obj",
-             "resources/models/my_obj/ground_06.obj",
-             "resources/models/my_obj/ground_05.obj",
-             "resources/models/my_obj/ground_04.obj",
-             "resources/models/my_obj/ground_03.obj",
-             "resources/models/my_obj/ground_02.obj",
-             "resources/models/my_obj/ground_01.obj",
-         ];
-
-        let within = grid.cell_size / 3.0; // Subtile size
-
-        for i in 0..grid.cells.len() {
-            if let Some(cell) = grid.cells.get(i) {
-                let cell_pos = cell.position; // Center of the cell
-
-                for x in -1..=1 {
-                    for z in -1..=1 {
-                        let num = rng.gen_range(0..grasses.len()); // Get random grass type
-
-                        // Offset to distribute grass tiles around the cell center
-                        let offset_x = x as f32 * within;
-                        let offset_z = z as f32 * within;
-
-                        entity_manager.create_entity(
-                            EntityType::Tree, // Change to appropriate type
-                            vec3(cell_pos.x + offset_x, 0.0, cell_pos.z + offset_z), // Spread around center
-                            Vec3::splat(1.0),
-                            grasses[num],
-                        );
-                    }
-                }
-            }
-        }
 
         let mut light_manager = Lights::new(50);
         light_manager.dir_light = DirLight::default_white();
