@@ -15,19 +15,35 @@ mod level;
 mod grid;
 mod renderer;
 
+use std::fs::OpenOptions;
+use std::io::Write;
+
 use game_state::GameState;
 use model::Model;
 use russimp::scene::{Scene, PostProcess};
 use russimp::Russult;
-// use sparse_set::SparseSet;
+use sparse_set::SparseSet;
 
 fn main() {
-     let mut state = GameState::new();
-     while !state.window.should_close() {
-         state.process_events();
-         state.update();
-         state.render();
-     }
+    let mut scene = Scene::from_file("resources/models/my_obj/ground_01.obj", vec![]);
+    
+    let debug_output = format!("{:#?}", scene);
+
+    // Write to a file
+    let mut file = OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open("debug_output.txt")
+        .expect("Failed to open debug file");
+
+    writeln!(file, "{}", debug_output).expect("Failed to write to file");
+
+   let mut state = GameState::new();
+   while !state.window.should_close() {
+       state.process_events();
+       state.update();
+       state.render();
+   }
 }
 
 
