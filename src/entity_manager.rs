@@ -1,12 +1,15 @@
 use glam::{vec3, Mat4, Quat, Vec3};
+use rand::{Rng, SeedableRng};
+use rand_chacha::ChaCha8Rng;
 
-use crate::{camera::Camera, enums_types::{EntityType, Transform}, gl_call, grid::Grid, lights::Lights, model::Model, shaders::Shader, some_data::{SHADOW_HEIGHT, SHADOW_WIDTH}, sparse_set::SparseSet};
+use crate::{camera::Camera, enums_types::{CellType, EntityType, Transform}, gl_call, grid::Grid, lights::Lights, model::Model, shaders::Shader, some_data::{GRASSES, SHADOW_HEIGHT, SHADOW_WIDTH, TREES}, sparse_set::SparseSet};
 
 pub struct EntityManager {
     pub next_entity_id: usize,
     pub transforms: SparseSet<Transform>,
     pub entity_types: SparseSet<EntityType>,
     pub models: SparseSet<Model>,
+    pub rng: ChaCha8Rng,
 }
 
 impl EntityManager {
@@ -15,7 +18,8 @@ impl EntityManager {
             next_entity_id: 0,
             transforms: SparseSet::with_capacity(max_entities),
             entity_types: SparseSet::with_capacity(max_entities),
-            models: SparseSet::with_capacity(max_entities)
+            models: SparseSet::with_capacity(max_entities),
+            rng: ChaCha8Rng::seed_from_u64(1)
         }
     }
 
@@ -56,6 +60,45 @@ impl EntityManager {
             // pos.y -= 0.98;
             self.create_entity(EntityType::BlockGrass, pos, vec3(1.0, 1.0, 1.0), model_path);
         }
+    }
+
+    pub fn populate_cell_rng(&mut self, grid: &Grid) {
+        for cell in grid.cells.iter() {
+
+            let (entity_data, subtile_size, entity_type) = match cell.cell_type {
+                CellType::Tree => (TREES, 3.0, EntityType::Tree),
+                CellType::Grass => (GRASSES, 3.0, EntityType::Grass),
+                _=> continue,
+            };
+
+            let within = grid.cell_size / subtile_size;
+
+            let cell_pos = cell.position;
+            for x in -1..=1 {
+                for z in -1..=1 {
+                    let num = self.rng.gen_range(0..entity_data.len() + 1);
+                    let scale = match entity_type {
+                        EntityType::Grass => self.rng.gen_range(20..=45) as f32 / 100.0,
+                        EntityType::Tree => self.rng.gen_range(90..=110) as f32 / 100.0,
+                        _=> 1.0,
+                };
+                    let smoff = self.rng.gen_range(-0.1..=0.1);
+
+                    let offset_x = x as f32 * within;
+                    let offset_z = z as f32 * within;
+
+                    if num < entity_data.len() {
+                        self.create_entity(
+                            entity_type.clone(),
+                            vec3(cell_pos.x + offset_x + smoff, 0.0, cell_pos.z + offset_z + smoff),
+                            Vec3::splat(scale),
+                            entity_data[num],
+                        );
+                    }
+                }
+            }
+        }
+
     }
 
     pub fn update(&mut self, delta: &f64) {

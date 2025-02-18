@@ -24,6 +24,8 @@ use russimp::scene::{Scene, PostProcess};
 use russimp::Russult;
 use sparse_set::SparseSet;
 
+use crate::grid::Grid;
+
 fn main() {
     let mut scene = Scene::from_file("resources/models/flowers_grass_fbx/model_bush_01.fbx", vec![]);
     
@@ -37,6 +39,8 @@ fn main() {
         .expect("Failed to open debug file");
 
     writeln!(file, "{}", debug_output).expect("Failed to write to file");
+
+
 
    let mut state = GameState::new();
    while !state.window.should_close() {

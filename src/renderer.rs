@@ -340,7 +340,7 @@ impl Renderer {
     fn shadow_pass(&mut self, em: &EntityManager, camera: &mut Camera, light_manager: &Lights, fb_width: u32, fb_height: u32) {
         let shader = self.shaders.get_mut(&ShaderType::Depth).unwrap();
         let near_plane = 1.0;
-        let far_plane = 10.0;
+        let far_plane = 20.0;
         let light_projection = Mat4::orthographic_rh_gl(-10.0, 10.0, -10.0, 10.0, near_plane, far_plane);
         let light_view = Mat4::look_at_rh(light_manager.dir_light.view_pos, vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
 

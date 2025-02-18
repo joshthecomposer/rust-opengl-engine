@@ -39,7 +39,7 @@ impl Camera {
             target: vec3(0.0, 0.0, 0.0),
             right: vec3(0.0, 0.0, 0.0),
             fovy: 45.0_f32.to_radians(),
-            movement_speed: 50.0,
+            movement_speed: 25.0,
             sensitivity: 0.1,
             first_mousing: true,
             last_x: 0.0,
@@ -119,6 +119,7 @@ impl Camera {
                 self.forward = self.direction;
             },
             _ => {}
+
         }
         
         // Zoom
@@ -145,5 +146,7 @@ impl Camera {
         if window.get_key(Key::D) == Action::Press {
             self.position -= ((self.up.cross(self.forward).normalize()) * self.movement_speed) * delta as f32;
         }
+
+        // self.position.y = 0.5;
     }
 }

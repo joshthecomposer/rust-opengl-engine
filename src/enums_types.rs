@@ -44,9 +44,18 @@ pub struct Transform {
     pub scale: Vec3,
 }
 
+#[derive(Clone, Debug)]
 pub enum EntityType {
     Donut,
-    ArcherTower_01,
+    ArcherTower01,
     BlockGrass,
     Tree,
+    Grass,
+}
+
+#[derive(Clone, Debug)]
+pub enum CellType {
+    Grass,
+    Tree,
+    Path
 }

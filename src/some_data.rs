@@ -173,3 +173,28 @@ pub const GROUND_PLANE:[f32; 36] = [
         -100.0, 0.0, -100.0,  0.0, 1.0, 0.0,  
          100.0, 0.0, -100.0,  0.0, 1.0, 0.0,  
 ];
+
+pub const GRASSES:[&str;6] = [
+     "resources/models/tuft/tuffft.obj",
+     "resources/models/tuft/tuffft.obj",
+     "resources/models/tuft/tuffft.obj",
+     "resources/models/tuft/tuffft.obj",
+     "resources/models/tuft/tuffft.obj",
+     "resources/models/tuft/tuffft.obj",
+    // "resources/models/my_obj/ground_07.obj",
+    // "resources/models/my_obj/ground_06.obj",
+    // "resources/models/my_obj/ground_05.obj",
+    // "resources/models/my_obj/ground_04.obj",
+    // "resources/models/my_obj/ground_03.obj",
+    // "resources/models/my_obj/ground_02.obj",
+    // "resources/models/my_obj/ground_01.obj"
+];
+
+pub const TREES:[&str; 6] = [
+    "resources/models/obj/tree_small.obj",
+    "resources/models/obj/tree_thin.obj",
+    "resources/models/obj/tree_tall.obj",
+    "resources/models/obj/tree_default.obj",
+    "resources/models/obj/tree_cone.obj",
+    "resources/models/obj/tree_oak_dark.obj",
+];
