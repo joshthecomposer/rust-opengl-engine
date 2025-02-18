@@ -6,7 +6,7 @@ use russimp::mesh::Mesh as RMesh;
 use crate::{gl_call, shaders::Shader};
 
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Vertex {
     pub position: Vec3,
     pub normal: Vec3,
@@ -32,7 +32,7 @@ pub struct Texture {
 }
 
 #[repr(C)]
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Mesh {
     pub vertices: Vec<Vertex>,
     pub indices: Vec<u32>,

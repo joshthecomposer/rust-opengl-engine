@@ -292,14 +292,19 @@ impl Renderer {
         shader.set_mat4("projection", camera.projection);
         shader.set_mat4("light_space_mat", camera.light_space);
         shader.set_dir_light("dir_light", &light_manager.dir_light);
-
-        grid.draw(shader);
+        unsafe {
+            // TODO: Fix the wrapping of this quad
+            gl_call!(gl::Disable(gl::CULL_FACE));
+            grid.draw(shader);
+            gl_call!(gl::Enable(gl::CULL_FACE));
+        }
     }
 
     fn skybox_pass(&mut self, camera: &mut Camera, fb_width: u32, fb_height: u32) {
         camera.reset_matrices(fb_width as f32 / fb_height as f32);
         
         unsafe {
+            gl_call!(gl::Disable(gl::CULL_FACE));
             let status = gl::CheckFramebufferStatus(gl::FRAMEBUFFER);
             if status != gl::FRAMEBUFFER_COMPLETE {
                 println!("Framebuffer incomplete: {}", status);
@@ -328,6 +333,7 @@ impl Renderer {
             gl_call!(gl::BindVertexArray(0));
 
             gl_call!(gl::DepthFunc(gl::LESS));
+            gl_call!(gl::Enable(gl::CULL_FACE));
         }
     }
 
@@ -347,7 +353,9 @@ impl Renderer {
             gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER, *self.fbos.get(&FboType::DepthMap).unwrap()));
             gl_call!(gl::Clear(gl::DEPTH_BUFFER_BIT));
             // Render scene
+            gl_call!(gl::CullFace(gl::FRONT));
             self.render_sample_depth(em);
+            gl_call!(gl::CullFace(gl::BACK)); 
             // End render
             gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER,0));
             gl_call!(gl::Viewport(0, 0, fb_width as i32, fb_height as i32));
