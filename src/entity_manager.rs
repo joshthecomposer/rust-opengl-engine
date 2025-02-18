@@ -40,9 +40,9 @@ impl EntityManager {
 
     pub fn populate_floor_tiles(&mut self, grid: &Grid, model_path: &str) {
         for cell in grid.cells.iter() {
-            let mut pos = cell.position;
-            pos.y -= 0.98;
-            self.create_entity(EntityType::BlockGrass, pos, vec3(1.2, 1.0, 1.2), model_path);
+            let pos = cell.position;
+            // pos.y -= 0.98;
+            self.create_entity(EntityType::BlockGrass, pos, vec3(1.0, 1.0, 1.0), model_path);
         }
     }
 

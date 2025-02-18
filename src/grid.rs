@@ -63,6 +63,7 @@ impl Grid {
     }
 
     fn generate_grid_mesh(&mut self, cell_size: f32) -> Mesh {
+        self.cell_size = cell_size;
         let mut vertices = Vec::<Vertex>::new();
         let mut indices = Vec::<u32>::new();
         let mut mesh = Mesh::new();
