@@ -25,7 +25,7 @@ use russimp::Russult;
 use sparse_set::SparseSet;
 
 fn main() {
-    let mut scene = Scene::from_file("resources/models/my_obj/ground_01.obj", vec![]);
+    let mut scene = Scene::from_file("resources/models/flowers_grass_fbx/model_bush_01.fbx", vec![]);
     
     let debug_output = format!("{:#?}", scene);
 
