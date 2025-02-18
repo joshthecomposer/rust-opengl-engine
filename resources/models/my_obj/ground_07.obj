@@ -1,6 +1,6 @@
 # Blender 4.3.0
 # www.blender.org
-mtllib grass_01.mtl
+mtllib ground_07.mtl
 o Grass_007
 v 0.056590 -0.006842 0.035530
 v 0.067747 -0.003071 -0.006106

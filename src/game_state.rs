@@ -4,6 +4,8 @@ use glfw::{Action, Context, Glfw, GlfwReceiver, MouseButton, PWindow, WindowEven
 use imgui::{Ui};
 
 use crate::{camera::Camera, entity_manager::EntityManager, enums_types::EntityType, gl_call, grid::Grid, lights::{DirLight, Lights}, renderer::Renderer};
+use rand::prelude::*;
+use rand_chacha::ChaCha8Rng;
 
 pub struct GameState {
     pub delta_time: f64,
@@ -74,7 +76,7 @@ impl GameState {
         }
 
         let mut entity_manager = EntityManager::new(10_000);
-        entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/ground_01.obj");
+        // entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/tile_01.obj");
         entity_manager.create_entity(EntityType::ArcherTower_01, vec3(0.0, 0.0, 0.0), vec3(0.2, 0.13, 0.2), "resources/models/my_obj/tower.obj");
         entity_manager.create_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(2.0), "resources/models/my_obj/donut.obj");
         
@@ -82,11 +84,92 @@ impl GameState {
 //        entity_manager.create_entity(EntityType::Tree, grid.cells.get(5).unwrap().position, Vec3::splat(1.0), "resources/models/obj/tree_default.obj");
 //        entity_manager.create_entity(EntityType::Tree, grid.cells.get(15).unwrap().position, Vec3::splat(1.0), "resources/models/obj/tree_oak.obj");
 //        entity_manager.create_entity(EntityType::Tree, grid.cells.get(7).unwrap().position, Vec3::splat(1.0), "resources/models/obj/tree_oak_dark.obj");
-//
-        for i in 16..=25 {
-            entity_manager.create_entity(EntityType::Tree, grid.cells.get(i).unwrap().position, Vec3::splat(0.01), "resources/models/my_obj/grass_07.fbx");
-        }
+        let mut rng = ChaCha8Rng::seed_from_u64(1);
 
+        let grasses = [
+            "resources/models/my_obj/ground_07.obj",
+            "resources/models/my_obj/ground_06.obj",
+            "resources/models/my_obj/ground_05.obj",
+            "resources/models/my_obj/ground_04.obj",
+            "resources/models/my_obj/ground_03.obj",
+            "resources/models/my_obj/ground_02.obj",
+            "resources/models/my_obj/ground_01.obj",
+        ];
+
+        let increment = grid.cell_size / 3.0;
+
+        dbg!(increment);
+
+        for i in 16..=25 {
+            let cell_pos = grid.cells.get(i).unwrap().position;
+            let x = cell_pos.x;
+            let y = cell_pos.y;
+            let z = cell_pos.z;
+
+            let l0 = vec3(x, y, z - increment);
+            let l1 = vec3(x, y, z + increment);
+            let l2 = vec3(x + increment, y, z);
+            let l3 = vec3(x - increment, y, z);
+            let l4 = vec3(x + increment, y, z - increment);
+            let l5 = vec3(x + increment, y, z + increment);
+            let l6 = vec3(x - increment, y, z - increment);
+            let l7 = vec3(x - increment, y, z + increment);
+
+            entity_manager.create_entity(
+                EntityType::Tree,
+                cell_pos,
+                Vec3::splat(1.0),
+                grasses[rng.random_range(0..grasses.len())],
+            );
+            entity_manager.create_entity(
+                EntityType::Tree,
+                l0,
+                Vec3::splat(1.0),
+                grasses[rng.random_range(0..grasses.len())],
+            );
+            entity_manager.create_entity(
+                EntityType::Tree,
+                l1,
+                Vec3::splat(1.0),
+                grasses[rng.random_range(0..grasses.len())],
+            );
+            entity_manager.create_entity(
+                EntityType::Tree,
+                l2,
+                Vec3::splat(1.0),
+                grasses[rng.random_range(0..grasses.len())],
+            );
+            entity_manager.create_entity(
+                EntityType::Tree,
+                l3,
+                Vec3::splat(1.0),
+                grasses[rng.random_range(0..grasses.len())],
+            );
+            entity_manager.create_entity(
+                EntityType::Tree,
+                l4,
+                Vec3::splat(1.0),
+                grasses[rng.random_range(0..grasses.len())],
+            );
+            entity_manager.create_entity(
+                EntityType::Tree,
+                l5,
+                Vec3::splat(1.0),
+                grasses[rng.random_range(0..grasses.len())],
+            );
+            entity_manager.create_entity(
+                EntityType::Tree,
+                l6,
+                Vec3::splat(1.0),
+                grasses[rng.random_range(0..grasses.len())],
+            );
+            entity_manager.create_entity(
+                EntityType::Tree,
+                l7,
+                Vec3::splat(1.0),
+                grasses[rng.random_range(0..grasses.len())],
+            );
+        }
 
         let mut light_manager = Lights::new(50);
         light_manager.dir_light = DirLight::default_white();
