@@ -29,8 +29,20 @@ impl EntityManager {
             scale,
         };
 
-        let model = Model::load(model_path);
+        let mut model = Model::new();
 
+        let mut found = false;
+        for m in self.models.iter_mut() {
+            if m.value().full_path == model_path.to_string() {
+                model = m.value().clone();
+                found = true;
+            }
+        }
+
+        if !found {
+            model = Model::load(model_path);
+        }
+        
         self.transforms.insert(self.next_entity_id, transform);
         self.entity_types.insert(self.next_entity_id, entity_type);
         self.models.insert(self.next_entity_id, model);

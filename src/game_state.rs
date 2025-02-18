@@ -3,7 +3,7 @@ use glam::{vec3, Vec3};
 use glfw::{Action, Context, Glfw, GlfwReceiver, MouseButton, PWindow, WindowEvent};
 use imgui::{Ui};
 
-use crate::{camera::Camera, entity_manager::EntityManager, enums_types::EntityType, gl_call, grid::Grid, lights::{DirLight, Lights}, renderer::Renderer};
+use crate::{camera::Camera, entity_manager::EntityManager, enums_types::EntityType, gl_call, grid::Grid, lights::{DirLight, Lights}, model::Model, renderer::Renderer};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 
@@ -71,15 +71,14 @@ impl GameState {
             gl_call!(gl::Enable(gl::DEPTH_TEST));
             gl::Enable(gl::DEBUG_OUTPUT);
             // gl_call!(gl::Enable(gl::FRAMEBUFFER_SRGB)); 
-            // gl::Enable(gl::CULL_FACE);  
-            // gl::CullFace(gl::BACK);  
+            gl::Enable(gl::CULL_FACE);  
+            gl::CullFace(gl::BACK);  
         }
 
         let mut entity_manager = EntityManager::new(10_000);
         // entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/tile_01.obj");
-        entity_manager.create_entity(EntityType::ArcherTower_01, vec3(0.0, 0.0, 0.0), vec3(0.2, 0.13, 0.2), "resources/models/my_obj/tower.obj");
-        entity_manager.create_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(2.0), "resources/models/my_obj/donut.obj");
-        
+        entity_manager.create_entity(EntityType::ArcherTower_01, vec3(0.0, 0.0, 0.0), vec3(0.2, 0.13, 0.2), "resources/models/my_obj/tower.obj",);
+        entity_manager.create_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(2.0), "resources/models/my_obj/donut.obj", );
 
 //        entity_manager.create_entity(EntityType::Tree, grid.cells.get(5).unwrap().position, Vec3::splat(1.0), "resources/models/obj/tree_default.obj");
 //        entity_manager.create_entity(EntityType::Tree, grid.cells.get(15).unwrap().position, Vec3::splat(1.0), "resources/models/obj/tree_oak.obj");

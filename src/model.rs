@@ -7,10 +7,12 @@ use russimp_sys::AI_SCENE_FLAGS_INCOMPLETE;
 
 use crate::{gl_call, mesh::{Mesh, Texture, Vertex}, shaders::Shader};
 
+#[derive(Clone)]
 pub struct Model {
     pub meshes: Vec<Mesh>,
     pub directory: String,
     pub textures_loaded: Vec<Texture>,
+    pub full_path: String,
 }
 
 impl Model {
@@ -19,11 +21,13 @@ impl Model {
             meshes: vec![],
             directory: "".to_string(),
             textures_loaded: vec![],
+            full_path: "".to_string(),
         }
     }
 
     pub fn load(path: &str) -> Model {
         let mut model = Model::new();
+        model.full_path = path.to_string();
         println!("=============================================================");
         println!("BEGIN LOADING OF SCENE FROM PATH: {}", path);
         println!("=============================================================");
