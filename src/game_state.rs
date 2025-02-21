@@ -120,6 +120,7 @@ impl GameState {
 
                 gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32));
                 gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32));
+                 gl_call!(gl::PixelStorei(gl::UNPACK_ALIGNMENT, 4)); 
             }
 
         }
