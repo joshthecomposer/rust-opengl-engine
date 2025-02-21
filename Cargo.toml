@@ -14,6 +14,6 @@ russimp-sys = "2.0.2"
 russimp = "3.2.0"
 rand = "0.9.0"
 rand_chacha = "0.9.0"
-freetype-rs = { version = "*", features = ["bundled"] }
+rusttype = "0.9.3"
 
 [build-dependencies]
