@@ -57,7 +57,7 @@ vec3 calculate_directional_light() {
 
 	float shadow = ShadowCalculation(dot_light_normal);
 
-    return (shadow * (diffuse) + ambient) * tex_color;
+    return (shadow * (diffuse /* + specular */) + ambient) * tex_color;
 }
 
 void main() {    
