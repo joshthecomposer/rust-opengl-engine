@@ -2,7 +2,7 @@ use std::{ffi::c_void, path::Path};
 
 use glam::{vec3, Vec3};
 use image::{GenericImageView, ImageBuffer, Rgba};
-use russimp::{material::{Material as RMaterial, MaterialProperty, PropertyTypeInfo, TextureType}, mesh::Mesh as RMesh, node::Node, scene::{PostProcess, Scene}};
+use russimp::{material::{Material as RMaterial, MaterialProperty, PropertyTypeInfo, TextureType}, mesh::Mesh as RMesh, node::Node, scene::{PostProcess, Scene}, Vector3D};
 use russimp_sys::AI_SCENE_FLAGS_INCOMPLETE;
 
 use crate::{gl_call, mesh::{Mesh, Texture, Vertex}, shaders::Shader};
@@ -80,7 +80,7 @@ impl Model {
 
             vertex.position = vec3(ai_vertex.x, ai_vertex.y, ai_vertex.z);
 
-            let ai_norm = ai_mesh.normals.get(i).unwrap();
+            let ai_norm = ai_mesh.normals.get(i).unwrap_or(&Vector3D {x: 0.0, y: 1.0, z: 0.0});
             vertex.normal = vec3(ai_norm.x, ai_norm.y, ai_norm.z);
 
             if let Some(tex_coord_list) = ai_mesh.texture_coords.get(0).unwrap() {
