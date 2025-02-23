@@ -47,6 +47,8 @@ impl Renderer {
         model_shader.store_uniform_location("light_space_mat");
         model_shader.store_uniform_location("shadow_map");
 
+        let mut text_shader = Shader::new("resources/shaders/text.vs", "resources/shaders/text.fs");
+
         let mut vao = 0;
         let mut vbo = 0;
         let mut ebo = 0;
@@ -221,6 +223,7 @@ impl Renderer {
         shaders.insert(ShaderType::DebugLight, debug_light_shader);
         shaders.insert(ShaderType::Depth, depth_shader);
         shaders.insert(ShaderType::DebugShadowMap, debug_depth_quad);
+        shaders.insert(ShaderType::Text, text_shader);
 
         Self {
             shaders,

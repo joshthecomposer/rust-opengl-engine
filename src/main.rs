@@ -27,7 +27,7 @@ use sparse_set::SparseSet;
 use crate::grid::Grid;
 
 fn main() {
-    let mut scene = Scene::from_file("resources/models/flowers_grass_fbx/model_bush_01.fbx", vec![]);
+    let mut scene = Scene::from_file("resources/models/my_obj/TestBone/arm.fbx", vec![]);
     
     let debug_output = format!("{:#?}", scene);
 
