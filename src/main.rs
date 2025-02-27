@@ -14,6 +14,7 @@ mod mesh;
 mod level;
 mod grid;
 mod renderer;
+mod animation;
 
 use std::fs::OpenOptions;
 use std::io::Write;

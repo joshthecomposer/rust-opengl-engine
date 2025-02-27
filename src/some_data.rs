@@ -198,3 +198,6 @@ pub const TREES:[&str; 6] = [
     "resources/models/obj/tree_cone.obj",
     "resources/models/obj/tree_oak_dark.obj",
 ];
+
+pub const MAX_BONE_INFLUENCE: u32 = 4;
+pub const MAX_BONES: u32 = 200;

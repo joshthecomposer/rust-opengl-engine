@@ -1,32 +1,42 @@
-use std::{ffi::c_void, path::Path};
+use std::{collections::HashMap, ffi::c_void, path::Path};
 
-use glam::{vec3, Vec3};
+use glam::{vec3, Mat4, Vec3};
 use image::{GenericImageView, ImageBuffer, Rgba};
-use russimp::{material::{Material as RMaterial, MaterialProperty, PropertyTypeInfo, TextureType}, mesh::Mesh as RMesh, node::Node, scene::{PostProcess, Scene}, Vector3D};
-use russimp_sys::AI_SCENE_FLAGS_INCOMPLETE;
+use russimp::{material::{Material as RMaterial, MaterialProperty, PropertyTypeInfo, TextureType, }, mesh::Mesh as RMesh, node::Node, scene::{PostProcess, Scene}, Vector3D};
 
-use crate::{gl_call, mesh::{Mesh, Texture, Vertex}, shaders::Shader};
+use crate::{gl_call, mesh::Texture, shaders::Shader};
 
-#[derive(Clone)]
-pub struct Model {
-    pub meshes: Vec<Mesh>,
+use super::ani_mesh::{AniMesh, AniVertex};
+
+pub struct BoneInfo {
+    id: u32,
+    offset: Mat4,
+}
+
+pub struct AniModel {
+    pub meshes: Vec<AniMesh>,
     pub directory: String,
     pub textures_loaded: Vec<Texture>,
     pub full_path: String,
+
+    pub bone_info_map: HashMap<String, BoneInfo>,
+    pub bone_counter: u32,
 }
 
-impl Model {
+impl AniModel {
     pub fn new() -> Self {
         Self {
             meshes: vec![],
             directory: "".to_string(),
             textures_loaded: vec![],
             full_path: "".to_string(),
+            bone_info_map: HashMap::new(),
+            bone_counter: 0,
         }
     }
 
-    pub fn load(path: &str) -> Model {
-        let mut model = Model::new();
+    pub fn load(path: &str) -> Self {
+        let mut model = Self::new();
         model.full_path = path.to_string();
         println!("=============================================================");
         println!("BEGIN LOADING OF SCENE FROM PATH: {}", path);
@@ -47,7 +57,7 @@ impl Model {
 
         let directory = Path::new(path).parent().unwrap().to_str().unwrap();
 
-        println!("Directory of model is: {}", &directory);
+        println!("Directory of ani_model is: {}", &directory);
         println!("=============================================================");
 
         model.directory = directory.to_string();
@@ -72,11 +82,11 @@ impl Model {
         }
     }
 
-    pub fn process_mesh(&mut self, ai_mesh: &RMesh, scene: &Scene) -> Mesh {
-        let mut mesh = Mesh::new();
+    pub fn process_mesh(&mut self, ai_mesh: &RMesh, scene: &Scene) -> AniMesh {
+        let mut mesh = AniMesh::new();
         // Vertices
         for (i, ai_vertex) in ai_mesh.vertices.iter().enumerate() {
-            let mut vertex = Vertex::new();
+            let mut vertex = AniVertex::new();
 
             vertex.position = vec3(ai_vertex.x, ai_vertex.y, ai_vertex.z);
 
@@ -113,7 +123,19 @@ impl Model {
             }
         // }
         mesh.setup_mesh();
+
+        self.extract_bone_weight_for_vertices(&mut mesh.vertices, ai_mesh, scene);
         mesh
+    }
+
+    pub fn extract_bone_weight_for_vertices(&mut self, vertices: &mut Vec<AniVertex>, ai_mesh: &RMesh, scene: &Scene) {
+        for (b_index, bone) in ai_mesh.bones.iter().enumerate() {
+            let bone_id = -1;
+
+            // let bone_name = bone.name;
+            // if (self.bone_info_map.get(bone_name).is_some_and()) {
+            // }
+        }
     }
 
     pub fn load_material_textures(&mut self, ai_mat: &RMaterial, texture_type: TextureType, my_type: String) -> Vec<Texture> {
@@ -200,7 +222,8 @@ impl Model {
         None
     }
 
-    pub fn texture_from_file(model: &Model, path: String) -> u32 {
+
+    pub fn texture_from_file(model: &Self, path: String) -> u32 {
         let file_name = model.directory.clone() + "/" + path.as_str();
 
         dbg!(&path);
@@ -223,7 +246,7 @@ impl Model {
                 img_width as i32, 
                 img_height as i32, 
                 0, 
-                gl::RGBA, 
+                gl::RGBA,
                 gl::UNSIGNED_BYTE, 
                 raw.as_ptr() as *const c_void
             ));
@@ -237,7 +260,7 @@ impl Model {
         
         texture_id
     }
-
+    
     pub fn draw(&self, shader: &mut Shader) {
         for mesh in self.meshes.iter() {
             mesh.draw(shader);
@@ -253,4 +276,3 @@ impl Model {
         }
     }
 }
-
