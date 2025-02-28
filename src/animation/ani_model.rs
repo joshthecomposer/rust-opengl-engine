@@ -1,15 +1,15 @@
 use std::{collections::HashMap, ffi::c_void, path::Path};
 
-use glam::{vec3, Mat4, Vec3};
+use glam::{vec3, Mat4, Vec3, Vec4};
 use image::{GenericImageView, ImageBuffer, Rgba};
-use russimp::{material::{Material as RMaterial, MaterialProperty, PropertyTypeInfo, TextureType, }, mesh::Mesh as RMesh, node::Node, scene::{PostProcess, Scene}, Vector3D};
+use russimp::{bone::VertexWeight, material::{Material as RMaterial, MaterialProperty, PropertyTypeInfo, TextureType, }, mesh::Mesh as RMesh, node::Node, scene::{PostProcess, Scene}, Matrix4x4, Vector3D};
 
-use crate::{gl_call, mesh::Texture, shaders::Shader};
+use crate::{gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE};
 
 use super::ani_mesh::{AniMesh, AniVertex};
 
 pub struct BoneInfo {
-    id: u32,
+    id: i32,
     offset: Mat4,
 }
 
@@ -20,7 +20,7 @@ pub struct AniModel {
     pub full_path: String,
 
     pub bone_info_map: HashMap<String, BoneInfo>,
-    pub bone_counter: u32,
+    pub bone_counter: i32,
 }
 
 impl AniModel {
@@ -130,12 +130,49 @@ impl AniModel {
 
     pub fn extract_bone_weight_for_vertices(&mut self, vertices: &mut Vec<AniVertex>, ai_mesh: &RMesh, scene: &Scene) {
         for (b_index, bone) in ai_mesh.bones.iter().enumerate() {
-            let bone_id = -1;
+            let mut bone_id: i32 = -1;
 
-            // let bone_name = bone.name;
-            // if (self.bone_info_map.get(bone_name).is_some_and()) {
-            // }
+            let bone_name = bone.name.clone();
+            if let Some(bone_info) = self.bone_info_map.get(&bone_name) {
+                bone_id = bone_info.id as i32;
+            } else {
+                let new_bone_info = BoneInfo {
+                    id: self.bone_counter,
+                    offset: Self::russimp_mat4_to_glam(bone.offset_matrix),
+                };
+                self.bone_info_map.insert(bone_name, new_bone_info);
+                bone_id = self.bone_counter;
+                self.bone_counter += 1;
+            }
+            assert!(bone_id != -1);
+
+            for weight in bone.weights.iter() {
+                let vertex_id = weight.vertex_id;
+                assert!(vertex_id <= vertices.len() as u32);
+                let vertex = vertices.get_mut(vertex_id as usize).unwrap();
+                Self::set_vertex_bone_data(vertex, bone_id, weight.weight);
+            }
         }
+    }
+
+    pub fn set_vertex_bone_data(vertex: &mut AniVertex, bone_id: i32, weight: f32) {
+        // TODO: THis seems really bad, there must be a better way to limit this to MAX_BONE_INFLUENCE.
+        for i in 0..MAX_BONE_INFLUENCE {
+            if vertex.bone_ids[i] < 0 {
+                vertex.bone_ids[i] = bone_id;
+                vertex.weights[i] = weight;
+                break;
+            }
+        }
+    }
+
+    pub fn russimp_mat4_to_glam(from: Matrix4x4) -> Mat4 {
+        Mat4::from_cols_array(&[
+            from.a1, from.a2, from.a3, from.a4,
+            from.b1, from.b2, from.b3, from.b4,
+            from.c1, from.c2, from.c3, from.c4,
+            from.d1, from.d2, from.d3, from.d4,
+        ])
     }
 
     pub fn load_material_textures(&mut self, ai_mat: &RMaterial, texture_type: TextureType, my_type: String) -> Vec<Texture> {

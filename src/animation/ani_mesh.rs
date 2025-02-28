@@ -12,8 +12,8 @@ pub struct AniVertex {
     pub tangent: Vec3,
     pub bitangent: Vec3,
 
-    pub bone_ids: [u32; MAX_BONE_INFLUENCE as usize],
-    pub weights: [u32; MAX_BONE_INFLUENCE as usize],
+    pub bone_ids: [i32; MAX_BONE_INFLUENCE],
+    pub weights: [f32; MAX_BONE_INFLUENCE],
 }
 
 impl AniVertex {
@@ -26,8 +26,8 @@ impl AniVertex {
             tangent: vec3(0.0, 0.0, 0.0),
             bitangent: vec3(0.0, 0.0, 0.0),
 
-            bone_ids: [0; MAX_BONE_INFLUENCE as usize],
-            weights: [0; MAX_BONE_INFLUENCE as usize],
+            bone_ids: [0; MAX_BONE_INFLUENCE],
+            weights: [0.0; MAX_BONE_INFLUENCE],
         }
     }
 }
