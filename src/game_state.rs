@@ -5,7 +5,7 @@ use image::GrayImage;
 use imgui::{Ui};
 use rusttype::{point, Font, Scale};
 
-use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{EntityType, ShaderType}, gl_call, grid::Grid, lights::{DirLight, Lights}, model::Model, renderer::Renderer};
+use crate::{animation::ani_model::AniModel, camera::Camera, entity_manager::EntityManager, enums_types::{EntityType, ShaderType}, gl_call, grid::Grid, lights::{DirLight, Lights}, model::Model, renderer::Renderer};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 
@@ -62,6 +62,10 @@ impl GameState {
         println!("Framebuffer size: {}x{}", fb_width, fb_height);
 
         gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
+
+        println!("Begin testing load anim model");
+        let test_model = AniModel::load("resources/models/animation/run_test.fbx");
+        panic!("End Testing loading anim model");
         
         // =============================================================
         // text
@@ -193,6 +197,7 @@ impl GameState {
         // entity_manager.create_entity(EntityType::ArcherTower01, vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), "resources/models/sponza/sponza.obj");
         entity_manager.create_entity(EntityType::ArcherTower01, vec3(0.0, 0.0, 0.0), Vec3::splat(0.1), "resources/models/my_obj/tower.obj");
         entity_manager.create_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(2.0), "resources/models/my_obj/donut.obj");
+
 
         let mut light_manager = Lights::new(50);
         light_manager.dir_light = DirLight::default_white();
