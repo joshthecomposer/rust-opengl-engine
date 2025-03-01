@@ -59,57 +59,57 @@ impl AniMesh {
         let mut ebo = 0;
         
         unsafe {
-            gl::GenVertexArrays(1, &mut vao);
-            gl::GenBuffers(1, &mut vbo);
-            gl::GenBuffers(1, &mut ebo);
+            gl_call!(gl::GenVertexArrays(1, &mut vao));
+            gl_call!(gl::GenBuffers(1, &mut vbo));
+            gl_call!(gl::GenBuffers(1, &mut ebo));
             
-            gl::BindVertexArray(vao);
-            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
+            gl_call!(gl::BindVertexArray(vao));
+            gl_call!(gl::BindBuffer(gl::ARRAY_BUFFER, vbo));
             
-            gl::BufferData(
+            gl_call!(gl::BufferData(
                 gl::ARRAY_BUFFER, 
                 (mem::size_of::<AniVertex>() * self.vertices.len()) as isize,
                 self.vertices.as_ptr().cast(),
                 gl::STATIC_DRAW,
-            );
+            ));
 
-            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo);
-            gl::BufferData(
+            gl_call!(gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, ebo));
+            gl_call!(gl::BufferData(
                 gl::ELEMENT_ARRAY_BUFFER,
                 (mem::size_of::<u32>() * self.indices.len()) as isize,
                 self.indices.as_ptr().cast(),
                 gl::STATIC_DRAW
-            );
+            ));
 
-            gl::EnableVertexAttribArray(0);
-            gl::VertexAttribPointer(
+            gl_call!(gl::EnableVertexAttribArray(0));
+            gl_call!(gl::VertexAttribPointer(
                 0, 
                 3, 
                 gl::FLOAT, 
                 gl::FALSE, 
                 mem::size_of::<AniVertex>() as i32,
                 0 as *const _
-            );
+            ));
 
-            gl::EnableVertexAttribArray(1);
-            gl::VertexAttribPointer(
+            gl_call!(gl::EnableVertexAttribArray(1));
+            gl_call!(gl::VertexAttribPointer(
                 1, 
                 3, 
                 gl::FLOAT, 
                 gl::FALSE, 
                 mem::size_of::<AniVertex>() as i32,
                 offset_of!(AniVertex, normal) as *const _
-            );
+            ));
 
-            gl::EnableVertexAttribArray(2);
-            gl::VertexAttribPointer(
+            gl_call!(gl::EnableVertexAttribArray(2));
+            gl_call!(gl::VertexAttribPointer(
                 2, 
                 2, 
                 gl::FLOAT, 
                 gl::FALSE, 
                 mem::size_of::<AniVertex>() as i32, 
                 offset_of!(AniVertex, tex_coords) as *const _
-            );
+            ));
 
             gl_call!(gl::EnableVertexAttribArray(3));
             gl_call!(gl::VertexAttribPointer(
@@ -135,8 +135,8 @@ impl AniMesh {
             self.vao = vao;
             self.vbo = vbo;
             self.ebo = ebo;
-
-            gl::BindVertexArray(0);
+            
+            gl_call!(gl::BindVertexArray(0));
         }
     }
 
