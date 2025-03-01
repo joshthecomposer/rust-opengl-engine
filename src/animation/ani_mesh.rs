@@ -26,7 +26,7 @@ impl AniVertex {
             tangent: vec3(0.0, 0.0, 0.0),
             bitangent: vec3(0.0, 0.0, 0.0),
 
-            bone_ids: [0; MAX_BONE_INFLUENCE],
+            bone_ids: [-1; MAX_BONE_INFLUENCE],
             weights: [0.0; MAX_BONE_INFLUENCE],
         }
     }

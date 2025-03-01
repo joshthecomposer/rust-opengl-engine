@@ -129,6 +129,10 @@ impl AniModel {
     }
 
     pub fn extract_bone_weight_for_vertices(&mut self, vertices: &mut Vec<AniVertex>, ai_mesh: &RMesh, scene: &Scene) {
+        println!("=============================================================");
+        println!("EXTRACTING BONE DATA... NUM BONES TO PROCESS: {:?}", ai_mesh.bones.iter().count());
+        println!("=============================================================");
+
         for (b_index, bone) in ai_mesh.bones.iter().enumerate() {
             let mut bone_id: i32 = -1;
 
