@@ -1,6 +1,6 @@
 use glam::Mat4;
 
-use super::animation::Animation;
+use super::animation::{Animation, AssimpNodeData};
 
 pub struct Animator<'a> {
     final_bone_matrices: Vec<Mat4>,
@@ -9,7 +9,7 @@ pub struct Animator<'a> {
 }
 
 impl<'a> Animator<'a> {
-    pub fn new(animation: &mut Animation) -> Self {
+    pub fn new(animation: &'a mut Animation) -> Self {
         let mut final_bone_matrices = Vec::new();
         for i in 0..200 {
             final_bone_matrices.push(Mat4::IDENTITY);
