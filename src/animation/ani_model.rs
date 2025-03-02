@@ -8,11 +8,13 @@ use crate::{gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUEN
 
 use super::ani_mesh::{AniMesh, AniVertex};
 
+#[derive(Debug, Clone)]
 pub struct BoneInfo {
     id: i32,
     offset: Mat4,
 }
 
+#[derive(Debug, Clone)]
 pub struct AniModel {
     pub meshes: Vec<AniMesh>,
     pub directory: String,

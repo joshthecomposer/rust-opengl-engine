@@ -1,20 +1,25 @@
-use glam::{Mat4, Quat, Vec3};
+use glam::{vec3, Mat4, Quat, Vec3};
 use russimp::animation::NodeAnim;
 
+#[derive(Debug, Clone)]
 pub struct KeyPosition {
     position: Vec3,
     time_stamp: f64,
 }
 
+#[derive(Debug, Clone)]
 pub struct KeyRotation {
     orientation: Quat,
     time_stamp: f64,
 }
+
+#[derive(Debug, Clone)]
 pub struct KeyScale {
     scale: Vec3,
     time_stamp: f64,
 }
 
+#[derive(Debug, Clone)]
 pub struct AniBone {
     positions: Vec<KeyPosition>,
     rotations: Vec<KeyRotation>,
@@ -75,18 +80,100 @@ impl AniBone {
     }
 
 
-    pub fn update(&mut self, animation_time: f32) {
+    pub fn update(&mut self, animation_time: f64) {
+        let translation = self.interpolate_position(animation_time);
+        let rotation = self.interpolate_rotation(animation_time);
+        let scale = self.interpolate_scaling(animation_time);
+
+        self.local_transform = translation * rotation * scale;
     }
 
-    pub fn get_scale_factor(last_time_stamp: f32, next_time_stamp: f32, animation_time: f32) {
+    pub fn get_scale_factor(last_time_stamp: f64, next_time_stamp: f64, animation_time: f64) -> f64 {
+        let midway_len = animation_time - last_time_stamp;
+        let frame_diff = next_time_stamp - last_time_stamp;
+
+        midway_len / frame_diff
+    }
+    
+    pub fn get_position_index(&mut self, animation_time: f64) -> usize {
+        for i in 0..self.positions.len() - 1 {
+            if let Some(pos) = self.positions.get(i + 1) {
+                if animation_time < pos.time_stamp {
+                    return i;
+                }
+            }
+        }
+        panic!("We shouldn't have gotten here");
     }
 
-    pub fn interpolate_position(animation_time: f32) {
+    pub fn get_rotation_index(&mut self, animation_time: f64) -> usize {
+        for i in 0..self.rotations.len() - 1 {
+            if let Some(rot) = self.rotations.get(i + 1) {
+                if animation_time < rot.time_stamp {
+                    return i;
+                }
+            }
+        }
+        panic!("We shouldn't have gotten here");
     }
 
-    pub fn interpolate_rotation(animation_time: f32) {
+    pub fn get_scale_index(&mut self, animation_time: f64) -> usize {
+        for i in 0..self.scales.len() - 1 {
+            if let Some(scale) = self.scales.get(i + 1) {
+                if animation_time < scale.time_stamp {
+                    return i;
+                }
+            }
+        }
+        panic!("We shouldn't have gotten here");
     }
 
-    pub fn interpolate_scale(animation_time: f32) {
+    pub fn interpolate_position(&mut self, animation_time: f64) -> Mat4 {
+        if 1 == self.positions.len() {
+            return Mat4::from_translation(self.positions.first().unwrap().position);
+        }
+
+        // TODO: THIS FEELS VERY FUCKING DUMB AND HACKY LET'S FIND A BETTER WAY
+        let p0_index = self.get_position_index(animation_time);
+        
+        let p0 = self.positions.get(p0_index).unwrap();
+        let p1 = self.positions.get(p0_index + 1).unwrap();
+
+        let scale_factor = Self::get_scale_factor(p0.time_stamp, p1.time_stamp, animation_time);
+        let final_position = p0.position.lerp(p1.position, scale_factor as f32);
+        return Mat4::from_translation(final_position);
+    }
+
+    pub fn interpolate_rotation(&mut self, animation_time: f64) -> Mat4 {
+        if 1 == self.rotations.len() {
+            let rotation = self.rotations.first().unwrap().orientation;
+            return Mat4::from_quat(rotation);
+        }
+        
+        // TODO: This could be just "get_index()" and reusable potentially
+        let p0_index = self.get_rotation_index(animation_time);
+
+        let p0 = self.rotations.get(p0_index).unwrap();
+        let p1 = self.rotations.get(p0_index + 1).unwrap();
+
+        let scale_factor = Self::get_scale_factor(p0.time_stamp, p1.time_stamp, animation_time);
+
+        let final_rotation = p0.orientation.slerp(p1.orientation, scale_factor as f32);
+        return Mat4::from_quat(final_rotation);
+    }
+
+    pub fn interpolate_scaling(&mut self, animation_time: f64) -> Mat4{
+        if 1 == self.scales.len() {
+            return Mat4::from_scale(self.scales.first().unwrap().scale);
+        }
+
+        let p0_index = self.get_scale_index(animation_time);
+
+        let p0 = self.scales.get(p0_index).unwrap();
+        let p1 = self.scales.get(p0_index + 1).unwrap();
+
+        let scale_factor = Self::get_scale_factor(p0.time_stamp, p1.time_stamp, animation_time);
+        let final_scale = p0.scale.lerp(p1.scale, scale_factor as f32);
+        return Mat4::from_scale(final_scale);
     }
 }

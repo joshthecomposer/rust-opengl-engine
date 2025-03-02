@@ -5,7 +5,7 @@ use image::GrayImage;
 use imgui::{Ui};
 use rusttype::{point, Font, Scale};
 
-use crate::{animation::ani_model::AniModel, camera::Camera, entity_manager::EntityManager, enums_types::{EntityType, ShaderType}, gl_call, grid::Grid, lights::{DirLight, Lights}, model::Model, renderer::Renderer};
+use crate::{animation::{ani_model::AniModel, animation::Animation}, camera::Camera, entity_manager::EntityManager, enums_types::{EntityType, ShaderType}, gl_call, grid::Grid, lights::{DirLight, Lights}, model::Model, renderer::Renderer};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 
@@ -64,7 +64,10 @@ impl GameState {
         gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
 
         println!("Begin testing load anim model");
-        let test_model = AniModel::load("resources/models/animation/run_test.fbx");
+        let mut test_model = AniModel::load("resources/models/animation/run_test.fbx");
+        let test_anim = Animation::new("resources/models/animation/run_test.fbx".to_string(), &mut test_model);
+
+        dbg!(test_anim);
         panic!("End Testing loading anim model");
         
         // =============================================================

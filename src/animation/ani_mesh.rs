@@ -4,6 +4,7 @@ use glam::{vec2, vec3, Vec2, Vec3};
 
 use crate::{gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE};
 
+#[derive(Debug, Clone)]
 pub struct AniVertex {
     pub position: Vec3,
     pub normal: Vec3,
@@ -32,6 +33,7 @@ impl AniVertex {
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct AniMesh {
     pub vertices: Vec<AniVertex>,
     pub indices: Vec<u32>,
