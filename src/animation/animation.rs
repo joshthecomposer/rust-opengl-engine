@@ -7,9 +7,9 @@ use super::{ani_bone::AniBone, ani_model::{AniModel, BoneInfo}};
 
 #[derive(Clone, Debug)]
 pub struct AssimpNodeData {
-    transformation: Mat4,
-    name: String,
-    children: Vec<AssimpNodeData>,
+    pub transformation: Mat4,
+    pub name: String,
+    pub children: Vec<AssimpNodeData>,
 }
 
 impl AssimpNodeData {
@@ -24,10 +24,10 @@ impl AssimpNodeData {
 
 #[derive(Clone, Debug)]
 pub struct Animation {
-    duration: f64,
-    ticks_per_second: f64,
+    pub duration: f64,
+    pub ticks_per_second: f64,
     bones: Vec<AniBone>,
-    root_node: AssimpNodeData,
+    pub root_node: AssimpNodeData,
     bone_info_map: HashMap<String, BoneInfo>,
 }
 
