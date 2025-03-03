@@ -36,7 +36,8 @@ pub enum ShaderType {
     GroundPlane,
     DebugShadowMap,
     Model,
-    Text
+    Text,
+    AniModel
 }
 
 pub struct Transform {

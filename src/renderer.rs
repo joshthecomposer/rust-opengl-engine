@@ -3,7 +3,7 @@ use std::{collections::HashMap, ffi::c_void, mem, ptr::null_mut};
 use glam::{vec3, vec4, Mat4};
 use image::GenericImageView;
 
-use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}};
+use crate::{animation::{ani_model::AniModel, animator::Animator}, camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}};
 
 pub struct Renderer {
     pub shaders: HashMap<ShaderType, Shader>, // TODO: make this an enum
@@ -48,6 +48,12 @@ impl Renderer {
         model_shader.store_uniform_location("shadow_map");
 
         let mut text_shader = Shader::new("resources/shaders/text.vs", "resources/shaders/text.fs");
+
+        let mut anim_shader = Shader::new("resources/shaders/ani_model.vs", "resources/shaders/ani_model.fs");
+        anim_shader.store_uniform_location("projection");
+        anim_shader.store_uniform_location("view");
+        anim_shader.store_uniform_location("model");
+        anim_shader.store_uniform_location("finaleBonesMatrices");
 
         let mut vao = 0;
         let mut vbo = 0;
@@ -224,6 +230,7 @@ impl Renderer {
         shaders.insert(ShaderType::Depth, depth_shader);
         shaders.insert(ShaderType::DebugShadowMap, debug_depth_quad);
         shaders.insert(ShaderType::Text, text_shader);
+        shaders.insert(ShaderType::AniModel, anim_shader);
 
         Self {
             shaders,
@@ -235,7 +242,7 @@ impl Renderer {
         }
     }
 
-    pub fn draw(&mut self, em: &EntityManager, camera: &mut Camera, light_manager: &Lights, grid: &mut Grid, fb_width: u32, fb_height: u32) {
+    pub fn draw(&mut self, em: &EntityManager, camera: &mut Camera, light_manager: &Lights, grid: &mut Grid, fb_width: u32, fb_height: u32, animator: &Animator, anim_model: &mut AniModel) {
         self.shadow_pass(em,  camera, light_manager, fb_width, fb_height);
         unsafe {
             gl_call!(gl::ClearColor(0.0, 0.0, 0.0, 1.0));
@@ -253,35 +260,54 @@ impl Renderer {
             return;
         }
         // SHADOW MUST GO FIRST
-        self.skybox_pass(camera, fb_width, fb_height);
+         self.skybox_pass(camera, fb_width, fb_height);
         // self.debug_light_pass(camera);
-        // self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
+        self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
         
-        camera.reset_matrices(fb_width as f32 / fb_height as f32);
-        let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
-        shader.activate();
-        for model in em.models.iter() {
-            let trans = em.transforms.get(model.key()).unwrap();
-            camera.model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
+        // camera.reset_matrices(fb_width as f32 / fb_height as f32);
+        // let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
+        // shader.activate();
+        // for model in em.models.iter() {
+        //     let trans = em.transforms.get(model.key()).unwrap();
+        //     camera.model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
 
-            shader.set_mat4("model", camera.model);
-            shader.set_mat4("view", camera.view);
-            shader.set_mat4("projection", camera.projection);
-            shader.set_mat4("light_space_mat", camera.light_space);
-            shader.set_dir_light("dir_light", &light_manager.dir_light);
-            unsafe {
-                // TODO: This could clash, we need to make sure we reserve texture0 in our dynamic shader code.
-                gl_call!(gl::ActiveTexture(gl::TEXTURE2));
-                gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-                shader.set_int("shadow_map", 2);
+        //     shader.set_mat4("model", camera.model);
+        //     shader.set_mat4("view", camera.view);
+        //     shader.set_mat4("projection", camera.projection);
+        //     shader.set_mat4("light_space_mat", camera.light_space);
+        //     shader.set_dir_light("dir_light", &light_manager.dir_light);
+        //     unsafe {
+        //         // TODO: This could clash, we need to make sure we reserve texture0 in our dynamic shader code.
+        //         gl_call!(gl::ActiveTexture(gl::TEXTURE2));
+        //         gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+        //         shader.set_int("shadow_map", 2);
+        // }
+
+        //     model.value.draw(shader);
+
+        //     unsafe {
+        //         gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+        //         gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
+        //     }
+        // }
+
+        camera.reset_matrices(fb_width as f32 / fb_height as f32);
+        let ani_shader = self.shaders.get_mut(&ShaderType::AniModel).unwrap();
+
+        ani_shader.activate();
+        ani_shader.set_mat4("projection", camera.projection);
+        ani_shader.set_mat4("view", camera.view);
+        camera.model = Mat4::IDENTITY * Mat4::from_translation(vec3(0.0, 0.0, 0.0)) * Mat4::from_scale(vec3(10.0, 10.0, 10.0));
+        ani_shader.set_mat4("model", camera.model);
+
+        for (i, transform) in animator.final_bone_matrices.iter().enumerate() {
+            ani_shader.set_mat4(format!("finalBonesMatrices[{}]", i).as_str(), *transform);
         }
 
-            model.value.draw(shader);
-
-            unsafe {
-                gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-                gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
-            }
+        unsafe {
+            gl_call!(gl::Disable(gl::CULL_FACE));
+            anim_model.draw(ani_shader);
+            gl_call!(gl::Enable(gl::CULL_FACE));
         }
     }
 

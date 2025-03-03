@@ -5,7 +5,7 @@ use image::GrayImage;
 use imgui::{Ui};
 use rusttype::{point, Font, Scale};
 
-use crate::{animation::{ani_model::AniModel, animation::Animation}, camera::Camera, entity_manager::EntityManager, enums_types::{EntityType, ShaderType}, gl_call, grid::Grid, lights::{DirLight, Lights}, model::Model, renderer::Renderer};
+use crate::{animation::{ani_model::AniModel, animation::Animation, animator::Animator}, camera::Camera, entity_manager::EntityManager, enums_types::{EntityType, ShaderType}, gl_call, grid::Grid, lights::{DirLight, Lights}, model::Model, renderer::Renderer};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 
@@ -33,7 +33,10 @@ pub struct GameState {
     pub grid: Grid,
     pub renderer: Renderer,
     pub glyph_tex: u32,
-    pub tex_vao: u32
+    pub tex_vao: u32,
+    
+    pub animator: Animator,
+    pub anim_model: AniModel,
 }
 
 impl GameState {
@@ -64,11 +67,10 @@ impl GameState {
         gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
 
         println!("Begin testing load anim model");
-        let mut test_model = AniModel::load("resources/models/animation/run_test.fbx");
-        let test_anim = Animation::new("resources/models/animation/run_test.fbx".to_string(), &mut test_model);
+        let mut anim_model = AniModel::load("resources/models/animation/run_test.fbx");
+        let mut test_anim = Animation::new("resources/models/animation/run_test.fbx".to_string(), &mut anim_model);
+        let animator = Animator::new(test_anim);
 
-        dbg!(test_anim);
-        panic!("End Testing loading anim model");
         
         // =============================================================
         // text
@@ -195,11 +197,11 @@ impl GameState {
 
         let mut entity_manager = EntityManager::new(10_000);
 
-        entity_manager.populate_cell_rng(&grid);
-        entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/tile_01.obj");
+        // entity_manager.populate_cell_rng(&grid);
+        // entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/tile_01.obj");
         // entity_manager.create_entity(EntityType::ArcherTower01, vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), "resources/models/sponza/sponza.obj");
-        entity_manager.create_entity(EntityType::ArcherTower01, vec3(0.0, 0.0, 0.0), Vec3::splat(0.1), "resources/models/my_obj/tower.obj");
-        entity_manager.create_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(2.0), "resources/models/my_obj/donut.obj");
+        // entity_manager.create_entity(EntityType::ArcherTower01, vec3(0.0, 0.0, 0.0), Vec3::splat(0.1), "resources/models/my_obj/tower.obj");
+        // entity_manager.create_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(2.0), "resources/models/my_obj/donut.obj");
 
 
         let mut light_manager = Lights::new(50);
@@ -241,6 +243,9 @@ impl GameState {
             renderer,
             glyph_tex,
             tex_vao,
+
+            animator,
+            anim_model,
         }
     }
 
@@ -313,6 +318,8 @@ impl GameState {
 
         self.elapsed += self.delta_time;
 
+        self.animator.update(self.delta_time);
+
         // let radius = 0.5;
         // let speed = 1.0;
         // let angle = (self.elapsed * speed) as f32;
@@ -338,24 +345,27 @@ impl GameState {
 
     pub fn render(&mut self) {
         self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
-        self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, self.fb_width, self.fb_height);
+        self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, self.fb_width, self.fb_height, &self.animator, &mut self.anim_model);
 
-        let shader = self.renderer.shaders.get_mut(&ShaderType::Text).unwrap();
+        // =============================================================
+        // Render test text
+        // =============================================================
+        // let shader = self.renderer.shaders.get_mut(&ShaderType::Text).unwrap();
 
-        shader.activate();
-        unsafe {
-            // Bind texture
-            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.glyph_tex));
+        // shader.activate();
+        // unsafe {
+        //     // Bind texture
+        //     gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+        //     gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.glyph_tex));
 
-            // Bind VAO and draw quad
-            gl_call!(gl::BindVertexArray(self.tex_vao));
-            gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 6));
+        //     // Bind VAO and draw quad
+        //     gl_call!(gl::BindVertexArray(self.tex_vao));
+        //     gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 6));
 
-            // Cleanup
-            gl_call!(gl::BindVertexArray(0));
-            gl_call!(gl::UseProgram(0));
-        }
+        //     // Cleanup
+        //     gl_call!(gl::BindVertexArray(0));
+        //     gl_call!(gl::UseProgram(0));
+        // }
 
         self.window.swap_buffers();
         self.glfw.poll_events()

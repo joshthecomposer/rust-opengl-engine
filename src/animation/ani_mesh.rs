@@ -114,11 +114,10 @@ impl AniMesh {
             ));
 
             gl_call!(gl::EnableVertexAttribArray(3));
-            gl_call!(gl::VertexAttribPointer(
+            gl_call!(gl::VertexAttribIPointer( 
                 3,
                 4,
-                gl::FLOAT,
-                gl::FALSE,
+                gl::INT,
                 mem::size_of::<AniVertex>() as i32,
                 offset_of!(AniVertex, bone_ids) as *const _
             ));
