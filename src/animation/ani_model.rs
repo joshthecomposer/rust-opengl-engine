@@ -10,8 +10,8 @@ use super::ani_mesh::{AniMesh, AniVertex};
 
 #[derive(Debug, Clone)]
 pub struct BoneInfo {
-    id: i32,
-    offset: Mat4,
+    pub id: i32,
+    pub offset: Mat4,
 }
 
 #[derive(Debug, Clone)]

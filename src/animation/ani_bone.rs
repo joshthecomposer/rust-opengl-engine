@@ -25,8 +25,8 @@ pub struct AniBone {
     rotations: Vec<KeyRotation>,
     scales: Vec<KeyScale>,
 
-    local_transform: Mat4,
-    name: String,
+    pub local_transform: Mat4,
+    pub name: String,
     id: usize,
 }
 
@@ -114,7 +114,8 @@ impl AniBone {
                 }
             }
         }
-        panic!("We shouldn't have gotten here");
+
+        self.rotations.len() - 1
     }
 
     pub fn get_scale_index(&mut self, animation_time: f64) -> usize {
@@ -145,21 +146,28 @@ impl AniBone {
     }
 
     pub fn interpolate_rotation(&mut self, animation_time: f64) -> Mat4 {
-        if 1 == self.rotations.len() {
-            let rotation = self.rotations.first().unwrap().orientation;
+        // If there's only 1 rotation key, just return it
+        if self.rotations.len() == 1 {
+            let rotation = self.rotations[0].orientation;
             return Mat4::from_quat(rotation);
         }
-        
-        // TODO: This could be just "get_index()" and reusable potentially
+
+        // Find the current key index
         let p0_index = self.get_rotation_index(animation_time);
 
-        let p0 = self.rotations.get(p0_index).unwrap();
-        let p1 = self.rotations.get(p0_index + 1).unwrap();
+        // If we're at the last key, just return its orientation
+        if p0_index == self.rotations.len() - 1 {
+            let rotation = self.rotations[p0_index].orientation;
+            return Mat4::from_quat(rotation);
+        }
+
+        // Otherwise, interpolate between p0 and p1
+        let p0 = &self.rotations[p0_index];
+        let p1 = &self.rotations[p0_index + 1];
 
         let scale_factor = Self::get_scale_factor(p0.time_stamp, p1.time_stamp, animation_time);
-
         let final_rotation = p0.orientation.slerp(p1.orientation, scale_factor as f32);
-        return Mat4::from_quat(final_rotation);
+        Mat4::from_quat(final_rotation)
     }
 
     pub fn interpolate_scaling(&mut self, animation_time: f64) -> Mat4{
