@@ -297,7 +297,7 @@ impl Renderer {
         ani_shader.activate();
         ani_shader.set_mat4("projection", camera.projection);
         ani_shader.set_mat4("view", camera.view);
-        camera.model = Mat4::IDENTITY * Mat4::from_translation(vec3(0.0, 0.0, 0.0)) * Mat4::from_scale(vec3(10.0, 10.0, 10.0));
+        camera.model = Mat4::IDENTITY * Mat4::from_translation(vec3(0.0, 0.0, 0.0)) * Mat4::from_scale(vec3(1.0, 1.0, 1.0));
         ani_shader.set_mat4("model", camera.model);
 
         for (i, transform) in animator.final_bone_matrices.iter().enumerate() {

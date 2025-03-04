@@ -4,6 +4,8 @@ use gl::PointSize;
 use glam::Mat4;
 use russimp::{animation::Animation as RAnimation, bone, node::Node, scene::{PostProcess, Scene}};
 
+use crate::debug::write::write_data;
+
 use super::{ani_bone::AniBone, ani_model::{AniModel, BoneInfo}};
 
 #[derive(Clone, Debug)]
@@ -27,7 +29,7 @@ impl AssimpNodeData {
 pub struct Animation {
     pub duration: f64,
     pub ticks_per_second: f64,
-    bones: Vec<AniBone>,
+    pub bones: Vec<AniBone>,
     pub root_node: AssimpNodeData,
     pub bone_info_map: HashMap<String, BoneInfo>,
     pub global_inverse_transformation: Mat4,
@@ -48,6 +50,8 @@ impl Animation {
         ).unwrap();
 
         assert!(scene.root.is_some());
+
+        write_data(&scene, "scene.txt");
 
         let ai_animation = scene.animations.get(0).unwrap();
         let duration = ai_animation.duration;

@@ -1,7 +1,0 @@
-mac build:
-
-println!("cargo:rustc-link-search=native=libs");
-println!("cargo:rustc-link-lib=dylib=clang");
-println!("cargo:rustc-link-lib=static=glfw3");
-println!("cargo:rustc-link-lib=dylib=assimp");
-

@@ -67,10 +67,17 @@ impl GameState {
         gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
 
         println!("Begin testing load anim model");
-        let mut anim_model = AniModel::load("resources/models/animation/run_test.fbx");
-        let mut test_anim = Animation::new("resources/models/animation/run_test.fbx".to_string(), &mut anim_model);
-        let animator = Animator::new(test_anim);
+        // let mut anim_model = AniModel::load("resources/models/animation/run_test.fbx");
+        // let mut test_anim = Animation::new("resources/models/animation/run_test.fbx".to_string(), &mut anim_model);
+        let mut anim_model = AniModel::load("resources/models/animation/example4.fbx");
+        let mut test_anim = Animation::new("resources/models/animation/example4.fbx".to_string(), &mut anim_model);
+        let mut animator = Animator::new(test_anim);
 
+        // animator.update(0.0);
+
+        // dbg!(animator.final_bone_matrices);
+
+        // panic!();
         
         // =============================================================
         // text

@@ -1,5 +1,10 @@
+use std::fs::OpenOptions;
+use std::io::Write;
+
 use glam::{vec3, Mat4, Quat, Vec3};
 use russimp::animation::NodeAnim;
+
+use crate::debug::write::write_data;
 
 #[derive(Debug, Clone)]
 pub struct KeyPosition {
@@ -43,6 +48,7 @@ impl AniBone {
 
             positions.push(data);
         };
+        write_data(positions.clone(), "positions.txt");
 
         let mut rotations = Vec::new();
         for rotation_key in channel.rotation_keys.iter() {
@@ -56,6 +62,10 @@ impl AniBone {
             rotations.push(data);
         }
 
+        write_data(rotations.clone(), "rotations.txt");
+        write_data(channel.rotation_keys.clone(), "channel_rots.txt");
+        write_data(channel.clone(), "channel.txt");
+
         let mut scales = Vec::new();
         for scale_key in channel.scaling_keys.iter() {
             let scale = scale_key.value;
@@ -67,6 +77,7 @@ impl AniBone {
 
             scales.push(data);
         }
+        write_data(scales.clone(), "scales.txt");
 
         Self {
             positions,
@@ -114,8 +125,8 @@ impl AniBone {
                 }
             }
         }
-
-        self.rotations.len() - 1
+        return self.rotations.len() - 2;
+        // panic!("By rights we shouldn't even be here");
     }
 
     pub fn get_scale_index(&mut self, animation_time: f64) -> usize {
@@ -146,22 +157,13 @@ impl AniBone {
     }
 
     pub fn interpolate_rotation(&mut self, animation_time: f64) -> Mat4 {
-        // If there's only 1 rotation key, just return it
         if self.rotations.len() == 1 {
             let rotation = self.rotations[0].orientation;
             return Mat4::from_quat(rotation);
         }
 
-        // Find the current key index
         let p0_index = self.get_rotation_index(animation_time);
 
-        // If we're at the last key, just return its orientation
-        if p0_index == self.rotations.len() - 1 {
-            let rotation = self.rotations[p0_index].orientation;
-            return Mat4::from_quat(rotation);
-        }
-
-        // Otherwise, interpolate between p0 and p1
         let p0 = &self.rotations[p0_index];
         let p1 = &self.rotations[p0_index + 1];
 

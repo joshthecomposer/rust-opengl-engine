@@ -1,0 +1,61 @@
+NodeAnim {
+    name: "Light",
+    position_keys: [
+        VectorKey {
+            time: 0.0,
+            value: Vector3D {
+                x: 407.62454,
+                y: 590.3862,
+                z: -100.545395,
+            },
+        },
+        VectorKey {
+            time: 1.0,
+            value: Vector3D {
+                x: 407.62454,
+                y: 590.3862,
+                z: -100.545395,
+            },
+        },
+    ],
+    rotation_keys: [
+        QuatKey {
+            time: 0.0,
+            value: Quaternion {
+                w: 0.5709475,
+                x: 0.16907574,
+                y: 0.75588024,
+                z: -0.2721713,
+            },
+        },
+        QuatKey {
+            time: 5e-324,
+            value: Quaternion {
+                w: 0.0,
+                x: 1.875,
+                y: 0.5709475,
+                z: 0.16907574,
+            },
+        },
+    ],
+    scaling_keys: [
+        VectorKey {
+            time: 0.0,
+            value: Vector3D {
+                x: 100.00001,
+                y: 100.00001,
+                z: 100.00001,
+            },
+        },
+        VectorKey {
+            time: 1.0,
+            value: Vector3D {
+                x: 100.00001,
+                y: 100.00001,
+                z: 100.00001,
+            },
+        },
+    ],
+    post_state: 0,
+    pre_state: 0,
+}
