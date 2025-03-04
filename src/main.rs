@@ -15,6 +15,7 @@ mod level;
 mod grid;
 mod renderer;
 mod animation;
+mod debug;
 
 use std::fs::OpenOptions;
 use std::io::Write;
