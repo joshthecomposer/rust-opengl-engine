@@ -34,7 +34,7 @@ impl Animator {
 
         let mut root_node = self.current_animation.root_node.clone();
 
-        write_data(&root_node, "root_node.txt");
+        // write_data(&root_node, "root_node.txt");
 
         Self::calculate_bone_transformation(&mut root_node, self, Mat4::IDENTITY);
 
@@ -51,17 +51,13 @@ impl Animator {
             if bone.local_transform.is_finite() {
                 node_transform = bone.local_transform;
             } else {
-                write_data(bone, "bad_transform.txt");
+                // write_data(bone, "bad_transform.txt");
             }
 
 
         }
 
         let global_transformation =  parent_transform * node_transform ;
-        
-        dbg!(&node_name);
-        dbg!(&parent_transform);
-        dbg!(&global_transformation);
 
         if let Some(bone_info) = animator.current_animation.bone_info_map.get(&node_name) {
 

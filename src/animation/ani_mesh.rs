@@ -174,7 +174,7 @@ impl AniMesh {
             gl::GetBufferParameteriv(gl::ARRAY_BUFFER, gl::BUFFER_SIZE, &mut vbo_size);
             gl::GetBufferParameteriv(gl::ELEMENT_ARRAY_BUFFER, gl::BUFFER_SIZE, &mut ebo_size);
 
-            println!("✅ VAO: {}, VBO Size: {}, EBO Size: {}", self.vao, vbo_size, ebo_size);
+            // println!("✅ VAO: {}, VBO Size: {}, EBO Size: {}", self.vao, vbo_size, ebo_size);
 
             gl_call!(gl::DrawElements(
                 gl::TRIANGLES, 
