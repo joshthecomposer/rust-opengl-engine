@@ -46,7 +46,7 @@ impl Camera {
             last_y: 0.0,
 
             z_near: 0.1,
-            z_far: 300.0,
+            z_far: 10000.0,
 
             projection: Mat4::IDENTITY,
             view: Mat4::IDENTITY,

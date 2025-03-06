@@ -53,7 +53,7 @@ impl Renderer {
         anim_shader.store_uniform_location("projection");
         anim_shader.store_uniform_location("view");
         anim_shader.store_uniform_location("model");
-        anim_shader.store_uniform_location("finaleBonesMatrices");
+        anim_shader.store_uniform_location("finalBonesMatrices");
 
         let mut vao = 0;
         let mut vbo = 0;
@@ -264,40 +264,39 @@ impl Renderer {
         // self.debug_light_pass(camera);
         self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
         
-        // camera.reset_matrices(fb_width as f32 / fb_height as f32);
-        // let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
-        // shader.activate();
-        // for model in em.models.iter() {
-        //     let trans = em.transforms.get(model.key()).unwrap();
-        //     camera.model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
+         camera.reset_matrices(fb_width as f32 / fb_height as f32);
+        //  let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
+        //  shader.activate();
+        //  for model in em.models.iter() {
+        //      let trans = em.transforms.get(model.key()).unwrap();
+        //      camera.model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
 
-        //     shader.set_mat4("model", camera.model);
-        //     shader.set_mat4("view", camera.view);
-        //     shader.set_mat4("projection", camera.projection);
-        //     shader.set_mat4("light_space_mat", camera.light_space);
-        //     shader.set_dir_light("dir_light", &light_manager.dir_light);
-        //     unsafe {
-        //         // TODO: This could clash, we need to make sure we reserve texture0 in our dynamic shader code.
-        //         gl_call!(gl::ActiveTexture(gl::TEXTURE2));
-        //         gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-        //         shader.set_int("shadow_map", 2);
-        // }
+        //      shader.set_mat4("model", camera.model);
+        //      shader.set_mat4("view", camera.view);
+        //      shader.set_mat4("projection", camera.projection);
+        //      shader.set_mat4("light_space_mat", camera.light_space);
+        //      shader.set_dir_light("dir_light", &light_manager.dir_light);
+        //      unsafe {
+        //          // TODO: This could clash, we need to make sure we reserve texture0 in our dynamic shader code.
+        //          gl_call!(gl::ActiveTexture(gl::TEXTURE2));
+        //          gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+        //          shader.set_int("shadow_map", 2);
+        //  }
 
-        //     model.value.draw(shader);
+        //      model.value.draw(shader);
 
-        //     unsafe {
-        //         gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-        //         gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
-        //     }
-        // }
+        //      unsafe {
+        //          gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+        //          gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
+        //      }
+        //  }
 
-        camera.reset_matrices(fb_width as f32 / fb_height as f32);
         let ani_shader = self.shaders.get_mut(&ShaderType::AniModel).unwrap();
 
         ani_shader.activate();
         ani_shader.set_mat4("projection", camera.projection);
         ani_shader.set_mat4("view", camera.view);
-        camera.model = Mat4::IDENTITY * Mat4::from_translation(vec3(0.0, 0.0, 0.0)) * Mat4::from_scale(vec3(1.0, 1.0, 1.0));
+        camera.model = Mat4::IDENTITY * Mat4::from_translation(vec3(0.0, 0.0, 0.0)) * Mat4::from_scale(vec3(0.01, 0.01, 0.01));
         ani_shader.set_mat4("model", camera.model);
 
         for (i, transform) in animator.final_bone_matrices.iter().enumerate() {
@@ -305,9 +304,9 @@ impl Renderer {
         }
 
         unsafe {
-            gl_call!(gl::Disable(gl::CULL_FACE));
+             gl_call!(gl::Disable(gl::CULL_FACE));
             anim_model.draw(ani_shader);
-            gl_call!(gl::Enable(gl::CULL_FACE));
+            // gl_call!(gl::Enable(gl::CULL_FACE));
         }
     }
 
@@ -325,7 +324,7 @@ impl Renderer {
             // TODO: Fix the wrapping of this quad
             gl_call!(gl::Disable(gl::CULL_FACE));
             grid.draw(shader);
-            gl_call!(gl::Enable(gl::CULL_FACE));
+            // gl_call!(gl::Enable(gl::CULL_FACE));
         }
     }
 
@@ -362,7 +361,7 @@ impl Renderer {
             gl_call!(gl::BindVertexArray(0));
 
             gl_call!(gl::DepthFunc(gl::LESS));
-            gl_call!(gl::Enable(gl::CULL_FACE));
+            // gl_call!(gl::Enable(gl::CULL_FACE));
         }
     }
 
