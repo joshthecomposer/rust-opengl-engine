@@ -124,9 +124,9 @@ impl AniModel {
                 mesh.textures.append(&mut specular_textures);
             }
         // }
+        self.extract_bone_weight_for_vertices(&mut mesh.vertices, ai_mesh, scene);
         mesh.setup_mesh();
 
-        self.extract_bone_weight_for_vertices(&mut mesh.vertices, ai_mesh, scene);
         mesh
     }
 
@@ -136,7 +136,7 @@ impl AniModel {
         println!("=============================================================");
 
         for (b_index, bone) in ai_mesh.bones.iter().enumerate() {
-            let mut bone_id: i32 = -1;
+            let mut bone_id  = -1;
 
             let bone_name = bone.name.clone();
             if let Some(bone_info) = self.bone_info_map.get(&bone_name) {
@@ -172,14 +172,23 @@ impl AniModel {
         }
     }
 
-    pub fn russimp_mat4_to_glam(from: Matrix4x4) -> Mat4 {
-        Mat4::from_cols_array(&[
-            from.a1, from.a2, from.a3, from.a4,
-            from.b1, from.b2, from.b3, from.b4,
-            from.c1, from.c2, from.c3, from.c4,
-            from.d1, from.d2, from.d3, from.d4,
-        ])
+    pub fn russimp_mat4_to_glam(matrix: Matrix4x4) -> Mat4 {
+        Mat4::from_cols(
+            glam::Vec4::new(matrix.a1, matrix.b1, matrix.c1, matrix.d1),
+            glam::Vec4::new(matrix.a2, matrix.b2, matrix.c2, matrix.d2),
+            glam::Vec4::new(matrix.a3, matrix.b3, matrix.c3, matrix.d3),
+            glam::Vec4::new(matrix.a4, matrix.b4, matrix.c4, matrix.d4),
+        )
     }
+
+   //  pub fn russimp_mat4_to_glam(from: Matrix4x4) -> Mat4 {
+   //      Mat4::from_cols_array(&[
+   //          from.a1, from.a2, from.a3, from.a4,
+   //          from.b1, from.b2, from.b3, from.b4,
+   //          from.c1, from.c2, from.c3, from.c4,
+   //          from.d1, from.d2, from.d3, from.d4,
+   //      ])
+   //  }
 
     pub fn load_material_textures(&mut self, ai_mat: &RMaterial, texture_type: TextureType, my_type: String) -> Vec<Texture> {
         let mut textures: Vec<Texture> = vec![];

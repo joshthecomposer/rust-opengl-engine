@@ -4,14 +4,12 @@ use glam::{vec2, vec3, Vec2, Vec3};
 
 use crate::{gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE};
 
+#[repr(C)]
 #[derive(Debug, Clone)]
 pub struct AniVertex {
     pub position: Vec3,
     pub normal: Vec3,
     pub tex_coords: Vec2,
-
-    pub tangent: Vec3,
-    pub bitangent: Vec3,
 
     pub bone_ids: [i32; MAX_BONE_INFLUENCE],
     pub weights: [f32; MAX_BONE_INFLUENCE],
@@ -23,9 +21,6 @@ impl AniVertex {
             position: vec3(0.0, 0.0, 0.0),
             normal: vec3(0.0, 0.0, 0.0),
             tex_coords: vec2(0.0, 0.0),
-
-            tangent: vec3(0.0, 0.0, 0.0),
-            bitangent: vec3(0.0, 0.0, 0.0),
 
             bone_ids: [-1; MAX_BONE_INFLUENCE],
             weights: [0.0; MAX_BONE_INFLUENCE],
@@ -173,6 +168,13 @@ impl AniMesh {
 
         unsafe {
             gl_call!(gl::BindVertexArray(self.vao));
+
+            let mut vbo_size = 0;
+            let mut ebo_size = 0;
+            gl::GetBufferParameteriv(gl::ARRAY_BUFFER, gl::BUFFER_SIZE, &mut vbo_size);
+            gl::GetBufferParameteriv(gl::ELEMENT_ARRAY_BUFFER, gl::BUFFER_SIZE, &mut ebo_size);
+
+            println!("✅ VAO: {}, VBO Size: {}, EBO Size: {}", self.vao, vbo_size, ebo_size);
 
             gl_call!(gl::DrawElements(
                 gl::TRIANGLES, 

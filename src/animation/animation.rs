@@ -90,6 +90,11 @@ impl Animation {
         for channel in ai_animation.channels.iter() { 
             let bone_name = channel.name.clone();
             if !bone_info_map.contains_key(&bone_name) {
+                if bone_name.contains("Light") || bone_name.contains("Camera") {
+                    println!("⚠️ Skipping non-bone animation node: {}", bone_name);
+                    continue;
+                }
+
                 bone_info_map.insert(bone_name.clone(), BoneInfo {
                     id: *bone_count,
                     offset: Mat4::IDENTITY,
@@ -113,6 +118,8 @@ impl Animation {
         println!("=============================================================");
         println!("READING HEIRARCHY DATA");
         println!("=============================================================");
+
+        write_data(&dest.transformation, "dest_transforms.txt");
 
         for child in src.children.borrow().iter() {
             let mut new_data = AssimpNodeData::new();

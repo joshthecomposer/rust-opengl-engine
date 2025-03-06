@@ -125,7 +125,8 @@ impl AniBone {
                 }
             }
         }
-        return self.rotations.len() - 2;
+        0
+        // return self.rotations.len() - 2;
         // panic!("By rights we shouldn't even be here");
     }
 

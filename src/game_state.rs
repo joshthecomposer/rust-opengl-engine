@@ -209,6 +209,8 @@ impl GameState {
         // entity_manager.create_entity(EntityType::ArcherTower01, vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), "resources/models/sponza/sponza.obj");
         // entity_manager.create_entity(EntityType::ArcherTower01, vec3(0.0, 0.0, 0.0), Vec3::splat(0.1), "resources/models/my_obj/tower.obj");
         // entity_manager.create_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(2.0), "resources/models/my_obj/donut.obj");
+        // entity_manager.create_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(1.0), "resources/models/animation/example4.fbx");
+// "resources/models/animation/example4.fbx"
 
 
         let mut light_manager = Lights::new(50);
