@@ -264,7 +264,7 @@ impl Renderer {
         // self.debug_light_pass(camera);
         self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
         
-         camera.reset_matrices(fb_width as f32 / fb_height as f32);
+        camera.reset_matrices(fb_width as f32 / fb_height as f32);
         //  let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
         //  shader.activate();
         //  for model in em.models.iter() {

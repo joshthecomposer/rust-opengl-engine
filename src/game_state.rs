@@ -69,11 +69,11 @@ impl GameState {
         println!("Begin testing load anim model");
         // let mut anim_model = AniModel::load("resources/models/animation/run_test.fbx");
         // let mut test_anim = Animation::new("resources/models/animation/run_test.fbx".to_string(), &mut anim_model);
-        let mut anim_model = AniModel::load("resources/models/animation/example4.fbx");
-        let mut test_anim = Animation::new("resources/models/animation/example4.fbx".to_string(), &mut anim_model);
+        let mut anim_model = AniModel::load("resources/models/animation/run_test.dae");
+        let mut test_anim = Animation::new("resources/models/animation/run_test.dae".to_string(), &mut anim_model);
         let mut animator = Animator::new(test_anim);
 
-        // animator.update(0.0);
+        // animator.update(0.5);
 
         // dbg!(animator.final_bone_matrices);
 
@@ -209,8 +209,8 @@ impl GameState {
         // entity_manager.create_entity(EntityType::ArcherTower01, vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), "resources/models/sponza/sponza.obj");
         // entity_manager.create_entity(EntityType::ArcherTower01, vec3(0.0, 0.0, 0.0), Vec3::splat(0.1), "resources/models/my_obj/tower.obj");
         // entity_manager.create_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(2.0), "resources/models/my_obj/donut.obj");
-        // entity_manager.create_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(1.0), "resources/models/animation/example4.fbx");
-// "resources/models/animation/example4.fbx"
+        // entity_manager.create_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(1.0), "resources/models/animation/run_test.dae");
+        // "resources/models/animation/example4.fbx"
 
 
         let mut light_manager = Lights::new(50);
