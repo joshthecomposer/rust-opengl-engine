@@ -2,3 +2,4 @@
 .DS_Store
 libs/
 debug_output.txt
+debug_out/
