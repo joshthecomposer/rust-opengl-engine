@@ -4,7 +4,7 @@ use glam::{vec3, Mat4, Vec3, Vec4};
 use image::{GenericImageView, ImageBuffer, Rgba};
 use russimp::{bone::VertexWeight, material::{Material as RMaterial, MaterialProperty, PropertyTypeInfo, TextureType, }, mesh::Mesh as RMesh, node::Node, scene::{PostProcess, Scene}, Matrix4x4, Vector3D};
 
-use crate::{gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE};
+use crate::{debug::write::write_data, gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE};
 
 use super::ani_mesh::{AniMesh, AniVertex};
 
@@ -57,6 +57,8 @@ impl AniModel {
             panic!("Scene had no root node :/");
         }
 
+        write_data(&scene, "scene.txt");
+
         let directory = Path::new(path).parent().unwrap().to_str().unwrap();
 
         println!("Directory of ani_model is: {}", &directory);
@@ -69,7 +71,7 @@ impl AniModel {
             model.traverse_nodes(&*root_node, &scene);
         }
 
-        return model;
+        model
     }
 
     fn traverse_nodes(&mut self, node: &Node, scene: &Scene) {
