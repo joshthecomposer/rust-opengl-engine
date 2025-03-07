@@ -50,17 +50,38 @@ impl AniBone {
         };
         write_data(positions.clone(), "positions.txt");
 
-        let mut rotations = Vec::new();
-        for rotation_key in channel.rotation_keys.iter() {
-            let ai_quat = rotation_key.value;
+        let mut rotations = channel.rotation_keys
+            .iter()
+            .filter(|rotation_key| {
+                let time = rotation_key.time;
 
-            let data = KeyRotation {
-                orientation: Quat::from_xyzw(ai_quat.x, ai_quat.y, ai_quat.z, ai_quat.w),
+                // Reject subnormal numbers (extremely tiny values like 5e-324)
+                if time.abs() < 1e-300 {
+                    return false;
+                }
+
+                // Check if it is a perfect multiple of 3
+                let multiple_of_3 = (time / 3.0).round() == (time / 3.0);
+
+                multiple_of_3
+            })
+            .map(|rotation_key| KeyRotation {
+                orientation: Quat::from_xyzw(rotation_key.value.x, rotation_key.value.y, rotation_key.value.z, rotation_key.value.w),
                 time_stamp: rotation_key.time,
-            };
+            })
+            .collect::<Vec<_>>();
 
-            rotations.push(data);
-        }
+        // let mut rotations = Vec::new();
+        // for rotation_key in channel.rotation_keys.iter() {
+        //     let ai_quat = rotation_key.value;
+
+        //     let data = KeyRotation {
+        //         orientation: Quat::from_xyzw(ai_quat.x, ai_quat.y, ai_quat.z, ai_quat.w),
+        //         time_stamp: rotation_key.time,
+        //     };
+        //     
+        //     rotations.push(data);
+        // }
 
         write_data(rotations.clone(), "rotations.txt");
         write_data(channel.rotation_keys.clone(), "channel_rots.txt");
@@ -118,16 +139,16 @@ impl AniBone {
     }
 
     pub fn get_rotation_index(&mut self, animation_time: f64) -> usize {
-        for i in 0..self.rotations.len() - 1 {
+        for i in 0..self.rotations.len().saturating_sub(1) {
             if let Some(rot) = self.rotations.get(i + 1) {
                 if animation_time < rot.time_stamp {
                     return i;
                 }
             }
         }
-
-        return self.rotations.len() - 2;
-        // panic!("By rights we shouldn't even be here");
+        
+        // return self.rotations.len() - 2;
+        panic!("By rights we shouldn't even be here");
     }
 
     pub fn get_scale_index(&mut self, animation_time: f64) -> usize {
