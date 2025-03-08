@@ -1,83 +1,72 @@
-use std::fs::OpenOptions;
-use std::io::Write;
+use std::collections::HashMap;
 
 use glam::Mat4;
 
 use crate::debug::write::write_data;
 
-use super::animation::{Animation, AssimpNodeData};
+use super::{ani_model::BoneInfo, animation::{AnimationClip, Keyframe}};
 
+#[derive(Debug, Clone)]
 pub struct Animator {
-    pub final_bone_matrices: Vec<Mat4>,
-    pub current_animation: Animation,
-    pub current_time: f64,
+    pub current_time: f32,
+    pub animation_clip: AnimationClip,
 }
 
 impl Animator {
-    pub fn new(animation: Animation) -> Self {
-        let mut final_bone_matrices = Vec::new();
-        for i in 0..animation.bone_info_map.keys().len() {
-            final_bone_matrices.push(Mat4::IDENTITY);
-        }
-
-
+    pub fn new(animation_clip: AnimationClip) -> Self {
         Self {
-            final_bone_matrices,
-            current_animation: animation,
             current_time: 0.0,
+            animation_clip,
         }
     }
 
-    pub fn update(&mut self, delta: f64) {
-        self.current_time += self.current_animation.ticks_per_second * delta;
-        self.current_time = self.current_time % self.current_animation.duration;
-
-        let mut root_node = self.current_animation.root_node.clone();
-
-        // write_data(&root_node, "root_node.txt");
-
-        Self::calculate_bone_transformation(&mut root_node, self, Mat4::IDENTITY);
-
-        // panic!();
+    pub fn update(&mut self, delta_time: f32) {
+        self.current_time += delta_time;
+        if self.current_time > self.animation_clip.duration {
+            self.current_time = 0.0; // Loop animation
+        }
     }
 
-    pub fn calculate_bone_transformation(node: &mut AssimpNodeData, animator: &mut Animator, parent_transform: Mat4,) {
-        let node_name = node.name.clone();
-        let mut node_transform = node.transformation.clone();
-        
-        if let Some(bone) = animator.current_animation.find_bone(&node_name) {
-            bone.update(animator.current_time);
-            
-            if bone.local_transform.is_finite() {
-                node_transform = bone.local_transform;
-            } else {
-                // write_data(bone, "bad_transform.txt");
+    pub fn get_bone_transforms(&self, bone_info_map: &HashMap<String, BoneInfo>) -> Vec<Mat4> {
+        let mut bone_transforms = vec![Mat4::IDENTITY; bone_info_map.len()];
+    
+        // TODO: Time based animation might be better than this to optimize out some calculations
+        let current_frame = (self.current_time * self.animation_clip.fps).floor() as usize;
+
+        for bone_anim in &self.animation_clip.bone_animations {
+            let bone_info = bone_info_map.get(&bone_anim.bone_name);
+            if let Some(bone) = bone_info {
+                let transform = self.interpolate_keyframes(&bone_anim.keyframes, current_frame);
+                bone_transforms[bone.id as usize] = transform;
             }
-
-
         }
 
-        let global_transformation =  parent_transform * node_transform ;
+        // dbg!(&bone_transforms.len());
 
-        if let Some(bone_info) = animator.current_animation.bone_info_map.get(&node_name) {
-
-            let offset = Self::correct_offset_matrix(bone_info.offset);
-
-            *animator.final_bone_matrices.get_mut(bone_info.id as usize).unwrap() = global_transformation * offset;
-            write_data(bone_info, "bone_info.txt");
-        }
-
-        for child in node.children.iter_mut() {
-            Self::calculate_bone_transformation(child, animator, global_transformation);
-        }
+        bone_transforms
     }
 
-    fn correct_offset_matrix(offset: Mat4) -> Mat4 {
-        Mat4::from_cols(
-            offset.x_axis,
-            offset.z_axis,
-            -offset.y_axis,
-            offset.w_axis,
-        )
+    fn interpolate_keyframes(&self, keyframes: &Vec<Keyframe>, current_frame: usize) -> Mat4 {
+        if keyframes.is_empty() {
+            return Mat4::IDENTITY;
+        }
+
+        let prev_keyframe = keyframes.iter().rev().find(|kf| kf.frame_index <= current_frame);
+        let next_keyframe = keyframes.iter().find(|kf| kf.frame_index > current_frame);
+
+        if let (Some(prev), Some(next)) = (prev_keyframe, next_keyframe) {
+            let factor = (current_frame as f32 - prev.frame_index as f32) / 
+            (next.frame_index as f32 - prev.frame_index as f32).max(1.0);
+
+            let interpolated_pos = prev.position.lerp(next.position, factor);
+            let interpolated_rot = prev.rotation.slerp(next.rotation, factor);
+            let interpolated_scale = prev.scale.lerp(next.scale, factor);
+
+            Mat4::from_scale_rotation_translation(interpolated_scale, interpolated_rot, interpolated_pos)
+        } else if let Some(single_frame) = prev_keyframe.or(next_keyframe) {
+            Mat4::from_scale_rotation_translation(single_frame.scale, single_frame.rotation, single_frame.position)
+        } else {
+            Mat4::IDENTITY
+        }
     }
 }

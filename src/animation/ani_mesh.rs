@@ -2,9 +2,9 @@ use std::mem::{self, offset_of};
 
 use glam::{vec2, vec3, Vec2, Vec3};
 
-use crate::{gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE};
+use crate::{debug::write::write_data, gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE};
 
-#[repr(C)]
+#[repr(C, align(16))]
 #[derive(Debug, Clone)]
 pub struct AniVertex {
     pub position: Vec3,
@@ -28,6 +28,7 @@ impl AniVertex {
     }
 }
 
+#[repr(C)]
 #[derive(Debug, Clone)]
 pub struct AniMesh {
     pub vertices: Vec<AniVertex>,
@@ -54,7 +55,7 @@ impl AniMesh {
         let mut vao = 0;
         let mut vbo = 0;
         let mut ebo = 0;
-        
+
         unsafe {
             gl_call!(gl::GenVertexArrays(1, &mut vao));
             gl_call!(gl::GenBuffers(1, &mut vbo));
@@ -134,6 +135,8 @@ impl AniMesh {
             
             gl_call!(gl::BindVertexArray(0));
         }
+
+        write_data(self, "mesh_out.txt");
     }
 
 
