@@ -6,7 +6,7 @@ use russimp::{bone::VertexWeight, material::{Material as RMaterial, MaterialProp
 
 use crate::{debug::write::write_data, gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE};
 
-use super::ani_mesh::{AniMesh, AniVertex};
+use super::{ani_mesh::{AniMesh, AniVertex}, animator::Animator};
 
 #[derive(Debug, Clone)]
 pub struct BoneInfo {
@@ -48,7 +48,6 @@ impl AniModel {
             path, 
             vec![
                  PostProcess::Triangulate,
-                // PostProcess::GenerateSmoothNormals,
                 PostProcess::FlipUVs,
             ],
         ).unwrap();
@@ -161,6 +160,8 @@ impl AniModel {
                 Self::set_vertex_bone_data(vertex, bone_id, weight.weight);
             }
         }
+
+        write_data(&self.bone_info_map, "ani_model_bone_info.txt");
     }
 
     pub fn set_vertex_bone_data(vertex: &mut AniVertex, bone_id: i32, weight: f32) {
@@ -315,8 +316,12 @@ impl AniModel {
         texture_id
     }
     
-    pub fn draw(&self, shader: &mut Shader) {
-        for mesh in self.meshes.iter() {
+    pub fn draw(&self, shader: &mut Shader, animator: &Animator) {
+        let bone_transforms = animator.get_bone_transforms(&self.bone_info_map);
+        // TODO: Maybe set this in the renderer so that the shadow pass can use it.
+        shader.set_mat4_array("bone_matrices", &bone_transforms);
+
+        for mesh in &self.meshes {
             mesh.draw(shader);
         }
     }

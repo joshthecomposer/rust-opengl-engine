@@ -12,7 +12,7 @@ def convert_z_up_to_y_up(matrix):
     ))
     return conversion_matrix @ matrix
 
-def export_mymodel(filepath):
+def export_animation_data(filepath):
     with open(filepath, "w") as f:
         f.write("# WiseModel 0.0.1\n")
         
@@ -22,10 +22,10 @@ def export_mymodel(filepath):
             return
         
         armature = armatures[0]  # Assuming one armature per model
-        f.write(f"{len(armature.pose.bones)} (Bone Count)\n")
+        f.write(f"BONECOUNT: {len(armature.pose.bones)}\n")
         
         fps = bpy.context.scene.render.fps
-        f.write(f"{fps} (FPS)\n\n")
+        f.write(f"FPS: {fps}\n\n")
         for bone in armature.pose.bones:
             parent_index = -1 if bone.parent is None else list(armature.pose.bones).index(bone.parent)
             f.write(f"BONE_NAME: {bone.name}\nPARENT_INDEX: {parent_index}\nMATRIX:\n")
@@ -56,4 +56,4 @@ def export_mymodel(filepath):
                     f.write(f"{round(scale.x, 6)} {round(scale.y, 6)} {round(scale.z, 6)}\n\n")
 
 output_path = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/meme.txt")
-export_mymodel(output_path)
+export_animation_data(output_path)

@@ -5,7 +5,7 @@ use image::GrayImage;
 use imgui::{Ui};
 use rusttype::{point, Font, Scale};
 
-use crate::{animation::{ani_model::AniModel, animation::Animation, animator::Animator}, camera::Camera, entity_manager::EntityManager, enums_types::{EntityType, ShaderType}, gl_call, grid::Grid, lights::{DirLight, Lights}, model::Model, renderer::Renderer};
+use crate::{animation::{ani_model::AniModel, animation::{load_wise_animation, AnimationClip}, animator::Animator}, camera::Camera, debug::write::write_data, entity_manager::EntityManager, enums_types::{EntityType, ShaderType}, gl_call, grid::Grid, lights::{DirLight, Lights}, model::Model, renderer::Renderer};
 use rand::prelude::*;
 use rand_chacha::ChaCha8Rng;
 
@@ -67,15 +67,9 @@ impl GameState {
         gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
 
         println!("Begin testing load anim model");
-        let mut anim_model = AniModel::load("resources/models/animation/bob.fbx");
-        let mut test_anim = Animation::new("resources/models/animation/bob.fbx".to_string(), &mut anim_model);
+        let mut anim_model = AniModel::load("resources/models/animation/example4.fbx");
+        let mut test_anim = load_wise_animation("resources/meme.txt");
         let mut animator = Animator::new(test_anim);
-
-        // animator.update(0.5);
-
-        // dbg!(animator.final_bone_matrices);
-
-        // panic!();
         
         // =============================================================
         // text
@@ -325,7 +319,8 @@ impl GameState {
 
         self.elapsed += self.delta_time;
 
-        self.animator.update(self.delta_time);
+        // TODO: clean this up, we shouldn't need to cast to f32. 
+        self.animator.update(self.delta_time as f32);
 
         // let radius = 0.5;
         // let speed = 1.0;

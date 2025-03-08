@@ -1,130 +1,128 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, fs};
 
-use gl::PointSize;
-use glam::Mat4;
-use russimp::{animation::Animation as RAnimation, bone, node::Node, scene::{PostProcess, Scene}};
+use glam::{vec3, Mat4, Quat, Vec3};
 
-use crate::debug::write::write_data;
-
-use super::{ani_bone::AniBone, ani_model::{AniModel, BoneInfo}};
-
-#[derive(Clone, Debug)]
-pub struct AssimpNodeData {
-    pub transformation: Mat4,
+#[derive(Debug, Clone)]
+pub struct Bone {
     pub name: String,
-    pub children: Vec<AssimpNodeData>,
+    pub parent_index: i32, // -1 means root
+    pub offset_matrix: Mat4, // Model-space transformation
+    pub bone_id: usize,
 }
 
-impl AssimpNodeData {
-    pub fn new() -> Self {
-        Self {
-            transformation: Mat4::IDENTITY,
-            name: "".to_string(),
-            children: Vec::new(),
+#[derive(Debug, Clone)]
+pub struct Keyframe {
+    pub frame_index: usize,
+    pub position: Vec3, // Bone translation
+    pub rotation: Quat, // Bone rotation (quaternion)
+    pub scale: Vec3,    // Bone scale
+}
+
+#[derive(Debug, Clone)]
+pub struct BoneAnimation {
+    pub bone_name: String, // Matches BoneInfo name
+    pub keyframes: Vec<Keyframe>,
+}
+
+#[derive(Debug, Clone)]
+pub struct AnimationClip {
+    // TODO: We don't need a name for the animatioin clip
+    pub name: String,
+    pub total_frames: usize,
+    pub fps: f32,
+    pub bone_animations: Vec<BoneAnimation>, // Animation per bone
+    pub duration: f32,
+}
+
+pub fn load_wise_animation(file_path: &str) -> AnimationClip {
+    let data = std::fs::read_to_string(file_path).unwrap();
+    let mut lines = data.lines();
+
+    let mut bone_animations = Vec::new();
+    let mut fps = 0.0;
+    let mut total_frames = 0;
+    let mut name = String::new();
+    let mut bone_count = 0;
+
+    while let Some(line) = lines.next() {
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.is_empty() {
+            continue;
+        }
+
+        match parts[0] {
+            "WiseModel" => {
+                name = "DefaultAnimation".to_string();
+            }
+            "FPS:" => {
+                fps = parts[1].parse::<f32>().unwrap();
+                assert!(fps > 0.0);
+            }
+            "BONECOUNT:" => {
+                bone_count = parts[1].parse::<usize>().unwrap();
+            }
+            "BONE_NAME:" => {
+                let bone_name = parts[1].to_string();
+                bone_animations.push(BoneAnimation {
+                    bone_name,
+                    keyframes: Vec::new(),
+                });
+            }
+            _ => {}
         }
     }
-}
 
-#[derive(Clone, Debug)]
-pub struct Animation {
-    pub duration: f64,
-    pub ticks_per_second: f64,
-    pub bones: Vec<AniBone>,
-    pub root_node: AssimpNodeData,
-    pub bone_info_map: HashMap<String, BoneInfo>,
-    pub global_inverse_transformation: Mat4,
-}
+    // Reset the iterator to read keyframes
+    let mut lines = data.lines();
+    while let Some(line) = lines.next() {
+        let parts: Vec<&str> = line.split_whitespace().collect();
+        if parts.is_empty() {
+            continue;
+        }
 
-impl Animation {
-    pub fn new(animation_path: String, model: &mut AniModel) -> Animation {
-        println!("=============================================================");
-        println!("BEGIN LOADING OF SCENE FOR ANIMATION: {}", animation_path);
-        println!("=============================================================");
+        if parts[0] == "KEYFRAME:" {
+            let frame_index: usize = parts[1].parse().unwrap();
 
-        let scene = Scene::from_file(
-            animation_path.as_str(),
-            vec![
-                PostProcess::Triangulate,
-                PostProcess::FlipUVs,
-            ],
-        ).unwrap();
+            for bone_index in 0..bone_count {
+                let position: Vec3 = parse_vec3(lines.next().unwrap());
+                let rotation: Quat = parse_quat(lines.next().unwrap());
+                let scale: Vec3 = parse_vec3(lines.next().unwrap());
 
-        assert!(scene.root.is_some());
+                let keyframe = Keyframe {
+                    frame_index,
+                    position,
+                    rotation,
+                    scale,
+                };
 
-        write_data(&scene, "scene.txt");
-
-        let ai_animation = scene.animations.get(0).unwrap();
-        let duration = ai_animation.duration;
-        let ticks_per_second = ai_animation.ticks_per_second;
-        let mut dest = AssimpNodeData::new();
-
-        let root_node = scene.root.as_ref().unwrap();
-
-        Self::read_heirarchy_data(&mut dest, root_node);
-
-        let root_transform = AniModel::russimp_mat4_to_glam(root_node.transformation.clone());
-        let global_inverse_transformation = root_transform.inverse();
-
-        let mut anim = Self {
-            duration,
-            ticks_per_second,
-            bones: Vec::new(),
-            root_node: dest,
-            bone_info_map: HashMap::new(),
-            global_inverse_transformation,
-        };
-
-        anim.read_missing_bones(model, &ai_animation);
-
-        anim
-    }
-
-    pub fn find_bone(&mut self, input: &String) -> Option<&mut AniBone> {
-        self.bones.iter_mut().find(|b| b.name == *input)
-    }
-
-    pub fn read_missing_bones(&mut self, model: &mut AniModel, ai_animation: &RAnimation) {
-        let bone_count = &mut model.bone_counter;
-        let bone_info_map = &mut model.bone_info_map;
-
-        for channel in ai_animation.channels.iter() { 
-            let bone_name = channel.name.clone();
-            if !bone_info_map.contains_key(&bone_name) {
-                if bone_name.contains("Light") || bone_name.contains("Camera") {
-                    println!("⚠️ Skipping non-bone animation node: {}", bone_name);
-                    continue;
+                if bone_index < bone_animations.len() {
+                    bone_animations[bone_index].keyframes.push(keyframe);
                 }
 
-                bone_info_map.insert(bone_name.clone(), BoneInfo {
-                    id: *bone_count,
-                    offset: Mat4::IDENTITY,
-                });
-                *bone_count += 1;
+                lines.next();
             }
 
-            self.bones.push(AniBone::new(
-                bone_name.clone(),
-                bone_info_map.get(&bone_name).unwrap().id as usize,
-                channel
-            ));
-        }
-
-        self.bone_info_map = bone_info_map.clone();
-    }
-
-    pub fn read_heirarchy_data(dest: &mut AssimpNodeData, src: &Node) {
-        dest.name = src.name.clone();
-        dest.transformation = AniModel::russimp_mat4_to_glam(src.transformation);
-        println!("=============================================================");
-        println!("READING HEIRARCHY DATA");
-        println!("=============================================================");
-
-        write_data(&dest.transformation, "dest_transforms.txt");
-
-        for child in src.children.borrow().iter() {
-            let mut new_data = AssimpNodeData::new();
-            Self::read_heirarchy_data(&mut new_data, &child);
-            dest.children.push(new_data);
+            total_frames = total_frames.max(frame_index + 1);
         }
     }
+
+    let duration = total_frames as f32 / fps;
+
+    AnimationClip {
+        name,
+        total_frames,
+        fps,
+        bone_animations,
+        duration,
+    }
+}
+
+fn parse_vec3(line: &str) -> Vec3 {
+    let parts: Vec<f32> = line.split_whitespace().map(|v| v.parse().unwrap()).collect();
+    vec3(parts[0], parts[1], parts[2])
+}
+
+fn parse_quat(line: &str) -> Quat {
+    let parts: Vec<f32> = line.split_whitespace().map(|v| v.parse().unwrap()).collect();
+    Quat::from_xyzw(parts[1], parts[2], parts[3], parts[0]) // Order (w, x, y, z)
 }

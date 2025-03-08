@@ -53,7 +53,7 @@ impl Renderer {
         anim_shader.store_uniform_location("projection");
         anim_shader.store_uniform_location("view");
         anim_shader.store_uniform_location("model");
-        anim_shader.store_uniform_location("finalBonesMatrices");
+        anim_shader.store_uniform_location("bone_matrices");
 
         let mut vao = 0;
         let mut vbo = 0;
@@ -299,14 +299,9 @@ impl Renderer {
         camera.model = Mat4::IDENTITY * Mat4::from_translation(vec3(0.0, 0.0, 0.0)) * Mat4::from_scale(vec3(0.01, 0.01, 0.01));
         ani_shader.set_mat4("model", camera.model);
 
-        for (i, transform) in animator.final_bone_matrices.iter().enumerate() {
-            ani_shader.set_mat4(format!("finalBonesMatrices[{}]", i).as_str(), *transform);
-        }
-
         unsafe {
              gl_call!(gl::Disable(gl::CULL_FACE));
-            anim_model.draw(ani_shader);
-            // gl_call!(gl::Enable(gl::CULL_FACE));
+            anim_model.draw(ani_shader, &animator);
         }
     }
 
