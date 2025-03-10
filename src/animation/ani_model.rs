@@ -143,10 +143,12 @@ impl AniModel {
             if let Some(bone_info) = self.bone_info_map.get(&bone_name) {
                 bone_id = bone_info.id as i32;
             } else {
+                write_data(&bone.offset_matrix, "original_offset_matrix.txt");
                 let new_bone_info = BoneInfo {
                     id: self.bone_counter,
                     offset: Self::russimp_mat4_to_glam(bone.offset_matrix),
                 };
+
                 self.bone_info_map.insert(bone_name, new_bone_info);
                 bone_id = self.bone_counter;
                 self.bone_counter += 1;
@@ -317,9 +319,9 @@ impl AniModel {
     }
     
     pub fn draw(&self, shader: &mut Shader, animator: &Animator) {
-        let bone_transforms = animator.get_bone_transforms(&self.bone_info_map);
-        // TODO: Maybe set this in the renderer so that the shadow pass can use it.
-        shader.set_mat4_array("bone_matrices", &bone_transforms);
+        //let bone_transforms = animator.get_bone_transforms(&self.bone_info_map);
+        //// TODO: Maybe set this in the renderer so that the shadow pass can use it.
+        //shader.set_mat4_array("bone_matrices", &bone_transforms);
 
         for mesh in &self.meshes {
             mesh.draw(shader);
