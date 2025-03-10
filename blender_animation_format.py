@@ -30,7 +30,7 @@ def export_animation_data(filepath):
             parent_index = -1 if bone.parent is None else list(armature.pose.bones).index(bone.parent)
             f.write(f"BONE_NAME: {bone.name}\nPARENT_INDEX: {parent_index}\nMATRIX:\n")
             
-            matrix = convert_y_up(bone.bone.matrix_local)
+            matrix = convert_y_up(bone.bone.matrix_local).transposed()
             
             for row in matrix:
                 f.write(f"{row[0]:.5f} {row[1]:.5f} {row[2]:.5f} {row[3]:.5f}\n")
@@ -38,14 +38,21 @@ def export_animation_data(filepath):
 
         if armature.animation_data and armature.animation_data.action:
             action = armature.animation_data.action
+
+            
             f.write(f"# ========== {action.name} ==========\n")
+
 
             frame_start = int(action.frame_range[0])
             frame_end = int(action.frame_range[1])
+            duration = (frame_end - frame_start) / fps
+            f.write(f"DURATION: {duration:.5f}\n\n")
 
             for frame in range(frame_start, frame_end + 1):
                 bpy.context.scene.frame_set(frame)
+                timestamp = frame / fps
                 f.write(f"KEYFRAME: {frame}\n")
+                f.write(f"TIMESTAMP: {timestamp:.5f}\n")
 
                 for bone in armature.pose.bones:
                     position = bone.head  # Local position
