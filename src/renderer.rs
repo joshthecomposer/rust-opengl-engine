@@ -1,6 +1,6 @@
 use std::{collections::HashMap, ffi::c_void, mem, ptr::null_mut};
 
-use glam::{vec3, vec4, Mat4};
+use glam::{vec3, vec4, Mat4, Quat, Vec3};
 use image::GenericImageView;
 
 use crate::{animation::{ani_model::AniModel, animator::Animator}, camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}};
@@ -296,12 +296,20 @@ impl Renderer {
         ani_shader.activate();
         ani_shader.set_mat4("projection", camera.projection);
         ani_shader.set_mat4("view", camera.view);
-        camera.model = Mat4::IDENTITY * Mat4::from_translation(vec3(0.0, 0.0, 0.0)) * Mat4::from_scale(vec3(0.01, 0.01, 0.01));
+
+        let pos = Vec3::splat(1.0);
+        let scale = Vec3::splat(1.0);
+        let rot = Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707);
+        // let rot = Quat::from_rotation_x(0.1);
+
+
+
+        camera.model = Mat4::IDENTITY * Mat4::from_scale_rotation_translation(scale, rot, pos) * Mat4::from_scale(vec3(1.0, 1.0, 1.0));
         ani_shader.set_mat4("model", camera.model);
 
         unsafe {
              gl_call!(gl::Disable(gl::CULL_FACE));
-            anim_model.draw(ani_shader, &animator);
+            anim_model.draw(ani_shader, animator);
         }
     }
 
