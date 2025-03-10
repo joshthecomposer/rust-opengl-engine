@@ -5,7 +5,7 @@ use image::GrayImage;
 use imgui::{Ui};
 use rusttype::{point, Font, Scale};
 
-use crate::{animation::{ani_model::AniModel, animation::Animation, animator::Animator}, camera::Camera, entity_manager::EntityManager, gl_call, grid::Grid, lights::{DirLight, Lights}, renderer::Renderer};
+use crate::{animation::system_three::import_bone_data, camera::Camera, entity_manager::EntityManager, gl_call, grid::Grid, lights::{DirLight, Lights}, renderer::Renderer};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -35,8 +35,8 @@ pub struct GameState {
     pub glyph_tex: u32,
     pub tex_vao: u32,
     
-    pub animator: Animator,
-    pub anim_model: AniModel,
+    // pub animator: Animator,
+    // pub anim_model: AniModel,
 }
 
 impl GameState {
@@ -67,9 +67,13 @@ impl GameState {
         gl::load_with(|symbol| window.get_proc_address(symbol) as *const _);
 
         println!("Begin testing load anim model");
-        let mut anim_model = AniModel::load("resources/models/animation/Mytest.fbx");
-        let mut test_anim = Animation::new("resources/models/animation/Mytest.fbx".to_string(), &mut anim_model);
-        let mut animator = Animator::new(test_anim);
+        // let mut anim_model = AniModel::load("resources/models/animation/Mytest.fbx");
+        // let mut test_anim = Animation::new("resources/models/animation/Mytest.fbx".to_string(), &mut anim_model);
+        // let mut animator = Animator::new(test_anim);
+
+        import_bone_data("resources/armature.txt");
+
+        panic!();
         
         // =============================================================
         // text
@@ -245,8 +249,8 @@ impl GameState {
             glyph_tex,
             tex_vao,
 
-            animator,
-            anim_model,
+            // animator,
+            // anim_model,
         }
     }
 
@@ -320,7 +324,6 @@ impl GameState {
         self.elapsed += self.delta_time;
 
         // TODO: clean this up, we shouldn't need to cast to f32. 
-        self.animator.update(self.delta_time);
 
         // let radius = 0.5;
         // let speed = 1.0;
@@ -347,7 +350,7 @@ impl GameState {
 
     pub fn render(&mut self) {
         self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
-        self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, self.fb_width, self.fb_height, &self.animator, &mut self.anim_model);
+        self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, self.fb_width, self.fb_height);
 
         // =============================================================
         // Render test text
