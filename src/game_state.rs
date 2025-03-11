@@ -5,7 +5,7 @@ use image::GrayImage;
 use imgui::{Ui};
 use rusttype::{point, Font, Scale};
 
-use crate::{animation::system_three::import_bone_data, camera::Camera, entity_manager::EntityManager, gl_call, grid::Grid, lights::{DirLight, Lights}, renderer::Renderer};
+use crate::{animation::system_three::{import_bone_data, import_model_data, Model}, camera::Camera, debug::write::write_data, entity_manager::EntityManager, gl_call, grid::Grid, lights::{DirLight, Lights}, renderer::Renderer};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -36,7 +36,7 @@ pub struct GameState {
     pub tex_vao: u32,
     
     // pub animator: Animator,
-    // pub anim_model: AniModel,
+    pub model: Model,
 }
 
 impl GameState {
@@ -71,9 +71,11 @@ impl GameState {
         // let mut test_anim = Animation::new("resources/models/animation/Mytest.fbx".to_string(), &mut anim_model);
         // let mut animator = Animator::new(test_anim);
 
-        import_bone_data("resources/armature2.txt");
+        let (skellington, anim) = import_bone_data("resources/armature2.txt");
+        let mut model = import_model_data("resources/model.txt", &anim);
+        model.setup_opengl();
 
-        panic!();
+        write_data(&model, "model_out.txt");
         
         // =============================================================
         // text
@@ -251,6 +253,7 @@ impl GameState {
 
             // animator,
             // anim_model,
+            model: model.clone(),
         }
     }
 
@@ -350,7 +353,7 @@ impl GameState {
 
     pub fn render(&mut self) {
         self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
-        self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, self.fb_width, self.fb_height);
+        self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, self.fb_width, self.fb_height, &self.model);
 
         // =============================================================
         // Render test text
