@@ -131,6 +131,7 @@ impl Model {
 
     pub fn shadow_pass(shader: &mut Shader) {
     }
+
 }
 
 #[derive(Debug, Clone)]
@@ -195,6 +196,28 @@ impl Animation {
             bone_transforms: HashMap::new(),
         }
     }
+
+    pub fn calculate_pose(
+        &mut self,
+        skeleton: &mut Bone,
+        elapsed_time: f32,
+        current_pose: Vec<Mat4>,
+        parent_transform: Mat4, // Maybe starts as identity?
+        global_inverse_transform: Mat4,
+    ) {
+        let btt = self.bone_transforms.get(&skeleton.name).unwrap();
+
+        let dt = elapsed_time % self.duration;
+
+
+
+    }
+}
+
+pub fn get_time_fraction(times: Vec<f32>, dt: f32) -> (u32, f32) {
+    let segment = 0;
+
+    unimplemented!();
 }
 
 pub fn import_bone_data(file_path: &str) -> (Bone, Animation) {

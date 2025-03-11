@@ -18,16 +18,19 @@ fn main() {
     }
 
     // Debug: Check if Bash is available
-    let bash_status = Command::new("where")
-        .arg("bash")
-        .status()
-        .expect("Failed to check for Bash installation");
+    #[cfg(target_os = "windows")]
+    {
+        let bash_status = Command::new("where")
+            .arg("bash")
+            .status()
+            .expect("Failed to check for Bash installation");
 
-    if !bash_status.success() {
-        panic!("Bash not found! Ensure it's installed and in PATH.");
+        if !bash_status.success() {
+            panic!("Bash not found! Ensure it's installed and in PATH.");
+        }
     }
 
-    #[allow(clippy)]
+    //#[allow(clippy)]
     {
         let resource_script_path = "./copy_files.sh";
 
