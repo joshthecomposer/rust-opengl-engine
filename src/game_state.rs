@@ -71,7 +71,7 @@ impl GameState {
         // let mut test_anim = Animation::new("resources/models/animation/Mytest.fbx".to_string(), &mut anim_model);
         // let mut animator = Animator::new(test_anim);
 
-        import_bone_data("resources/armature.txt");
+        import_bone_data("resources/armature2.txt");
 
         panic!();
         

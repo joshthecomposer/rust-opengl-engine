@@ -26,6 +26,7 @@ def export_animation_data(filepath):
 
         fps = bpy.context.scene.render.fps
         f.write(f"FPS: {fps}\n\n")
+        # TODO: This oughtta be for `obj` in `armature.pose.bones` perhaps.
         for bone in armature.pose.bones:
             parent_index = -1 if bone.parent is None else list(armature.pose.bones).index(bone.parent)
             f.write(f"BONE_NAME: {bone.name}\nPARENT_INDEX: {parent_index}\nOFFSET_MATRIX:\n")
