@@ -26,7 +26,6 @@ def export_animation_data(filepath):
 
         fps = bpy.context.scene.render.fps
         f.write(f"FPS: {fps}\n\n")
-        # TODO: This oughtta be for `obj` in `armature.pose.bones` perhaps.
         for bone in armature.pose.bones:
             parent_index = -1 if bone.parent is None else list(armature.pose.bones).index(bone.parent)
             f.write(f"BONE_NAME: {bone.name}\nPARENT_INDEX: {parent_index}\nOFFSET_MATRIX:\n")
@@ -146,17 +145,18 @@ def export_mesh_with_indices(filepath):
                 uv = v[6]
                 weights = v[7]
 
-                f.write(f"VERT_POS: {pos[0]:.5f} {pos[1]:.5f} {pos[2]:.5f}\nNORMAL: {norm[0]:.5f} {norm[1]:.5f} {norm[2]:.5f}\nTEX_COORDS: {uv[0]:.5f} {uv[1]:.5f}\n")
+                f.write(f"VERT:\n{pos[0]:.5f} {pos[1]:.5f} {pos[2]:.5f}\n{norm[0]:.5f} {norm[1]:.5f} {norm[2]:.5f}\n{uv[0]:.5f} {uv[1]:.5f}\n")
 
                 if weights:
-                    f.write("WEIGHTS: " + " ".join(f"{bone} {weight}" for bone, weight in weights) + "\n\n")
+                    text = " ".join(f"{bone} {weight}" for bone, weight in weights)
+                    f.write(text + "\n\n")
                 else:
                     f.write("WEIGHTS: None\n\n")
 
             # Export indices
             f.write(f"INDEX_COUNT: {len(indices)}\n")
             for i in range(0, len(indices), 3):
-                f.write(f"INDEX: {indices[i]} {indices[i+1]} {indices[i+2]}\n")
+                f.write(f"{indices[i]} {indices[i+1]} {indices[i+2]} ")
 
 armature_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/armature2.txt")
 mesh_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/model.txt")

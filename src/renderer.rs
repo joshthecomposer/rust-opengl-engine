@@ -3,7 +3,7 @@ use std::{collections::HashMap, ffi::c_void, mem, ptr::null_mut};
 use glam::{vec3, vec4, Mat4, Quat, Vec3};
 use image::GenericImageView;
 
-use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}};
+use crate::{animation::system_three::Model, camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}};
 
 pub struct Renderer {
     pub shaders: HashMap<ShaderType, Shader>, // TODO: make this an enum
@@ -53,7 +53,6 @@ impl Renderer {
         anim_shader.store_uniform_location("projection");
         anim_shader.store_uniform_location("view");
         anim_shader.store_uniform_location("model");
-        anim_shader.store_uniform_location("bone_matrices");
 
         let mut vao = 0;
         let mut vbo = 0;
@@ -242,7 +241,7 @@ impl Renderer {
         }
     }
 
-    pub fn draw(&mut self, em: &EntityManager, camera: &mut Camera, light_manager: &Lights, grid: &mut Grid, fb_width: u32, fb_height: u32,) {
+    pub fn draw(&mut self, em: &EntityManager, camera: &mut Camera, light_manager: &Lights, grid: &mut Grid, fb_width: u32, fb_height: u32, model: &Model) {
         self.shadow_pass(em,  camera, light_manager, fb_width, fb_height);
         unsafe {
             gl_call!(gl::ClearColor(0.0, 0.0, 0.0, 1.0));
@@ -291,26 +290,24 @@ impl Renderer {
         //      }
         //  }
 
-        // let ani_shader = self.shaders.get_mut(&ShaderType::AniModel).unwrap();
+        let ani_shader = self.shaders.get_mut(&ShaderType::AniModel).unwrap();
 
-        // ani_shader.activate();
-        // ani_shader.set_mat4("projection", camera.projection);
-        // ani_shader.set_mat4("view", camera.view);
+            ani_shader.activate();
+         ani_shader.set_mat4("projection", camera.projection);
+         ani_shader.set_mat4("view", camera.view);
 
-        // let pos = Vec3::splat(1.0);
-        // let scale = Vec3::splat(1.0);
-        // let rot = Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707);
-        // // let rot = Quat::from_rotation_x(0.1);
-
+        let pos = Vec3::splat(0.0);
+        let scale = Vec3::splat(1.0);
+        let rot = Quat::from_xyzw(0.0, 0.0, 0.0, 0.0);
 
 
-        // camera.model = Mat4::IDENTITY * Mat4::from_scale_rotation_translation(scale, rot, pos) * Mat4::from_scale(vec3(1.0, 1.0, 1.0));
-        // ani_shader.set_mat4("model", camera.model);
+        camera.model = Mat4::IDENTITY * Mat4::from_scale_rotation_translation(scale, rot, pos);
+        ani_shader.set_mat4("model", camera.model);
 
-        // unsafe {
-        //      gl_call!(gl::Disable(gl::CULL_FACE));
-        //     anim_model.draw(ani_shader, animator);
-        // }
+        unsafe {
+            gl_call!(gl::Disable(gl::CULL_FACE));
+        }
+        model.draw(ani_shader);
     }
 
     fn grid_pass(&mut self,grid: &mut Grid, camera: &mut Camera, light_manager: &Lights, fb_width: u32, fb_height: u32) {
