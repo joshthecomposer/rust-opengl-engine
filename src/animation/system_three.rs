@@ -1,12 +1,12 @@
 use std::{collections::HashMap, ptr, str::Lines};
 
-use glam::{Mat4, Quat, Vec2, Vec3, Vec4};
+use glam::{vec3, vec4, Mat4, Quat, Vec2, Vec3, Vec4};
 use std::{ffi::CString, mem::{self, offset_of}};
 
 use crate::{debug::write::write_data, gl_call, shaders::Shader, some_data::MAX_BONE_INFLUENCE};
 
-#[repr(C)]
 #[derive(Debug, Clone)]
+#[repr(C)]
 pub struct Vertex {
     pub position: Vec3,
     pub normal: Vec3,
@@ -40,37 +40,37 @@ impl Model {
 
     pub fn setup_opengl(&mut self) {
         unsafe {
-            gl::GenVertexArrays(1, &mut self.vao);
-            gl::GenBuffers(1, &mut self.vbo);
-            gl::GenBuffers(1, &mut self.ebo);
+            gl_call!(gl::GenVertexArrays(1, &mut self.vao));
+            gl_call!(gl::GenBuffers(1, &mut self.vbo));
+            gl_call!(gl::GenBuffers(1, &mut self.ebo));
 
-            gl::BindVertexArray(self.vao);
-            gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo);
+            gl_call!(gl::BindVertexArray(self.vao));
+            gl_call!(gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo));
 
-            gl::BufferData(
+            gl_call!(gl::BufferData(
                 gl::ARRAY_BUFFER, 
                 (mem::size_of::<Vertex>() * self.vertices.len()) as isize,
                 self.vertices.as_ptr().cast(),
                 gl::STATIC_DRAW,
-            );
+            ));
 
-            gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.ebo);
-            gl::BufferData(
+            gl_call!(gl::BindBuffer(gl::ELEMENT_ARRAY_BUFFER, self.ebo));
+            gl_call!(gl::BufferData(
                 gl::ELEMENT_ARRAY_BUFFER,
                 (mem::size_of::<u32>() * self.indices.len()) as isize,
                 self.indices.as_ptr().cast(),
                 gl::STATIC_DRAW
-            );
+            ));
 
-            gl::EnableVertexAttribArray(0);
-            gl::VertexAttribPointer(
+            gl_call!(gl::EnableVertexAttribArray(0));
+            gl_call!(gl::VertexAttribPointer(
                 0, 
                 3, 
                 gl::FLOAT, 
                 gl::FALSE, 
                 mem::size_of::<Vertex>() as i32,
                 ptr::null(),
-            );
+            ));
 
             gl_call!(gl::EnableVertexAttribArray(1));
             gl_call!(gl::VertexAttribPointer(
@@ -116,6 +116,7 @@ impl Model {
     }
 
     pub fn draw(&self, shader: &mut Shader) {
+        shader.activate();
         unsafe {
             gl_call!(gl::BindVertexArray(self.vao));
              gl_call!(gl::DrawElements(
@@ -131,7 +132,6 @@ impl Model {
 
     pub fn shadow_pass(shader: &mut Shader) {
     }
-
 }
 
 #[derive(Debug, Clone)]
@@ -181,10 +181,11 @@ impl BoneTransformTrack {
 pub struct Animation {
     duration: f32,
     ticks_per_second: f32,
-    gpu_bone_info: Vec<GPUBoneInfo>,
+    gpu_bone_info: Vec<GPUBoneInfo>, // TODO> rename this model_animation_join
     // Bone name is the key.
     // It makes sense to keep this away from the bone because we could have multiple animations
-    bone_transforms: HashMap<String, BoneTransformTrack>
+    bone_transforms: HashMap<String, BoneTransformTrack>,
+    pub current_pose: Vec<Mat4>,
 }
 
 impl Animation {
@@ -194,6 +195,7 @@ impl Animation {
             ticks_per_second: 0.0,
             gpu_bone_info: vec![],
             bone_transforms: HashMap::new(),
+            current_pose: vec![],
         }
     }
 
@@ -201,23 +203,68 @@ impl Animation {
         &mut self,
         skeleton: &mut Bone,
         elapsed_time: f32,
-        current_pose: Vec<Mat4>,
         parent_transform: Mat4, // Maybe starts as identity?
         global_inverse_transform: Mat4,
     ) {
         let btt = self.bone_transforms.get(&skeleton.name).unwrap();
 
-        let dt = elapsed_time % self.duration;
+        let dt = (elapsed_time / 1000.0) % self.duration;
+        
+        // We should only have to get time fraction once, because they all align equally.
+        let (segment, fraction) = get_time_fraction(&btt.position_timestamps, dt);
+        // Position
+        let position1 = btt.positions[(segment - 1) as usize];
+        let position2 = btt.positions[segment as usize];
 
+        let position = position1.lerp(position2, fraction); 
 
+        // Rotation
+        let rotation1 = btt.rotations[(segment - 1) as usize];
+        let rotation2 = btt.rotations[segment as usize];
 
+        let rotation = rotation1.slerp(rotation2, fraction);
+
+        // Scale
+        let scale1 = btt.scales[(segment - 1) as usize];
+        let scale2 = btt.scales[segment as usize];
+
+        let scale = scale1.lerp(scale2, fraction);
+
+        let local_transform = Mat4::from_scale_rotation_translation(scale, rotation, position);
+        let global_transform = parent_transform * local_transform;
+
+        self.current_pose[skeleton.id as usize] = global_inverse_transform * global_transform * skeleton.offset;
+
+        for child in skeleton.children.iter_mut() {
+            self.calculate_pose(child, dt, global_transform, global_inverse_transform);
+        }
+    }
+
+    pub fn update(&mut self, elapsed_time: f32, skellington: &mut Bone) {
+        self.calculate_pose(
+            skellington, 
+            elapsed_time, 
+            Mat4::IDENTITY,
+            Mat4::from_scale(vec3(0.01, 0.01, 0.01)),
+        );
     }
 }
 
-pub fn get_time_fraction(times: Vec<f32>, dt: f32) -> (u32, f32) {
-    let segment = 0;
+pub fn get_time_fraction(times: &Vec<f32>, dt: f32) -> (u32, f32) {
+    let mut segment = 0;
 
-    unimplemented!();
+    while dt > times[segment] {
+        segment += 1;
+    }
+
+    write_data(times, "times.txt");
+    write_data(segment, "segment.txt");
+
+    let start = times[segment - 1];
+    let end = times[segment];
+    let frac = (dt - start) / (end - start);
+
+    (segment as u32, frac)
 }
 
 pub fn import_bone_data(file_path: &str) -> (Bone, Animation) {
@@ -292,7 +339,10 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animation) {
             }
         );
 
+        animation.current_pose.push(b.offset);
+
         assert!(gpu_bone_info[b.id as usize].name == b.name);
+        assert!(gpu_bone_info.len() == animation.current_pose.len());
     }
 
     while let Some(line) = lines.next() {
@@ -387,6 +437,13 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> Model {
 
                     vertex.bone_ids[i] = bone_id;
                     vertex.bone_weights[i] = weight;
+
+                    let total_weight = vertex.bone_weights.iter().sum::<f32>();
+                    if total_weight > 0.0 {
+                        for w in vertex.bone_weights.iter_mut() {
+                            *w /= total_weight;
+                        }
+                    }
                 }
                 
                 model.vertices.push(vertex);
@@ -489,7 +546,4 @@ fn build_tree_node(
     }
 
     node
-}
-
-pub fn pose_bones_recursively() {
 }

@@ -25,7 +25,13 @@ def export_animation_data(filepath):
         f.write(f"BONECOUNT: {len(armature.pose.bones)}\n")
 
         fps = bpy.context.scene.render.fps
-        f.write(f"FPS: {fps}\n\n")
+        f.write(f"FPS: {fps}\n")
+        global_transform = convert_y_up(armature.matrix_world.copy()).transposed()
+        f.write(f"GLOBAL_TRANSFORM:\n")
+        for row in global_transform:
+            f.write(f"{row[0]:.5f} {row[1]:.5f} {row[2]:.5f} {row[3]:.5f}\n")
+        f.write("\n")
+    
         for bone in armature.pose.bones:
             parent_index = -1 if bone.parent is None else list(armature.pose.bones).index(bone.parent)
             f.write(f"BONE_NAME: {bone.name}\nPARENT_INDEX: {parent_index}\nOFFSET_MATRIX:\n")
@@ -159,8 +165,8 @@ def export_mesh_with_indices(filepath):
             for i in range(0, len(indices), 3):
                 f.write(f"{indices[i]} {indices[i+1]} {indices[i+2]} ")
 
-armature_output = os.path.expanduser("/Users/joshuawise/dev/rust/rust-opengl-engine/resources/armature2.txt")
-mesh_output = os.path.expanduser("/Users/joshuawise/dev/rust/rust-opengl-engine/resources/model.txt")
+armature_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/armature2.txt")
+mesh_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/model.txt")
 
 export_animation_data(armature_output)
 
