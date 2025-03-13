@@ -165,7 +165,7 @@ def export_mesh_with_indices(filepath):
                             vertex_weights.append((bone_name, round(weight, 6)))
 
                     # Unique key for vertex
-                    vertex_key = (position.x, position.z, position.y, normal.x, normal.z, normal.y, uv_tuple, tuple(vertex_weights))
+                    vertex_key = (-position.x, position.z, position.y, -normal.x, normal.z, normal.y, uv_tuple, tuple(vertex_weights))
 
                     if vertex_key not in vertex_map:
                         vertex_map[vertex_key] = len(unique_vertices)
@@ -195,13 +195,13 @@ def export_mesh_with_indices(filepath):
             for i in range(0, len(indices), 3):
                 f.write(f"{indices[i]} {indices[i+1]} {indices[i+2]} ")
 
-armature_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/armature2.txt")
-mesh_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/model.txt")
+armature_output = os.path.expanduser("~/dev/rust/rust-opengl-engine/resources/armature2.txt")
+mesh_output = os.path.expanduser("~/dev/rust/rust-opengl-engine/resources/model.txt")
 
-current_frame = bpy.context.scene.frame_current
-bpy.context.scene.frame_set(0)
+#current_frame = bpy.context.scene.frame_current
+#bpy.context.scene.frame_set(0)
 export_animation_data(armature_output)
-bpy.context.scene.frame_set(current_frame)
+#bpy.context.scene.frame_set(current_frame)
 
 current_frame = bpy.context.scene.frame_current
 bpy.context.scene.frame_set(0)
