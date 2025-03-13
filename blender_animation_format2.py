@@ -1,6 +1,8 @@
 import bpy
 import os
 import mathutils
+import math
+from bpy_extras.io_utils import axis_conversion
 
 def convert_y_up(matrix):
     """Convert Blender’s Z-up coordinate system to OpenGL’s Y-up system."""
@@ -11,6 +13,23 @@ def convert_y_up(matrix):
         (0,  0,  0,  1)
     ))
     return conversion_matrix @ matrix
+
+def convert_y_up_quaternion(blender_quaternion):
+    """
+    Converts a Blender quaternion to an OpenGL-compatible quaternion.
+
+    Args:
+        blender_quaternion: A mathutils.Quaternion representing the rotation in Blender's coordinate system.
+
+    Returns:
+        A mathutils.Quaternion representing the rotation in OpenGL's coordinate system.
+    """
+    mat_convert = axis_conversion(from_forward='-Y', from_up='Z', to_forward='-Z', to_up='Y').to_4x4()
+
+    q_convert = mat_convert.to_quaternion()
+    q_new = q_convert @ blender_quaternion @ q_convert.inverted()
+
+    return q_new
 
 def export_animation_data(filepath):
     with open(filepath, "w") as f:
@@ -23,10 +42,13 @@ def export_animation_data(filepath):
 
         armature = armatures[0]  # Assuming one armature per model
         f.write(f"BONECOUNT: {len(armature.pose.bones)}\n")
-
+        
+        conv = axis_conversion(from_forward='-Y', from_up='Z', to_forward='-Z', to_up='Y').to_4x4()
+        armature.data.transform(conv)
+        
         fps = bpy.context.scene.render.fps
         f.write(f"FPS: {fps}\n")
-        global_transform = convert_y_up(armature.matrix_world.copy()).transposed()
+        global_transform = armature.matrix_world.copy().inverted().transposed()
         f.write(f"GLOBAL_TRANSFORM:\n")
         for row in global_transform:
             f.write(f"{row[0]:.5f} {row[1]:.5f} {row[2]:.5f} {row[3]:.5f}\n")
@@ -37,7 +59,9 @@ def export_animation_data(filepath):
             f.write(f"BONE_NAME: {bone.name}\nPARENT_INDEX: {parent_index}\nOFFSET_MATRIX:\n")
             
             # inverse bindpose matrix for the bone.
-            offset_matrix = convert_y_up(bone.bone.matrix_local.copy().inverted().transposed())
+            
+            # offset_matrix = convert_y_up(armature.matrix_world.copy() @ bone.bone.matrix_local).transposed().inverted_safe();
+            offset_matrix = bone.bone.matrix_local.inverted().transposed()
             
             for row in offset_matrix:
                 f.write(f"{row[0]:.5f} {row[1]:.5f} {row[2]:.5f} {row[3]:.5f}\n")
@@ -62,18 +86,24 @@ def export_animation_data(filepath):
                 f.write(f"TIMESTAMP: {timestamp:.5f}\n")
 
                 for bone in armature.pose.bones:
-                    position = bone.head  # Local position
-                    rotation = bone.rotation_quaternion 
+                    parent_matrix = bone.parent.matrix if bone.parent else mathutils.Matrix.Identity(4)
+                    local_matrix  = parent_matrix.inverted_safe() @ bone.matrix
+                    position = local_matrix.translation
+
+                    rotation = local_matrix.to_quaternion()
+                    qw = rotation.w
+                    qx = rotation.x
+                    qy = rotation.y
+                    qz = rotation.z
                     scale = bone.scale
 
                     f.write(f"{position.x:.5f} {position.y:.5f} {position.z:.5f}\n")
-                    f.write(f"{rotation.w:.5f} {rotation.x:.5f} {rotation.y:.5f} {rotation.z:.5f}\n")
+                    f.write(f"{qx:.5f} {qy:.5f} {qz:.5f} {qw:.5f}\n")
                     f.write(f"{scale.x:.5f} {scale.y:.5f} {scale.z:.5f}\n\n")
 
                     
 
 def export_mesh_with_indices(filepath):
-
     with open(filepath, "w") as f:
         meshes = [obj for obj in bpy.context.selected_objects if obj.type == 'MESH']
         if not meshes:
@@ -112,10 +142,10 @@ def export_mesh_with_indices(filepath):
                     vert = mesh_eval_data.vertices[loop.vertex_index]
 
                     # Get vertex position
-                    position = convert_y_up(mesh.matrix_world @ vert.co)
+                    position = mesh.matrix_world @ vert.co
 
                     # Get normal
-                    normal = convert_y_up(mesh.matrix_world.to_3x3() @ vert.normal)
+                    normal = mesh.matrix_world.to_3x3() @ vert.normal
 
                     # Get UVs (if available)
                     if uv_layer:
@@ -135,7 +165,7 @@ def export_mesh_with_indices(filepath):
                             vertex_weights.append((bone_name, round(weight, 6)))
 
                     # Unique key for vertex
-                    vertex_key = (position.x, position.y, position.z, normal.x, normal.y, normal.z, uv_tuple, tuple(vertex_weights))
+                    vertex_key = (position.x, position.z, position.y, normal.x, normal.z, normal.y, uv_tuple, tuple(vertex_weights))
 
                     if vertex_key not in vertex_map:
                         vertex_map[vertex_key] = len(unique_vertices)
@@ -168,7 +198,10 @@ def export_mesh_with_indices(filepath):
 armature_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/armature2.txt")
 mesh_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/model.txt")
 
+current_frame = bpy.context.scene.frame_current
+bpy.context.scene.frame_set(0)
 export_animation_data(armature_output)
+bpy.context.scene.frame_set(current_frame)
 
 current_frame = bpy.context.scene.frame_current
 bpy.context.scene.frame_set(0)

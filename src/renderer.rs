@@ -49,7 +49,7 @@ impl Renderer {
 
         let mut text_shader = Shader::new("resources/shaders/text.vs", "resources/shaders/text.fs");
 
-        let mut anim_shader = Shader::new("resources/shaders/ani_model.vs", "resources/shaders/ani_model.fs");
+        let mut anim_shader = Shader::new("resources/shaders/ani_model_bones.vs", "resources/shaders/ani_model.fs");
         anim_shader.store_uniform_location("projection");
         anim_shader.store_uniform_location("view");
         anim_shader.store_uniform_location("model");
@@ -291,26 +291,26 @@ impl Renderer {
         //      }
         //  }
 
-        let ani_shader = self.shaders.get_mut(&ShaderType::AniModel).unwrap();
+         let ani_shader = self.shaders.get_mut(&ShaderType::AniModel).unwrap();
 
-            ani_shader.activate();
-         ani_shader.set_mat4("projection", camera.projection);
-         ani_shader.set_mat4("view", camera.view);
+             ani_shader.activate();
+          ani_shader.set_mat4("projection", camera.projection);
+          ani_shader.set_mat4("view", camera.view);
 
-        let pos = Vec3::splat(0.0);
-        let scale = Vec3::splat(0.01);
-        let rot = Quat::from_xyzw(0.0, 0.0, 0.0, 1.0);
+         let pos = Vec3::splat(0.0);
+         let scale = Vec3::splat(1.0);
+         let rot = Quat::from_xyzw(0.0, 0.0, 0.0, 1.0);
 
 
-        camera.model = Mat4::IDENTITY * Mat4::from_scale_rotation_translation(scale, rot, pos);
-        ani_shader.set_mat4("model", camera.model);
+         camera.model = Mat4::IDENTITY * Mat4::from_scale_rotation_translation(scale, rot, pos);
+         ani_shader.set_mat4("model", camera.model);
 
-        ani_shader.set_mat4_array("bone_transforms", &animation.current_pose);
+         ani_shader.set_mat4_array("bone_transforms", &animation.current_pose);
 
-        unsafe {
-            gl_call!(gl::Disable(gl::CULL_FACE));
-        }
-        model.draw(ani_shader);
+         unsafe {
+             gl_call!(gl::Disable(gl::CULL_FACE));
+         }
+         model.draw(ani_shader);
     }
 
     fn grid_pass(&mut self,grid: &mut Grid, camera: &mut Camera, light_manager: &Lights, fb_width: u32, fb_height: u32) {
