@@ -262,7 +262,7 @@ impl Renderer {
         // SHADOW MUST GO FIRST
          self.skybox_pass(camera, fb_width, fb_height);
         // self.debug_light_pass(camera);
-        // self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
+        self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
         
         camera.reset_matrices(fb_width as f32 / fb_height as f32);
         //  let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
@@ -297,9 +297,9 @@ impl Renderer {
           ani_shader.set_mat4("projection", camera.projection);
           ani_shader.set_mat4("view", camera.view);
 
-         let pos = Vec3::splat(0.0);
-         let scale = Vec3::splat(1.0);
-         let rot = Quat::from_xyzw(0.0, 0.0, 0.0, 1.0);
+         let pos = vec3(3.5, 0.0, 2.5);
+         let scale = Vec3::splat(0.3);
+         let rot = Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707);
 
 
          camera.model = Mat4::IDENTITY * Mat4::from_scale_rotation_translation(scale, rot, pos);
