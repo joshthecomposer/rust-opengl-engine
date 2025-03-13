@@ -8,6 +8,7 @@ layout (location = 4) in vec4 bone_weights;
 // out vec3 FragPos;
 out vec3 Normal;
 out vec2 TexCoords; // Pass texture coordinates to the fragment shader
+out vec3 FragPos;
 
 const int MAX_BONE_INFLUENCE = 4;
 const int MAX_BONES = 100;
@@ -19,24 +20,8 @@ uniform mat4 bone_transforms[MAX_BONES];
 
 void main()
 {
-	vec4 totalPosition = vec4(0.0f);
-	vec3 totalNormal = vec3(0.0f);
-    for(int i = 0 ; i < MAX_BONE_INFLUENCE; i++)
-    {
-        if(bone_ids[i] == -1) 
-            continue;
-        if(bone_ids[i] >=MAX_BONES) 
-        {
-            totalPosition = vec4(a_pos,1.0f);
-            break;
-        }
-        vec4 localPosition = bone_transforms[bone_ids[i]] * vec4(a_pos,1.0f);
-        totalPosition += localPosition * bone_weights[i];
-        totalNormal += mat3(bone_transforms[bone_ids[i]]) * a_normal * bone_weights[i];
-    }
-	
-	Normal = totalNormal;
-    mat4 viewModel = view * model;
-    gl_Position =  projection * viewModel * totalPosition;
-    TexCoords = a_tex_coords;
+	FragPos = vec3(model * vec4(a_pos, 1.0));
+    Normal = mat3(transpose(inverse(model))) * a_normal;  
+    TexCoords = a_tex_coords;    
+    gl_Position = projection * view * vec4(FragPos, 1.0);
 }

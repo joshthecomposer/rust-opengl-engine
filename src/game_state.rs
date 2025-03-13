@@ -348,10 +348,13 @@ impl GameState {
         // self.donut2_pos.z = self.donut_pos.z + donut2_r * angle2.sin();
         // self.donut2_pos.y = 1.0; // Same height as Donut 1
 
-        // self.animation.update(
-        //     self.elapsed as f32, // We need this in seconds
-        //     &mut self.skellington,
-        // );
+        self.animation.update(
+            self.elapsed as f32, // We need this in seconds
+            &mut self.skellington,
+        );
+
+        //write_data(self.animation.current_pose.clone(), "current_pose_after_one_update.txt");
+        //panic!();
 
         if self.paused { return; }
         self.entity_manager.update(&self.delta_time);

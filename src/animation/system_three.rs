@@ -39,6 +39,7 @@ impl Model {
     }
 
     pub fn setup_opengl(&mut self) {
+        write_data(&self.vertices, "st_43_model_verts.txt");
         unsafe {
             gl_call!(gl::GenVertexArrays(1, &mut self.vao));
             gl_call!(gl::GenBuffers(1, &mut self.vbo));
@@ -207,36 +208,49 @@ impl Animation {
         global_inverse_transform: Mat4,
     ) {
         let btt = self.bone_transforms.get(&skeleton.name).unwrap();
+        let dt = elapsed_time % self.duration;
 
-        let dt = (elapsed_time / 1000.0) % self.duration;
-        
         // We should only have to get time fraction once, because they all align equally.
         let (segment, fraction) = get_time_fraction(&btt.position_timestamps, dt);
-        // Position
-        let position1 = btt.positions[(segment - 1) as usize];
-        let position2 = btt.positions[segment as usize];
 
-        let position = position1.lerp(position2, fraction); 
+        let local_transform = if segment == 0 {
+            let position = btt.positions[0];
+            let rotation = btt.rotations[0];
+            let scale = btt.scales[0];
+            Mat4::from_scale_rotation_translation(scale, rotation, position)
+        } else {
+            // Just snap to the nearest keyframe instead of interpolating
+            let nearest_keyframe = if fraction < 0.5 {
+                segment - 1
+            } else {
+                segment
+            };
 
-        // Rotation
-        let rotation1 = btt.rotations[(segment - 1) as usize];
-        let rotation2 = btt.rotations[segment as usize];
+            let position = btt.positions[nearest_keyframe as usize];
+            let rotation = btt.rotations[nearest_keyframe as usize];
+            let scale = btt.scales[nearest_keyframe as usize];
 
-        let rotation = rotation1.slerp(rotation2, fraction);
+            Mat4::from_scale_rotation_translation(scale, rotation, position)
+        };
 
-        // Scale
-        let scale1 = btt.scales[(segment - 1) as usize];
-        let scale2 = btt.scales[segment as usize];
-
-        let scale = scale1.lerp(scale2, fraction);
-
-        let local_transform = Mat4::from_scale_rotation_translation(scale, rotation, position);
+        // Standard (most engines expect this order)
         let global_transform = parent_transform * local_transform;
 
-        self.current_pose[skeleton.id as usize] = global_inverse_transform * global_transform * skeleton.offset;
-
+        self.current_pose[skeleton.id as usize] =
+            match 0 {
+                0 => global_inverse_transform * global_transform * skeleton.offset,
+                1 => global_transform * skeleton.offset * global_inverse_transform,
+                2 => global_transform * skeleton.offset,
+                3 => global_inverse_transform * global_transform,
+                4 => global_inverse_transform * skeleton.offset * global_transform,
+                5 => global_transform * global_inverse_transform * skeleton.offset,
+                10 => Mat4::IDENTITY,
+                _ => global_inverse_transform * global_transform * skeleton.offset,
+            };
         for child in skeleton.children.iter_mut() {
             self.calculate_pose(child, dt, global_transform, global_inverse_transform);
+             // self.calculate_pose(child, dt, Mat4::IDENTITY, Mat4::IDENTITY);
+
         }
     }
 
@@ -245,7 +259,7 @@ impl Animation {
             skellington, 
             elapsed_time, 
             Mat4::IDENTITY,
-            Mat4::from_scale(vec3(0.01, 0.01, 0.01)),
+            Mat4::IDENTITY, 
         );
     }
 }
@@ -255,6 +269,10 @@ pub fn get_time_fraction(times: &Vec<f32>, dt: f32) -> (u32, f32) {
 
     while dt > times[segment] {
         segment += 1;
+    }
+
+    if segment == 0 {
+        return (0, 0.0); // Avoid accessing times[-1], return first segment with no interpolation
     }
 
     write_data(times, "times.txt");
