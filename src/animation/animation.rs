@@ -235,23 +235,33 @@ impl Animation {
         let (segment, fraction) = get_time_fraction(&btt.position_timestamps, dt);
 
         let local_transform = if segment == 0 {
+            // Use the first keyframe
             let position = btt.positions[0];
             let rotation = btt.rotations[0];
             let scale = btt.scales[0];
             Mat4::from_scale_rotation_translation(scale, rotation, position)
         } else {
-            // Just snap to the nearest keyframe instead of interpolating
-            let nearest_keyframe = if fraction < 0.5 {
-                segment - 1
-            } else {
-                segment
-            };
+            // Get the two keyframes to interpolate between
+            let prev_idx = segment - 1;
+            let next_idx = segment.min(btt.positions.len() as u32 - 1); // Prevent out-of-bounds
 
-            let position = btt.positions[nearest_keyframe as usize];
-            let rotation = btt.rotations[nearest_keyframe as usize];
-            let scale = btt.scales[nearest_keyframe as usize];
+            let prev_position = btt.positions[prev_idx as usize];
+            let next_position = btt.positions[next_idx as usize];
 
-            Mat4::from_scale_rotation_translation(scale, rotation, position)
+            let prev_rotation = btt.rotations[prev_idx as usize];
+            let next_rotation = btt.rotations[next_idx as usize];
+
+            let prev_scale = btt.scales[prev_idx as usize];
+            let next_scale = btt.scales[next_idx as usize];
+
+            // Perform linear interpolation for position and scale
+            let interpolated_position = prev_position.lerp(next_position, fraction);
+            let interpolated_scale = prev_scale.lerp(next_scale, fraction);
+
+            // Perform spherical interpolation (slerp) for rotation
+            let interpolated_rotation = prev_rotation.slerp(next_rotation, fraction);
+
+            Mat4::from_scale_rotation_translation(interpolated_scale, interpolated_rotation, interpolated_position)
         };
 
         let global_transform = parent_transform * local_transform;
@@ -267,10 +277,9 @@ impl Animation {
                 10 => Mat4::IDENTITY,
                 _ => global_inverse_transform * global_transform * skeleton.offset,
             };
+
         for child in skeleton.children.iter_mut() {
             self.calculate_pose(child, dt, global_transform, global_inverse_transform);
-             // self.calculate_pose(child, dt, Mat4::IDENTITY, Mat4::IDENTITY);
-
         }
     }
 
@@ -305,7 +314,7 @@ pub fn get_time_fraction(times: &[f32], dt: f32) -> (u32, f32) {
 pub fn import_bone_data(file_path: &str) -> (Bone, Animation) {
     let data = std::fs::read_to_string(file_path).unwrap();
     let mut lines = data.lines();
-    
+
     let mut bones_no_children = Vec::new();
     let mut bone_idx = 0;
     let mut bone_count: u32 = 0;
@@ -331,7 +340,7 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animation) {
             "BONE_NAME:" => {
                 let name = parts[1].to_string();
                 let parsed_parent: i32 = lines.next().unwrap().split_whitespace().collect::<Vec<&str>>()[1].parse().unwrap();
-                
+
                 let parent_index = match parsed_parent {
                     -1 => None,
                     _ => Some(parsed_parent as u32),
@@ -347,7 +356,7 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animation) {
                     offset,
                     children: vec![],
                 });
-                
+
                 bone_idx += 1;
             }
             _ => {}
@@ -384,7 +393,7 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animation) {
         if parts.is_empty() {
             continue;
         }
-        
+
         match parts[0] {
             "DURATION:" => {
                 animation.duration = parts[1].parse().unwrap()
@@ -478,7 +487,7 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {
                         }
                     }
                 }
-                
+
                 model.vertices.push(vertex);
             }
             "INDEX_COUNT:" => {
@@ -549,13 +558,13 @@ fn build_bone_hierarchy_top_down(bones: Vec<Bone>) -> Bone {
             children_of[parent_id as usize].push(bone.id);
         }
     }
-  
+
     let root_id = bones
         .iter()
         .find(|b| b.parent_index.is_none())
         .expect("No root bone found!")
-        .id;
-  
+    .id;
+
     build_tree_node(root_id, &bones, &children_of)
 }
 
