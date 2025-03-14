@@ -1,8 +1,9 @@
-use glam::{vec3, Mat4, Quat, Vec3};
+#![allow(dead_code)]
+use glam::{vec3, Mat4, Vec3};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-use crate::{camera::Camera, enums_types::{CellType, EntityType, Transform}, gl_call, grid::Grid, lights::Lights, model::Model, shaders::Shader, some_data::{GRASSES, SHADOW_HEIGHT, SHADOW_WIDTH, TREES}, sparse_set::SparseSet};
+use crate::{enums_types::{CellType, EntityType, Transform}, grid::Grid, model::Model, some_data::{GRASSES, TREES}, sparse_set::SparseSet};
 
 pub struct EntityManager {
     pub next_entity_id: usize,
@@ -23,9 +24,6 @@ impl EntityManager {
         }
     }
 
-    pub fn create_unit_cube(&mut self, position: Vec3, rotation: Mat4) {
-    }
-
     pub fn create_entity(&mut self, entity_type: EntityType, position: Vec3, scale: Vec3, model_path: &str) {
         let transform = Transform {
             position,
@@ -37,7 +35,7 @@ impl EntityManager {
 
         let mut found = false;
         for m in self.models.iter_mut() {
-            if m.value().full_path == model_path.to_string() {
+            if m.value().full_path == *model_path.to_string() {
                 model = m.value().clone();
                 found = true;
             }
@@ -76,13 +74,13 @@ impl EntityManager {
             let cell_pos = cell.position;
             for x in -1..=1 {
                 for z in -1..=1 {
-                    let num = self.rng.gen_range(0..entity_data.len() + 1);
+                    let num = self.rng.random_range(0..entity_data.len() + 1);
                     let scale = match entity_type {
-                        EntityType::Grass => self.rng.gen_range(20..=45) as f32 / 100.0,
-                        EntityType::Tree => self.rng.gen_range(90..=110) as f32 / 100.0,
+                        EntityType::Grass => self.rng.random_range(20..=45) as f32 / 100.0,
+                        EntityType::Tree => self.rng.random_range(90..=110) as f32 / 100.0,
                         _=> 1.0,
                 };
-                    let smoff = self.rng.gen_range(-0.1..=0.1);
+                    let smoff = self.rng.random_range(-0.1..=0.1);
 
                     let offset_x = x as f32 * within;
                     let offset_z = z as f32 * within;
@@ -101,6 +99,6 @@ impl EntityManager {
 
     }
 
-    pub fn update(&mut self, delta: &f64) {
+    pub fn update(&mut self, _delta: &f64) {
     }
 }

@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::{collections::HashMap, ffi::CString, fs::read_to_string, ptr};
 
 use gl::types::{GLint, GLuint};
@@ -168,7 +169,7 @@ pub fn init_shader_program(vs: &str, fs: &str) -> u32 {
         gl::DeleteShader(vertex_shader);
         gl::DeleteShader(fragment_shader);
 
-        return shader;
+        shader
     }
 }
 

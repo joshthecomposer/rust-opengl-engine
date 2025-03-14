@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use glam::{vec3, Mat4, Vec3};
 use glfw::{Action, Key, PWindow, WindowEvent};
 

@@ -1,8 +1,6 @@
-
-use glam::{vec3, Vec3};
+#![allow(dead_code)]
 use glfw::{Action, Context, Glfw, GlfwReceiver, MouseButton, PWindow, WindowEvent};
 use image::GrayImage;
-use imgui::{Ui};
 use rusttype::{point, Font, Scale};
 
 use crate::{animation::system_three::{import_bone_data, import_model_data, Animation, Bone, Model}, camera::Camera, debug::write::write_data, entity_manager::EntityManager, gl_call, grid::Grid, lights::{DirLight, Lights}, renderer::Renderer};
@@ -51,7 +49,7 @@ impl GameState {
         #[cfg(target_os = "macos")]
         glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
 
-        let (mut width,mut height):(i32, i32) = (1920, 1080);
+        let (width,height):(i32, i32) = (1920, 1080);
 
         let (mut window, events) = glfw
             .create_window(width as u32, height as u32, "Hello this is window", glfw::WindowMode::Windowed)
@@ -188,7 +186,7 @@ impl GameState {
             gl_call!(gl::BindVertexArray(0));
         }
 
-        let mut grid = Grid::parse_grid_data("resources/test_level.txt");
+        let grid = Grid::parse_grid_data("resources/test_level.txt");
 
         unsafe {
             gl_call!(gl::Enable(gl::BLEND));
@@ -202,7 +200,7 @@ impl GameState {
             gl::CullFace(gl::BACK);  
         }
 
-        let mut entity_manager = EntityManager::new(10_000);
+        let entity_manager = EntityManager::new(10_000);
 
         // entity_manager.populate_cell_rng(&grid);
         // entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/tile_01.obj");

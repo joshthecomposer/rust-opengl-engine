@@ -1,7 +1,8 @@
+#![allow(dead_code)]
 use std::{collections::HashMap, ptr, str::Lines};
 
-use glam::{vec3, vec4, Mat4, Quat, Vec2, Vec3, Vec4};
-use std::{ffi::CString, mem::{self, offset_of}};
+use glam::{Mat4, Quat, Vec2, Vec3, Vec4};
+use std::mem::{self, offset_of};
 
 use crate::{debug::write::write_data, gl_call, shaders::Shader, some_data::MAX_BONE_INFLUENCE};
 
@@ -39,7 +40,6 @@ impl Model {
     }
 
     pub fn setup_opengl(&mut self) {
-        write_data(&self.vertices, "st_43_model_verts.txt");
         unsafe {
             gl_call!(gl::GenVertexArrays(1, &mut self.vao));
             gl_call!(gl::GenBuffers(1, &mut self.vbo));
@@ -131,16 +131,14 @@ impl Model {
         }
     }
 
-    pub fn shadow_pass(shader: &mut Shader) {
-    }
+    // pub fn shadow_pass(shader: &mut Shader) {
+    // }
 }
 
 #[derive(Debug, Clone)]
 pub struct Bone {
     // id will be the position in the final bone array as well.
     id: u32,
-    // TODO: This field is completely useless, it might be better to make a hashmap temporarily in the parse function
-    // and avoid this field altogether.
     parent_index: Option<u32>,
     name: String,
     offset: Mat4,
@@ -148,9 +146,9 @@ pub struct Bone {
 }
 
 #[derive(Debug, Clone)]
-pub struct GPUBoneInfo {
+pub struct BoneJoinInfo {
     name: String,
-    offset: Mat4,
+    // offset: Mat4,
 }
 
 #[derive(Debug, Clone)]
@@ -182,9 +180,7 @@ impl BoneTransformTrack {
 pub struct Animation {
     duration: f32,
     ticks_per_second: f32,
-    gpu_bone_info: Vec<GPUBoneInfo>, // TODO> rename this model_animation_join
-    // Bone name is the key.
-    // It makes sense to keep this away from the bone because we could have multiple animations
+    model_animation_join: Vec<BoneJoinInfo>,
     bone_transforms: HashMap<String, BoneTransformTrack>,
     pub current_pose: Vec<Mat4>,
 }
@@ -194,7 +190,7 @@ impl Animation {
         Self {
             duration: 0.0,
             ticks_per_second: 0.0,
-            gpu_bone_info: vec![],
+            model_animation_join: vec![],
             bone_transforms: HashMap::new(),
             current_pose: vec![],
         }
@@ -204,13 +200,12 @@ impl Animation {
         &mut self,
         skeleton: &mut Bone,
         elapsed_time: f32,
-        parent_transform: Mat4, // Maybe starts as identity?
+        parent_transform: Mat4,
         global_inverse_transform: Mat4,
     ) {
         let btt = self.bone_transforms.get(&skeleton.name).unwrap();
         let dt = elapsed_time % self.duration;
 
-        // We should only have to get time fraction once, because they all align equally.
         let (segment, fraction) = get_time_fraction(&btt.position_timestamps, dt);
 
         let local_transform = if segment == 0 {
@@ -233,7 +228,6 @@ impl Animation {
             Mat4::from_scale_rotation_translation(scale, rotation, position)
         };
 
-        // Standard (most engines expect this order)
         let global_transform = parent_transform * local_transform;
 
         self.current_pose[skeleton.id as usize] =
@@ -264,7 +258,7 @@ impl Animation {
     }
 }
 
-pub fn get_time_fraction(times: &Vec<f32>, dt: f32) -> (u32, f32) {
+pub fn get_time_fraction(times: &[f32], dt: f32) -> (u32, f32) {
     let mut segment = 0;
 
     while dt > times[segment] {
@@ -274,9 +268,6 @@ pub fn get_time_fraction(times: &Vec<f32>, dt: f32) -> (u32, f32) {
     if segment == 0 {
         return (0, 0.0); // Avoid accessing times[-1], return first segment with no interpolation
     }
-
-    write_data(times, "times.txt");
-    write_data(segment, "segment.txt");
 
     let start = times[segment - 1];
     let end = times[segment];
@@ -313,7 +304,7 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animation) {
             }
             "BONE_NAME:" => {
                 let name = parts[1].to_string();
-                let mut parsed_parent: i32 = lines.next().unwrap().split_whitespace().collect::<Vec<&str>>()[1].parse().unwrap();
+                let parsed_parent: i32 = lines.next().unwrap().split_whitespace().collect::<Vec<&str>>()[1].parse().unwrap();
                 
                 let parent_index = match parsed_parent {
                     -1 => None,
@@ -338,8 +329,6 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animation) {
     }
 
     let bone = build_bone_hierarchy_top_down(bones_no_children.clone());
-    write_data(&bone, "skellington.txt");
-
     // =============================================================
     // Get Animation Data
     // ============================================================
@@ -347,20 +336,20 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animation) {
     let mut animation = Animation::default();
 
     // Get gpu bone info to use for later to gather a final matrix array
-    let mut gpu_bone_info = vec![];
+    let mut model_animation_join = vec![];
 
     for b in bones_no_children {
-        gpu_bone_info.push(
-            GPUBoneInfo {
+        model_animation_join.push(
+            BoneJoinInfo {
                 name: b.name.clone(),
-                offset: b.offset,
+                // offset: b.offset,
             }
         );
 
         animation.current_pose.push(b.offset);
 
-        assert!(gpu_bone_info[b.id as usize].name == b.name);
-        assert!(gpu_bone_info.len() == animation.current_pose.len());
+        assert!(model_animation_join[b.id as usize].name == b.name);
+        assert!(model_animation_join.len() == animation.current_pose.len());
     }
 
     while let Some(line) = lines.next() {
@@ -381,7 +370,7 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animation) {
                 let time_stamp = parts[1].parse().unwrap();
 
                 for i in 0..bone_count {
-                    let bone_name = gpu_bone_info[i as usize].name.clone();
+                    let bone_name = model_animation_join[i as usize].name.clone();
 
                     let track = animation
                         .bone_transforms
@@ -408,7 +397,7 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animation) {
         }
     }
 
-    animation.gpu_bone_info = gpu_bone_info;
+    animation.model_animation_join = model_animation_join;
 
     write_data(&animation, "animation_out.txt");
 
@@ -447,7 +436,7 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> Model {
 
                     let mut bone_id: i32 = -1;
 
-                    for (j, info) in animation.gpu_bone_info.iter().enumerate() {
+                    for (j, info) in animation.model_animation_join.iter().enumerate() {
                         if info.name == bone_name {
                             bone_id = j as i32;
                         }
@@ -526,7 +515,7 @@ fn parse_quat(input: &str) -> Quat {
     )
 }
 
-fn build_bone_hierarchy_top_down(mut bones: Vec<Bone>) -> Bone {
+fn build_bone_hierarchy_top_down(bones: Vec<Bone>) -> Bone {
     let mut children_of = vec![Vec::new(); bones.len()];
 
     for bone in &bones {

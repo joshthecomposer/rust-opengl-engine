@@ -1,4 +1,3 @@
-
 #[macro_export]
 macro_rules! gl_call {
     ($e:expr) => {{

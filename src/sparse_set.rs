@@ -110,8 +110,8 @@ impl<T> SparseSet<T> {
         }
         let n = self.dense.len();
         self.dense.push(Entry {
-            key: key,
-            value: value,
+            key,
+            value,
         });
         self.sparse[key] = n;
         true
