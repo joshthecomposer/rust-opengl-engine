@@ -76,7 +76,6 @@ impl EntityManager {
 
         // if !found {
         let (skellington, animation) = import_bone_data(animation_path);
-        dbg!(&skellington);
         let mut model = import_model_data(model_path, &animation);
         model.setup_opengl();
         let mut animator = Animator::new(animation);
