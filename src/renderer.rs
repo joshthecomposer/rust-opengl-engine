@@ -1,10 +1,10 @@
-#![allow(dead_code)]
+#![allow(dead_code, clippy::too_many_arguments)]
 use std::{collections::HashMap, ffi::c_void, mem, ptr::null_mut};
 
 use glam::{vec3, vec4, Mat4, Quat, Vec3};
 use image::GenericImageView;
 
-use crate::{animation::system_three::{Animation, Model}, camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}};
+use crate::{animation::animation::{Animation, AniModel}, camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}};
 
 pub struct Renderer {
     pub shaders: HashMap<ShaderType, Shader>, // TODO: make this an enum
@@ -241,7 +241,7 @@ impl Renderer {
         }
     }
 
-    pub fn draw(&mut self, em: &EntityManager, camera: &mut Camera, light_manager: &Lights, grid: &mut Grid, fb_width: u32, fb_height: u32, model: &Model, animation: &mut Animation) {
+    pub fn draw(&mut self, em: &EntityManager, camera: &mut Camera, light_manager: &Lights, grid: &mut Grid, fb_width: u32, fb_height: u32, model: &AniModel, animation: &mut Animation) {
         self.shadow_pass(em,  camera, light_manager, fb_width, fb_height);
         unsafe {
             gl_call!(gl::ClearColor(0.0, 0.0, 0.0, 1.0));
@@ -261,34 +261,34 @@ impl Renderer {
         // SHADOW MUST GO FIRST
          self.skybox_pass(camera, fb_width, fb_height);
         // self.debug_light_pass(camera);
-        self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
+        // self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
         
         camera.reset_matrices(fb_width as f32 / fb_height as f32);
-        //  let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
-        //  shader.activate();
-        //  for model in em.models.iter() {
-        //      let trans = em.transforms.get(model.key()).unwrap();
-        //      camera.model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
+        let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
+        shader.activate();
+        for model in em.models.iter() {
+            let trans = em.transforms.get(model.key()).unwrap();
+            camera.model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
 
-        //      shader.set_mat4("model", camera.model);
-        //      shader.set_mat4("view", camera.view);
-        //      shader.set_mat4("projection", camera.projection);
-        //      shader.set_mat4("light_space_mat", camera.light_space);
-        //      shader.set_dir_light("dir_light", &light_manager.dir_light);
-        //      unsafe {
-        //          // TODO: This could clash, we need to make sure we reserve texture0 in our dynamic shader code.
-        //          gl_call!(gl::ActiveTexture(gl::TEXTURE2));
-        //          gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-        //          shader.set_int("shadow_map", 2);
-        //  }
+            shader.set_mat4("model", camera.model);
+            shader.set_mat4("view", camera.view);
+            shader.set_mat4("projection", camera.projection);
+            shader.set_mat4("light_space_mat", camera.light_space);
+            shader.set_dir_light("dir_light", &light_manager.dir_light);
+            unsafe {
+                // TODO: This could clash, we need to make sure we reserve texture0 in our dynamic shader code.
+                gl_call!(gl::ActiveTexture(gl::TEXTURE2));
+                gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+                shader.set_int("shadow_map", 2);
+        }
 
-        //      model.value.draw(shader);
+            model.value.draw(shader);
 
-        //      unsafe {
-        //          gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-        //          gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
-        //      }
-        //  }
+            unsafe {
+                gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+                gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
+            }
+        }
 
          let ani_shader = self.shaders.get_mut(&ShaderType::AniModel).unwrap();
 
@@ -296,7 +296,7 @@ impl Renderer {
           ani_shader.set_mat4("projection", camera.projection);
           ani_shader.set_mat4("view", camera.view);
 
-         let pos = vec3(0.0, 0.0, 0.0);
+         let pos = vec3(-3.0, 0.0, 0.0);
          let scale = Vec3::splat(0.01);
          let rot = Quat::from_xyzw(0.0, 0.0, 0.0, 1.0);
 
