@@ -1,9 +1,10 @@
 #![allow(dead_code)]
+use glam::{vec3, Vec3};
 use glfw::{Action, Context, Glfw, GlfwReceiver, MouseButton, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{animation::system_three::{import_bone_data, import_model_data, Animation, Bone, Model}, camera::Camera, debug::write::write_data, entity_manager::EntityManager, gl_call, grid::Grid, lights::{DirLight, Lights}, renderer::Renderer};
+use crate::{animation::animation::{import_bone_data, import_model_data, AniModel, Animation, Bone}, camera::Camera, debug::write::write_data, entity_manager::EntityManager, enums_types::EntityType, gl_call, grid::Grid, lights::{DirLight, Lights}, renderer::Renderer};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -34,7 +35,7 @@ pub struct GameState {
     pub tex_vao: u32,
     
     // pub animator: Animator,
-    pub model: Model,
+    pub model: AniModel,
     pub animation: Animation,
     pub skellington: Bone,
 }
@@ -200,16 +201,12 @@ impl GameState {
             gl::CullFace(gl::BACK);  
         }
 
-        let entity_manager = EntityManager::new(10_000);
+        let mut entity_manager = EntityManager::new(10_000);
 
-        // entity_manager.populate_cell_rng(&grid);
-        // entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/tile_01.obj");
-        // entity_manager.create_entity(EntityType::ArcherTower01, vec3(0.0, 0.0, 0.0), vec3(1.0, 1.0, 1.0), "resources/models/sponza/sponza.obj");
-        // entity_manager.create_entity(EntityType::ArcherTower01, vec3(0.0, 0.0, 0.0), Vec3::splat(0.1), "resources/models/my_obj/tower.obj");
-        // entity_manager.create_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(2.0), "resources/models/my_obj/donut.obj");
-        // entity_manager.create_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(1.0), "resources/models/animation/run_test.dae");
-        // "resources/models/animation/example4.fbx"
-
+        entity_manager.populate_cell_rng(&grid);
+        entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/tile_01.obj");
+        entity_manager.create_entity(EntityType::ArcherTower01, vec3(0.0, 0.0, 0.0), Vec3::splat(0.1), "resources/models/my_obj/tower.obj");
+        entity_manager.create_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(2.0), "resources/models/my_obj/donut.obj");
 
         let mut light_manager = Lights::new(50);
         light_manager.dir_light = DirLight::default_white();

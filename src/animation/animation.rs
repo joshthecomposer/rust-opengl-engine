@@ -8,7 +8,7 @@ use crate::{debug::write::write_data, gl_call, shaders::Shader, some_data::MAX_B
 
 #[derive(Debug, Clone)]
 #[repr(C)]
-pub struct Vertex {
+pub struct AniVertex {
     pub position: Vec3,
     pub normal: Vec3,
     pub uv: Vec2,
@@ -18,16 +18,16 @@ pub struct Vertex {
 }
 
 #[derive(Debug, Clone)]
-pub struct Model {
+pub struct AniModel {
     pub vao: u32,
     pub vbo: u32,
     pub ebo: u32,
 
-    pub vertices: Vec<Vertex>,
+    pub vertices: Vec<AniVertex>,
     pub indices: Vec<u32>,
 }
 
-impl Model {
+impl AniModel {
     pub fn new() -> Self {
         Self {
             vao: 0,
@@ -50,7 +50,7 @@ impl Model {
 
             gl_call!(gl::BufferData(
                 gl::ARRAY_BUFFER, 
-                (mem::size_of::<Vertex>() * self.vertices.len()) as isize,
+                (mem::size_of::<AniVertex>() * self.vertices.len()) as isize,
                 self.vertices.as_ptr().cast(),
                 gl::STATIC_DRAW,
             ));
@@ -69,7 +69,7 @@ impl Model {
                 3, 
                 gl::FLOAT, 
                 gl::FALSE, 
-                mem::size_of::<Vertex>() as i32,
+                mem::size_of::<AniVertex>() as i32,
                 ptr::null(),
             ));
 
@@ -79,8 +79,8 @@ impl Model {
                 3, 
                 gl::FLOAT, 
                 gl::FALSE, 
-                mem::size_of::<Vertex>() as i32,
-                offset_of!(Vertex, normal) as *const _
+                mem::size_of::<AniVertex>() as i32,
+                offset_of!(AniVertex, normal) as *const _
             ));
 
             gl_call!(gl::EnableVertexAttribArray(2));
@@ -89,8 +89,8 @@ impl Model {
                 2, 
                 gl::FLOAT, 
                 gl::FALSE, 
-                mem::size_of::<Vertex>() as i32, 
-                offset_of!(Vertex, uv) as *const _
+                mem::size_of::<AniVertex>() as i32, 
+                offset_of!(AniVertex, uv) as *const _
             ));
 
             gl_call!(gl::EnableVertexAttribArray(3));
@@ -98,8 +98,8 @@ impl Model {
                 3,
                 4,
                 gl::INT,
-                mem::size_of::<Vertex>() as i32,
-                offset_of!(Vertex, bone_ids) as *const _
+                mem::size_of::<AniVertex>() as i32,
+                offset_of!(AniVertex, bone_ids) as *const _
             ));
 
             gl_call!(gl::EnableVertexAttribArray(4));
@@ -108,8 +108,8 @@ impl Model {
                 4,
                 gl::FLOAT,
                 gl::FALSE,
-                mem::size_of::<Vertex>() as i32,
-                offset_of!(Vertex, bone_weights) as *const _
+                mem::size_of::<AniVertex>() as i32,
+                offset_of!(AniVertex, bone_weights) as *const _
             ));
 
             gl::BindVertexArray(0);
@@ -404,11 +404,11 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animation) {
     (bone, animation)
 }
 
-pub fn import_model_data(file_path: &str, animation: &Animation) -> Model {
+pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {
     let data = std::fs::read_to_string(file_path).unwrap();
     let mut lines = data.lines();
 
-    let mut model = Model::new();
+    let mut model = AniModel::new();
 
     while let Some(line) = lines.next() {
         let parts: Vec<&str> = line.split_whitespace().collect();
@@ -420,7 +420,7 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> Model {
         match parts[0] {
             "MEME" => {}
             "VERT:" => {
-                let mut vertex = Vertex {
+                let mut vertex = AniVertex {
                     position: parse_vec3(lines.next().unwrap()),
                     normal: parse_vec3(lines.next().unwrap()),
                     uv: parse_vec2(lines.next().unwrap()),
