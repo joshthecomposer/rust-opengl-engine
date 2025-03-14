@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::{collections::HashMap, ffi::c_void, mem, ptr::null_mut};
 
 use glam::{vec3, vec4, Mat4, Quat, Vec3};
@@ -47,7 +48,7 @@ impl Renderer {
         model_shader.store_uniform_location("light_space_mat");
         model_shader.store_uniform_location("shadow_map");
 
-        let mut text_shader = Shader::new("resources/shaders/text.vs", "resources/shaders/text.fs");
+        let text_shader = Shader::new("resources/shaders/text.vs", "resources/shaders/text.fs");
 
         let mut anim_shader = Shader::new("resources/shaders/ani_model_bones.vs", "resources/shaders/ani_model.fs");
         anim_shader.store_uniform_location("projection");
@@ -58,8 +59,6 @@ impl Renderer {
         let mut vao = 0;
         let mut vbo = 0;
         let mut ebo = 0;
-        let mut container_diffuse = 0;
-        let mut container_specular = 0;
         let mut cubemap_texture = 0;
         // =============================================================
         // Skybox memes
@@ -98,7 +97,7 @@ impl Renderer {
                 gl::FLOAT, 
                 gl::FALSE, 
                 (3 * mem::size_of::<f32>()) as i32, 
-                0 as *const _
+                std::ptr::null(),
             ));
             gl_call!(gl::EnableVertexAttribArray(0));
 
@@ -167,7 +166,7 @@ impl Renderer {
                 gl::FLOAT,
                 gl::FALSE,
                 8 * mem::size_of::<f32>() as i32,
-                0 as *const _
+                std::ptr::null(),
             ));
             gl_call!(gl::EnableVertexAttribArray(0));
         
@@ -360,7 +359,7 @@ impl Renderer {
             gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::Skybox).unwrap()));
             gl_call!(gl::ActiveTexture(gl::TEXTURE0));
             gl_call!(gl::BindTexture(gl::TEXTURE_CUBE_MAP, self.cubemap_texture));
-            gl_call!(gl::DrawElements(gl::TRIANGLES, 36, gl::UNSIGNED_INT, 0 as *const _));
+            gl_call!(gl::DrawElements(gl::TRIANGLES, 36, gl::UNSIGNED_INT, std::ptr::null(),));
             gl_call!(gl::BindVertexArray(0));
 
             gl_call!(gl::DepthFunc(gl::LESS));
@@ -410,7 +409,7 @@ impl Renderer {
                         gl::TRIANGLES, 
                         mesh.indices.len() as i32, 
                         gl::UNSIGNED_INT, 
-                        0 as *const _
+                        std::ptr::null(),
                     ));
 
                     gl_call!(gl::BindVertexArray(0));
@@ -428,9 +427,9 @@ impl Renderer {
 
         unsafe {
             gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::DebugLight).unwrap()));
-            for i in 0..POINT_LIGHT_POSITIONS.len() {
+            for light_pos in &POINT_LIGHT_POSITIONS {
                 camera.model = Mat4::IDENTITY;
-                camera.model *= Mat4::from_translation(POINT_LIGHT_POSITIONS[i]);
+                camera.model *= Mat4::from_translation(*light_pos);
                 camera.model *= Mat4::from_scale(vec3(0.2, 0.2, 0.2)); 
 
                 debug_light_shader.set_mat4("model", camera.model);

@@ -5,10 +5,9 @@ use std::fmt::Debug;
 pub fn write_data<T: Debug>(input: T, file_path: &str) {
     let mut file = OpenOptions::new()
         .create(true)
-        .write(true)
         .append(true)
         .open(format!("debug_out/{}", file_path).as_str())
-        .expect(format!("Failed to open {} for writing", file_path).as_str());
+        .unwrap();
 
     // Use pretty-print debug: "{:#?}"
     writeln!(file, "{:#?}", input)

@@ -1,8 +1,5 @@
-use std::{ffi::CString, mem::{self, offset_of}};
-
+use std::mem::{self, offset_of};
 use glam::{vec2, vec3, Vec2, Vec3};
-use russimp::mesh::Mesh as RMesh;
-
 use crate::{gl_call, shaders::Shader};
 
 #[repr(C)]
@@ -89,7 +86,7 @@ impl Mesh {
                 gl::FLOAT, 
                 gl::FALSE, 
                 mem::size_of::<Vertex>() as i32,
-                0 as *const _
+                std::ptr::null(),
             ));
 
             gl_call!(gl::EnableVertexAttribArray(1));
@@ -159,7 +156,7 @@ impl Mesh {
                 gl::TRIANGLES, 
                 self.indices.len() as i32, 
                 gl::UNSIGNED_INT, 
-                0 as *const _
+                std::ptr::null(),
             ));
             gl_call!(gl::BindVertexArray(0));
         }
