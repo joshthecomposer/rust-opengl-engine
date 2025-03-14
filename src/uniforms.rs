@@ -1,5 +1,5 @@
+#![allow(dead_code)]
 use glam::Vec3;
-
 
 #[repr(C)]
 pub struct Material {
