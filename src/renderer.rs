@@ -297,9 +297,9 @@ impl Renderer {
           ani_shader.set_mat4("projection", camera.projection);
           ani_shader.set_mat4("view", camera.view);
 
-         let pos = vec3(3.5, 0.0, 2.5);
-         let scale = Vec3::splat(0.3);
-         let rot = Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707);
+         let pos = vec3(0.0, 0.0, 0.0);
+         let scale = Vec3::splat(0.01);
+         let rot = Quat::from_xyzw(0.0, 0.0, 0.0, 1.0);
 
 
          camera.model = Mat4::IDENTITY * Mat4::from_scale_rotation_translation(scale, rot, pos);
