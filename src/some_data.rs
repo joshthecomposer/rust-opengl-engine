@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use glam::{vec3, Vec3};
 
 pub const UNIT_CUBE_VERTICES: [f32; 6 * 6 * 8] = [
@@ -51,7 +52,7 @@ pub const UNIT_CUBE_VERTICES: [f32; 6 * 6 * 8] = [
     -0.5,  0.5, -0.5,       0.0, 0.0,           0.0,  1.0,  0.0,
 ];
 
-pub const BISEXUAL_PINK:Vec3 = vec3(0.72941176, 0.11372549, 0.43529412);
+pub const BISEXUAL_PINK:Vec3 = vec3(0.7294118, 0.11372549, 0.43529412);
 pub const BISEXUAL_PINK_SCALE: Vec3 = vec3(
     1.0,
     0.15591398,
@@ -198,3 +199,6 @@ pub const TREES:[&str; 6] = [
     "resources/models/obj/tree_cone.obj",
     "resources/models/obj/tree_oak_dark.obj",
 ];
+
+pub const MAX_BONE_INFLUENCE: usize = 4;
+pub const MAX_BONES: u32 = 200;

@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use std::{collections::HashMap, ffi::CString, fs::read_to_string, ptr};
 
 use gl::types::{GLint, GLuint};
@@ -121,6 +122,21 @@ impl Shader {
         }
     }
 
+    pub fn set_mat4_array(&self, name: &str, value: &Vec<Mat4>) {
+        let location = self.get_uniform_location(name);
+        if location != -1 {
+            let mut float_data = Vec::with_capacity(value.len() * 16);
+
+            for mat in value {
+                float_data.extend_from_slice(&mat.to_cols_array());
+            }
+
+            unsafe {
+                gl_call!(gl::UniformMatrix4fv(location, value.len() as i32, gl::FALSE, float_data.as_ptr()));
+            }
+        }
+    }
+
 }
 
 pub fn init_shader_program(vs: &str, fs: &str) -> u32 {
@@ -153,7 +169,7 @@ pub fn init_shader_program(vs: &str, fs: &str) -> u32 {
         gl::DeleteShader(vertex_shader);
         gl::DeleteShader(fragment_shader);
 
-        return shader;
+        shader
     }
 }
 

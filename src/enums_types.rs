@@ -1,3 +1,4 @@
+#![allow(dead_code)]
 use glam::{Mat4, Vec3};
 
 #[derive(Debug, Eq, PartialEq, Hash)]
@@ -36,7 +37,8 @@ pub enum ShaderType {
     GroundPlane,
     DebugShadowMap,
     Model,
-    Text
+    Text,
+    AniModel
 }
 
 pub struct Transform {

@@ -1,9 +1,10 @@
+#![allow(dead_code)]
 use std::{collections::HashMap, ffi::c_void, mem, ptr::null_mut};
 
-use glam::{vec3, vec4, Mat4};
+use glam::{vec3, vec4, Mat4, Quat, Vec3};
 use image::GenericImageView;
 
-use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}};
+use crate::{animation::system_three::{Animation, Model}, camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}};
 
 pub struct Renderer {
     pub shaders: HashMap<ShaderType, Shader>, // TODO: make this an enum
@@ -47,13 +48,17 @@ impl Renderer {
         model_shader.store_uniform_location("light_space_mat");
         model_shader.store_uniform_location("shadow_map");
 
-        let mut text_shader = Shader::new("resources/shaders/text.vs", "resources/shaders/text.fs");
+        let text_shader = Shader::new("resources/shaders/text.vs", "resources/shaders/text.fs");
+
+        let mut anim_shader = Shader::new("resources/shaders/ani_model_bones.vs", "resources/shaders/ani_model.fs");
+        anim_shader.store_uniform_location("projection");
+        anim_shader.store_uniform_location("view");
+        anim_shader.store_uniform_location("model");
+        anim_shader.store_uniform_location("bone_transforms");
 
         let mut vao = 0;
         let mut vbo = 0;
         let mut ebo = 0;
-        let mut container_diffuse = 0;
-        let mut container_specular = 0;
         let mut cubemap_texture = 0;
         // =============================================================
         // Skybox memes
@@ -92,7 +97,7 @@ impl Renderer {
                 gl::FLOAT, 
                 gl::FALSE, 
                 (3 * mem::size_of::<f32>()) as i32, 
-                0 as *const _
+                std::ptr::null(),
             ));
             gl_call!(gl::EnableVertexAttribArray(0));
 
@@ -161,7 +166,7 @@ impl Renderer {
                 gl::FLOAT,
                 gl::FALSE,
                 8 * mem::size_of::<f32>() as i32,
-                0 as *const _
+                std::ptr::null(),
             ));
             gl_call!(gl::EnableVertexAttribArray(0));
         
@@ -224,6 +229,7 @@ impl Renderer {
         shaders.insert(ShaderType::Depth, depth_shader);
         shaders.insert(ShaderType::DebugShadowMap, debug_depth_quad);
         shaders.insert(ShaderType::Text, text_shader);
+        shaders.insert(ShaderType::AniModel, anim_shader);
 
         Self {
             shaders,
@@ -235,7 +241,7 @@ impl Renderer {
         }
     }
 
-    pub fn draw(&mut self, em: &EntityManager, camera: &mut Camera, light_manager: &Lights, grid: &mut Grid, fb_width: u32, fb_height: u32) {
+    pub fn draw(&mut self, em: &EntityManager, camera: &mut Camera, light_manager: &Lights, grid: &mut Grid, fb_width: u32, fb_height: u32, model: &Model, animation: &mut Animation) {
         self.shadow_pass(em,  camera, light_manager, fb_width, fb_height);
         unsafe {
             gl_call!(gl::ClearColor(0.0, 0.0, 0.0, 1.0));
@@ -253,36 +259,57 @@ impl Renderer {
             return;
         }
         // SHADOW MUST GO FIRST
-        self.skybox_pass(camera, fb_width, fb_height);
+         self.skybox_pass(camera, fb_width, fb_height);
         // self.debug_light_pass(camera);
-        // self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
+        self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
         
         camera.reset_matrices(fb_width as f32 / fb_height as f32);
-        let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
-        shader.activate();
-        for model in em.models.iter() {
-            let trans = em.transforms.get(model.key()).unwrap();
-            camera.model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
+        //  let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
+        //  shader.activate();
+        //  for model in em.models.iter() {
+        //      let trans = em.transforms.get(model.key()).unwrap();
+        //      camera.model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
 
-            shader.set_mat4("model", camera.model);
-            shader.set_mat4("view", camera.view);
-            shader.set_mat4("projection", camera.projection);
-            shader.set_mat4("light_space_mat", camera.light_space);
-            shader.set_dir_light("dir_light", &light_manager.dir_light);
-            unsafe {
-                // TODO: This could clash, we need to make sure we reserve texture0 in our dynamic shader code.
-                gl_call!(gl::ActiveTexture(gl::TEXTURE2));
-                gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-                shader.set_int("shadow_map", 2);
-        }
+        //      shader.set_mat4("model", camera.model);
+        //      shader.set_mat4("view", camera.view);
+        //      shader.set_mat4("projection", camera.projection);
+        //      shader.set_mat4("light_space_mat", camera.light_space);
+        //      shader.set_dir_light("dir_light", &light_manager.dir_light);
+        //      unsafe {
+        //          // TODO: This could clash, we need to make sure we reserve texture0 in our dynamic shader code.
+        //          gl_call!(gl::ActiveTexture(gl::TEXTURE2));
+        //          gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+        //          shader.set_int("shadow_map", 2);
+        //  }
 
-            model.value.draw(shader);
+        //      model.value.draw(shader);
 
-            unsafe {
-                gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-                gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
-            }
-        }
+        //      unsafe {
+        //          gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+        //          gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
+        //      }
+        //  }
+
+         let ani_shader = self.shaders.get_mut(&ShaderType::AniModel).unwrap();
+
+             ani_shader.activate();
+          ani_shader.set_mat4("projection", camera.projection);
+          ani_shader.set_mat4("view", camera.view);
+
+         let pos = vec3(0.0, 0.0, 0.0);
+         let scale = Vec3::splat(0.01);
+         let rot = Quat::from_xyzw(0.0, 0.0, 0.0, 1.0);
+
+
+         camera.model = Mat4::IDENTITY * Mat4::from_scale_rotation_translation(scale, rot, pos);
+         ani_shader.set_mat4("model", camera.model);
+
+         ani_shader.set_mat4_array("bone_transforms", &animation.current_pose);
+
+         unsafe {
+             gl_call!(gl::Disable(gl::CULL_FACE));
+         }
+         model.draw(ani_shader);
     }
 
     fn grid_pass(&mut self,grid: &mut Grid, camera: &mut Camera, light_manager: &Lights, fb_width: u32, fb_height: u32) {
@@ -299,7 +326,7 @@ impl Renderer {
             // TODO: Fix the wrapping of this quad
             gl_call!(gl::Disable(gl::CULL_FACE));
             grid.draw(shader);
-            gl_call!(gl::Enable(gl::CULL_FACE));
+            // gl_call!(gl::Enable(gl::CULL_FACE));
         }
     }
 
@@ -332,11 +359,11 @@ impl Renderer {
             gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::Skybox).unwrap()));
             gl_call!(gl::ActiveTexture(gl::TEXTURE0));
             gl_call!(gl::BindTexture(gl::TEXTURE_CUBE_MAP, self.cubemap_texture));
-            gl_call!(gl::DrawElements(gl::TRIANGLES, 36, gl::UNSIGNED_INT, 0 as *const _));
+            gl_call!(gl::DrawElements(gl::TRIANGLES, 36, gl::UNSIGNED_INT, std::ptr::null(),));
             gl_call!(gl::BindVertexArray(0));
 
             gl_call!(gl::DepthFunc(gl::LESS));
-            gl_call!(gl::Enable(gl::CULL_FACE));
+            // gl_call!(gl::Enable(gl::CULL_FACE));
         }
     }
 
@@ -382,7 +409,7 @@ impl Renderer {
                         gl::TRIANGLES, 
                         mesh.indices.len() as i32, 
                         gl::UNSIGNED_INT, 
-                        0 as *const _
+                        std::ptr::null(),
                     ));
 
                     gl_call!(gl::BindVertexArray(0));
@@ -400,9 +427,9 @@ impl Renderer {
 
         unsafe {
             gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::DebugLight).unwrap()));
-            for i in 0..POINT_LIGHT_POSITIONS.len() {
+            for light_pos in &POINT_LIGHT_POSITIONS {
                 camera.model = Mat4::IDENTITY;
-                camera.model *= Mat4::from_translation(POINT_LIGHT_POSITIONS[i]);
+                camera.model *= Mat4::from_translation(*light_pos);
                 camera.model *= Mat4::from_scale(vec3(0.2, 0.2, 0.2)); 
 
                 debug_light_shader.set_mat4("model", camera.model);

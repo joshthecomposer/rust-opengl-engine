@@ -1,9 +1,9 @@
+#![allow(dead_code)]
 use std::{ffi::c_void, path::Path};
 
 use glam::{vec3, Vec3};
 use image::{GenericImageView, ImageBuffer, Rgba};
-use russimp::{material::{Material as RMaterial, MaterialProperty, PropertyTypeInfo, TextureType}, mesh::Mesh as RMesh, node::Node, scene::{PostProcess, Scene}, Vector3D};
-use russimp_sys::AI_SCENE_FLAGS_INCOMPLETE;
+use russimp::{material::{Material as RMaterial, PropertyTypeInfo, TextureType}, mesh::Mesh as RMesh, node::Node, scene::{PostProcess, Scene}, Vector3D};
 
 use crate::{gl_call, mesh::{Mesh, Texture, Vertex}, shaders::Shader};
 
@@ -41,7 +41,7 @@ impl Model {
             ],
         ).unwrap();
 
-        if !scene.root.is_some() {
+        if scene.root.is_none() {
             panic!("Scene had no root node :/");
         }
 
@@ -54,21 +54,21 @@ impl Model {
 
         println!("BEGIN PROCESSING OF NODES RECURSIVELY");
         if let Some(root_node) = &scene.root {
-            model.traverse_nodes(&*root_node, &scene);
+            model.traverse_nodes(root_node, &scene);
         }
 
-        return model;
+        model
     }
 
     fn traverse_nodes(&mut self, node: &Node, scene: &Scene) {
         for mesh_index in node.meshes.clone() {
             let ai_mesh = &scene.meshes[mesh_index as usize];
-            let mut mesh = self.process_mesh(ai_mesh, scene);
+            let mesh = self.process_mesh(ai_mesh, scene);
             self.meshes.push(mesh);
         }
 
         for child in node.children.borrow().iter() {
-           self.traverse_nodes(&*child, scene);
+           self.traverse_nodes(child, scene);
         }
     }
 
@@ -83,7 +83,7 @@ impl Model {
             let ai_norm = ai_mesh.normals.get(i).unwrap_or(&Vector3D {x: 0.0, y: 1.0, z: 0.0});
             vertex.normal = vec3(ai_norm.x, ai_norm.y, ai_norm.z);
 
-            if let Some(tex_coord_list) = ai_mesh.texture_coords.get(0).unwrap() {
+            if let Some(tex_coord_list) = ai_mesh.texture_coords.first().unwrap() {
                 if let Some(ai_tex_coord) = tex_coord_list.get(i) {
                     let tex_coord = glam::Vec2 {x: ai_tex_coord.x, y: ai_tex_coord.y};
                     vertex.tex_coords = tex_coord;
@@ -118,7 +118,7 @@ impl Model {
 
     pub fn load_material_textures(&mut self, ai_mat: &RMaterial, texture_type: TextureType, my_type: String) -> Vec<Texture> {
         let mut textures: Vec<Texture> = vec![];
-        let mut path = "".to_string();
+        let path;
         let mut skip = false;
 
         if let Some(ai_texes_cell) = ai_mat.textures.get(&texture_type) {
@@ -172,7 +172,7 @@ impl Model {
         textures
     }
 
-    pub fn generate_texture_from_color(input: Vec3) -> String {
+    pub fn generate_texture_from_color(_input: Vec3) -> String {
         "".to_string()
     }
 
@@ -227,6 +227,7 @@ impl Model {
                 gl::UNSIGNED_BYTE, 
                 raw.as_ptr() as *const c_void
             ));
+
             gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32));
             gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32));
             gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32));

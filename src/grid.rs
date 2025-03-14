@@ -1,15 +1,17 @@
-use std::{collections::HashMap, fs::{read_to_string, File}, io::Read};
+#![allow(dead_code)]
+use std::fs::read_to_string;
 
-use glam::{vec2, vec3, Vec3};
-use image::{ImageBuffer, Rgb, Rgba};
+use glam::{vec2, Vec3};
+use glam::vec3;
+use image::{ImageBuffer, Rgba};
 
-use crate::{enums_types::{CellType, EntityType}, mesh::{Mesh, Texture, Vertex}, model::Model, shaders::Shader};
+use crate::{enums_types::CellType, mesh::{Mesh, Texture, Vertex}, model::Model, shaders::Shader};
 
 #[derive(Debug)]
 pub struct GridCell {
     pub id: usize,
     pub position:  Vec3,
-    pub width: f32, // TODO: We don't need width because we have cell_size on the grid itself.
+    pub width: f32,
     // used to determine if this is traversable in A*
     pub blocked: bool,
     // used to precalculate the neighbors for A*

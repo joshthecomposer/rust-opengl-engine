@@ -34,8 +34,11 @@ impl<T> Entry<T> {
 impl<T> SparseSet<T> {
     /// Creates a SparseSet with the given capacity.
     pub fn with_capacity(size: usize) -> Self {
+
         let mut sparse = Vec::with_capacity(size);
+        #[allow(clippy::uninit_vec)]
         unsafe { sparse.set_len(size) }
+
         SparseSet {
             dense: Vec::with_capacity(size),
             sparse,
@@ -107,8 +110,8 @@ impl<T> SparseSet<T> {
         }
         let n = self.dense.len();
         self.dense.push(Entry {
-            key: key,
-            value: value,
+            key,
+            value,
         });
         self.sparse[key] = n;
         true
