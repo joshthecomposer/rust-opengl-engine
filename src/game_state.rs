@@ -197,6 +197,7 @@ impl GameState {
         entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/tile_01.obj");
         entity_manager.create_static_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(2.0), "resources/models/my_obj/donut.obj");
         entity_manager.create_animated_entity(EntityType::DemonLady, vec3(-3.0, 0.0, 0.0), Vec3::splat(0.01), "resources/model.txt", "resources/armature2.txt");
+        entity_manager.create_animated_entity(EntityType::DemonLady, vec3(4.0, 0.0, 0.0), Vec3::splat(0.03), "resources/big_guy_model.txt", "resources/big_guy_bones.txt");
 
 
         let mut light_manager = Lights::new(50);
