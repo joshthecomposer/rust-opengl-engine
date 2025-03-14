@@ -176,6 +176,32 @@ impl BoneTransformTrack {
     }
 }
 
+pub struct Animator {
+    pub current_animation: String,
+    pub animations: HashMap<String, Animation>,
+}
+
+impl Animator {
+    pub fn new(animation: Animation) -> Self {
+        let mut animations = HashMap::new();
+        animations.insert("Run".to_string(), animation);
+        Self {
+            current_animation: "Run".to_string(),
+            animations,
+        }
+    }
+
+    pub fn set_current_animation(&mut self, input: &str) {
+        self.current_animation = input.to_string();
+    }
+
+    pub fn update(&mut self, elapsed_time: f32, skellington: &mut Bone) {
+        if let Some(animation) = &mut self.animations.get_mut(&self.current_animation) {
+            animation.update(elapsed_time, skellington);
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Animation {
     duration: f32,

@@ -39,6 +39,8 @@ impl Renderer {
         let mut depth_shader = Shader::new("resources/shaders/depth_shader.vs","resources/shaders/depth_shader.fs");
         depth_shader.store_uniform_location("light_space_mat");
         depth_shader.store_uniform_location("model");
+        depth_shader.store_uniform_location("is_animated");
+        depth_shader.store_uniform_location("bone_transforms");
 
         let mut model_shader = Shader::new("resources/shaders/model.vs", "resources/shaders/model.fs");
         model_shader.store_uniform_location("projection");
@@ -55,6 +57,9 @@ impl Renderer {
         anim_shader.store_uniform_location("view");
         anim_shader.store_uniform_location("model");
         anim_shader.store_uniform_location("bone_transforms");
+        anim_shader.store_dir_light_location("dir_light");
+        anim_shader.store_uniform_location("light_space_mat");
+        anim_shader.store_uniform_location("shadow_map");
 
         let mut vao = 0;
         let mut vbo = 0;
@@ -241,7 +246,7 @@ impl Renderer {
         }
     }
 
-    pub fn draw(&mut self, em: &EntityManager, camera: &mut Camera, light_manager: &Lights, grid: &mut Grid, fb_width: u32, fb_height: u32, model: &AniModel, animation: &mut Animation) {
+    pub fn draw(&mut self, em: &EntityManager, camera: &mut Camera, light_manager: &Lights, grid: &mut Grid, fb_width: u32, fb_height: u32,) {
         self.shadow_pass(em,  camera, light_manager, fb_width, fb_height);
         unsafe {
             gl_call!(gl::ClearColor(0.0, 0.0, 0.0, 1.0));
@@ -259,7 +264,7 @@ impl Renderer {
             return;
         }
         // SHADOW MUST GO FIRST
-         self.skybox_pass(camera, fb_width, fb_height);
+        self.skybox_pass(camera, fb_width, fb_height);
         // self.debug_light_pass(camera);
         // self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
         
@@ -267,6 +272,7 @@ impl Renderer {
         let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
         shader.activate();
         for model in em.models.iter() {
+
             let trans = em.transforms.get(model.key()).unwrap();
             camera.model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
 
@@ -280,7 +286,7 @@ impl Renderer {
                 gl_call!(gl::ActiveTexture(gl::TEXTURE2));
                 gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
                 shader.set_int("shadow_map", 2);
-        }
+            }
 
             model.value.draw(shader);
 
@@ -290,26 +296,36 @@ impl Renderer {
             }
         }
 
-         let ani_shader = self.shaders.get_mut(&ShaderType::AniModel).unwrap();
+        let ani_shader = self.shaders.get_mut(&ShaderType::AniModel).unwrap();
+        ani_shader.activate();
 
-             ani_shader.activate();
-          ani_shader.set_mat4("projection", camera.projection);
-          ani_shader.set_mat4("view", camera.view);
+        for ani_model in em.ani_models.iter() {
+            if let Some(animator) = em.animators.get(ani_model.key()) {
+                let animation = animator.animations.get(&animator.current_animation).unwrap();
+                let trans = em.transforms.get(ani_model.key()).unwrap();
+                camera.model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
 
-         let pos = vec3(-3.0, 0.0, 0.0);
-         let scale = Vec3::splat(0.01);
-         let rot = Quat::from_xyzw(0.0, 0.0, 0.0, 1.0);
+                ani_shader.set_mat4("model", camera.model);
+                ani_shader.set_mat4("projection", camera.projection);
+                ani_shader.set_mat4("view", camera.view);
+                ani_shader.set_mat4("light_space_mat", camera.light_space);
+                ani_shader.set_dir_light("dir_light", &light_manager.dir_light);
+                ani_shader.set_mat4_array("bone_transforms", &animation.current_pose);
 
+                unsafe {
+                    gl_call!(gl::ActiveTexture(gl::TEXTURE2));
+                    gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+                    ani_shader.set_int("shadow_map", 2);
+                    gl_call!(gl::Disable(gl::CULL_FACE));
+                }
+                ani_model.value.draw(ani_shader);
+            }
+        }
 
-         camera.model = Mat4::IDENTITY * Mat4::from_scale_rotation_translation(scale, rot, pos);
-         ani_shader.set_mat4("model", camera.model);
-
-         ani_shader.set_mat4_array("bone_transforms", &animation.current_pose);
-
-         unsafe {
-             gl_call!(gl::Disable(gl::CULL_FACE));
-         }
-         model.draw(ani_shader);
+        unsafe {
+            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
+        }
     }
 
     fn grid_pass(&mut self,grid: &mut Grid, camera: &mut Camera, light_manager: &Lights, fb_width: u32, fb_height: u32) {
@@ -345,9 +361,9 @@ impl Renderer {
             gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT));
 
             let view_no_translation = Mat4 {
-                x_axis: camera.view.x_axis.clone(),
-                y_axis: camera.view.y_axis.clone(),
-                z_axis: camera.view.z_axis.clone(),
+                x_axis: camera.view.x_axis,
+                y_axis: camera.view.y_axis,
+                z_axis: camera.view.z_axis,
                 w_axis: vec4(0.0, 0.0, 0.0, 1.0),
             };
             gl_call!(gl::DepthFunc(gl::LEQUAL));
@@ -396,6 +412,7 @@ impl Renderer {
         let depth_shader = self.shaders.get(&ShaderType::Depth).unwrap();
         depth_shader.activate();
 
+        depth_shader.set_bool("is_animated", false);
         for model in em.models.iter() {
             let trans = em.transforms.get(model.key()).unwrap();
             let model_model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
@@ -417,6 +434,34 @@ impl Renderer {
             }
 
         }
+        depth_shader.set_bool("is_animated", true);
+
+        for ani_model in em.ani_models.iter() {
+            if let Some(animator) = em.animators.get(ani_model.key()) {
+                let animation = animator.animations.get(&animator.current_animation).unwrap();
+                let trans = em.transforms.get(ani_model.key()).unwrap();
+
+                depth_shader.set_mat4_array("bone_transforms", &animation.current_pose);
+
+                let mat = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
+                unsafe {
+                    gl::BindVertexArray(ani_model.value.vao);
+                }
+                depth_shader.set_mat4("model", mat);
+
+                unsafe {
+                    gl_call!(gl::DrawElements(
+                        gl::TRIANGLES, 
+                        ani_model.value.indices.len() as i32, 
+                        gl::UNSIGNED_INT, 
+                        std::ptr::null(),
+                    ));
+
+                    gl_call!(gl::BindVertexArray(0));
+                }
+            }
+        }
+
     }
     
     fn debug_light_pass(&mut self, camera: &mut Camera) {

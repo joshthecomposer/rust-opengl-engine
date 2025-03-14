@@ -66,6 +66,14 @@ impl Shader {
         }
     }
 
+    pub fn set_bool(&self, name: &str, value: bool) {
+        let location = self.get_uniform_location(name);
+        if location != -1 {
+            let int_value = if value { 1 } else { 0 };
+            unsafe { gl_call!(gl::Uniform1i(location, int_value)) };
+        }
+    }
+
     pub fn set_int(&self, name: &str, value: u32) {
         let location = self.get_uniform_location(name);
         if location != -1 {

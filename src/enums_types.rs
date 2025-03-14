@@ -54,6 +54,7 @@ pub enum EntityType {
     BlockGrass,
     Tree,
     Grass,
+    DemonLady,
 }
 
 #[derive(Clone, Debug)]

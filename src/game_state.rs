@@ -33,11 +33,6 @@ pub struct GameState {
     pub renderer: Renderer,
     pub glyph_tex: u32,
     pub tex_vao: u32,
-    
-    // pub animator: Animator,
-    pub model: AniModel,
-    pub animation: Animation,
-    pub skellington: Bone,
 }
 
 impl GameState {
@@ -72,11 +67,6 @@ impl GameState {
         // let mut test_anim = Animation::new("resources/models/animation/Mytest.fbx".to_string(), &mut anim_model);
         // let mut animator = Animator::new(test_anim);
 
-        let (skellington, animation) = import_bone_data("resources/armature2.txt");
-        let mut model = import_model_data("resources/model.txt", &animation);
-        model.setup_opengl();
-
-        write_data(&model, "model_out.txt");
         
         // =============================================================
         // text
@@ -203,10 +193,11 @@ impl GameState {
 
         let mut entity_manager = EntityManager::new(10_000);
 
-        entity_manager.populate_cell_rng(&grid);
+        // entity_manager.populate_cell_rng(&grid);
         entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/tile_01.obj");
-        entity_manager.create_entity(EntityType::ArcherTower01, vec3(0.0, 0.0, 0.0), Vec3::splat(0.1), "resources/models/my_obj/tower.obj");
-        entity_manager.create_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(2.0), "resources/models/my_obj/donut.obj");
+        entity_manager.create_static_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(2.0), "resources/models/my_obj/donut.obj");
+        entity_manager.create_animated_entity(EntityType::DemonLady, vec3(-3.0, 0.0, 0.0), Vec3::splat(0.01), "resources/model.txt", "resources/armature2.txt");
+
 
         let mut light_manager = Lights::new(50);
         light_manager.dir_light = DirLight::default_white();
@@ -247,12 +238,6 @@ impl GameState {
             renderer,
             glyph_tex,
             tex_vao,
-
-            // animator,
-            // anim_model,
-            model,
-            animation,
-            skellington,
         }
     }
 
@@ -343,16 +328,11 @@ impl GameState {
         // self.donut2_pos.z = self.donut_pos.z + donut2_r * angle2.sin();
         // self.donut2_pos.y = 1.0; // Same height as Donut 1
 
-        self.animation.update(
-            self.elapsed as f32, // We need this in seconds
-            &mut self.skellington,
-        );
-
         //write_data(self.animation.current_pose.clone(), "current_pose_after_one_update.txt");
         //panic!();
 
         if self.paused { return; }
-        self.entity_manager.update(&self.delta_time);
+        self.entity_manager.update(&self.delta_time, self.elapsed as f32);
         self.light_manager.update(&self.delta_time);
 
         self.camera.update();
@@ -360,7 +340,7 @@ impl GameState {
 
     pub fn render(&mut self) {
         self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
-        self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, self.fb_width, self.fb_height, &self.model, &mut self.animation);
+        self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, self.fb_width, self.fb_height);
 
         // =============================================================
         // Render test text
