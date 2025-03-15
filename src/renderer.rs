@@ -303,7 +303,7 @@ impl Renderer {
             if let Some(animator) = em.animators.get(ani_model.key()) {
                 let animation = animator.animations.get(&animator.current_animation).unwrap();
                 let trans = em.transforms.get(ani_model.key()).unwrap();
-                camera.model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
+                camera.model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
 
                 ani_shader.set_mat4("model", camera.model);
                 ani_shader.set_mat4("projection", camera.projection);
@@ -443,7 +443,7 @@ impl Renderer {
 
                 depth_shader.set_mat4_array("bone_transforms", &animation.current_pose);
 
-                let mat = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
+                let mat = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
                 unsafe {
                     gl::BindVertexArray(ani_model.value.vao);
                 }
