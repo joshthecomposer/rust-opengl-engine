@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use glam::{vec3, Mat4, Vec3};
+use glam::{vec3, Mat4, Quat, Vec3};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
@@ -30,10 +30,10 @@ impl EntityManager {
         }
     }
 
-    pub fn create_static_entity(&mut self, entity_type: EntityType, position: Vec3, scale: Vec3, model_path: &str) {
+    pub fn create_static_entity(&mut self, entity_type: EntityType, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str) {
         let transform = Transform {
             position,
-            rotation: Mat4::IDENTITY,
+            rotation,
             scale,
         };
 
@@ -58,10 +58,10 @@ impl EntityManager {
         self.next_entity_id += 1;
     }
 
-    pub fn create_animated_entity(&mut self, entity_type: EntityType, position: Vec3, scale: Vec3, model_path: &str, animation_path: &str) {
+    pub fn create_animated_entity(&mut self, entity_type: EntityType, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str, animation_path: &str) {
         let transform = Transform {
             position,
-            rotation: Mat4::IDENTITY,
+            rotation,
             scale,
         };
 
@@ -94,8 +94,7 @@ impl EntityManager {
     pub fn populate_floor_tiles(&mut self, grid: &Grid, model_path: &str) {
         for cell in grid.cells.iter() {
             let pos = cell.position;
-            // pos.y -= 0.98;
-            self.create_static_entity(EntityType::BlockGrass, pos, vec3(1.0, 1.0, 1.0), model_path);
+            self.create_static_entity(EntityType::BlockGrass, pos, vec3(1.0, 1.0, 1.0), Quat::IDENTITY, model_path);
         }
     }
 
@@ -129,6 +128,7 @@ impl EntityManager {
                             entity_type.clone(),
                             vec3(cell_pos.x + offset_x + smoff, 0.0, cell_pos.z + offset_z + smoff),
                             Vec3::splat(scale),
+                            Quat::IDENTITY,
                             entity_data[num],
                         );
                     }

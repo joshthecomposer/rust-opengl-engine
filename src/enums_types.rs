@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use glam::{Mat4, Vec3};
+use glam::{Mat4, Quat, Vec3};
 
 #[derive(Debug, Eq, PartialEq, Hash)]
 pub enum VaoType {
@@ -43,7 +43,7 @@ pub enum ShaderType {
 
 pub struct Transform {
     pub position: Vec3,
-    pub rotation: Mat4,
+    pub rotation: Quat,
     pub scale: Vec3,
 }
 
