@@ -59,11 +59,9 @@ impl Camera {
     }
 
     pub fn update(&mut self, em: &EntityManager) {
-        // let player_pos = em.transforms.get(0).unwrap();
-
-        // self.target = player_pos.position;
-
-        // self.position = self.target + vec3(3.0, 3.0, 0.0);
+        self.target = vec3(2.5, 0.0, 0.0);
+        self.position = vec3(15.0, 20.0, 0.0);
+        self.forward = Vec3::normalize(self.target - self.position);
     }
 
     pub fn get_view_matrix(&mut self) {
@@ -83,76 +81,75 @@ impl Camera {
     }
 
     pub fn process_mouse_input(&mut self, window: &PWindow, event: &WindowEvent) {
-        match event {
-        // Pitch yaw stuff
-            glfw::WindowEvent::CursorPos(xpos, ypos) => {
-                if self.first_mousing {
-                    self.last_x = *xpos;
-                    self.last_y = *ypos;
-                    self.first_mousing = false;
-                    return;
-                }
+       // match event {
+       // // Pitch yaw stuff
+       //     glfw::WindowEvent::CursorPos(xpos, ypos) => {
+       //         if self.first_mousing {
+       //             self.last_x = *xpos;
+       //             self.last_y = *ypos;
+       //             self.first_mousing = false;
+       //             return;
+       //         }
 
-                let mut x_offset = xpos - self.last_x;
-                let mut y_offset = self.last_y - ypos;
+       //         let mut x_offset = xpos - self.last_x;
+       //         let mut y_offset = self.last_y - ypos;
 
-                self.last_x = *xpos;
-                self.last_y = *ypos;
+       //         self.last_x = *xpos;
+       //         self.last_y = *ypos;
 
-                x_offset *= self.sensitivity; 
-                y_offset *= self.sensitivity;
+       //         x_offset *= self.sensitivity; 
+       //         y_offset *= self.sensitivity;
+       //         self.yaw += x_offset;
+       //         self.pitch += y_offset;
 
-                self.yaw += x_offset;
-                self.pitch += y_offset;
+       //         if self.yaw >= 360.0 { 
+       //             self.yaw -= 360.0;
+       //         } else if self.yaw < 0.0 {
+       //             self.yaw += 360.0;
+       //         }
 
-                if self.yaw >= 360.0 { 
-                    self.yaw -= 360.0;
-                } else if self.yaw < 0.0 {
-                    self.yaw += 360.0;
-                }
+       //         if self.pitch > 89.0 {
+       //             self.pitch = 89.0;
+       //         }
+       //         if self.pitch < -89.0 {
+       //             self.pitch = -89.0;
+       //         }
 
-                if self.pitch > 89.0 {
-                    self.pitch = 89.0;
-                }
-                if self.pitch < -89.0 {
-                    self.pitch = -89.0;
-                }
+       //         self.direction.x = (self.yaw.to_radians().cos() * self.pitch.to_radians().cos()) as f32;
+       //         self.direction.y = self.pitch.to_radians().sin() as f32;
+       //         self.direction.z = (self.yaw.to_radians().sin() * self.pitch.to_radians().cos()) as f32;
+       //         self.direction = self.direction.normalize();
 
-                self.direction.x = (self.yaw.to_radians().cos() * self.pitch.to_radians().cos()) as f32;
-                self.direction.y = self.pitch.to_radians().sin() as f32;
-                self.direction.z = (self.yaw.to_radians().sin() * self.pitch.to_radians().cos()) as f32;
-                self.direction = self.direction.normalize();
+       //         self.forward = self.direction;
+       //     },
+       //     _ => {}
 
-                self.forward = self.direction;
-            },
-            _ => {}
-
-        }
+        // }
         
-        // Zoom
-        if window.get_key(Key::U) == Action::Press {
-            self.fovy = 5.0_f32.to_radians();
-        } else {
-            self.fovy = 45.0_f32.to_radians();
-        }
+        // // Zoom
+        // if window.get_key(Key::U) == Action::Press {
+        //     self.fovy = 5.0_f32.to_radians();
+        // } else {
+        //     self.fovy = 45.0_f32.to_radians();
+        // }
 
     }
 
     pub fn process_key_event(&mut self, window: &PWindow, delta: f64) {
-        if window.get_key(Key::W) == Action::Press {
-            self.position += (self.movement_speed * self.forward) * delta as f32;
-            // self.position.z += (50.0 * delta) as f32;
-        }
-        if window.get_key(Key::S) == Action::Press {
-            self.position -= (self.movement_speed * self.forward) * delta as f32;
-        }
-        if window.get_key(Key::A) == Action::Press {
-            // cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-            self.position += ((self.up.cross(self.forward).normalize()) * self.movement_speed) * delta as f32;
-        }
-        if window.get_key(Key::D) == Action::Press {
-            self.position -= ((self.up.cross(self.forward).normalize()) * self.movement_speed) * delta as f32;
-        }
+        // if window.get_key(Key::W) == Action::Press {
+        //     self.position += (self.movement_speed * self.forward) * delta as f32;
+        //     // self.position.z += (50.0 * delta) as f32;
+        // }
+        // if window.get_key(Key::S) == Action::Press {
+        //     self.position -= (self.movement_speed * self.forward) * delta as f32;
+        // }
+        // if window.get_key(Key::A) == Action::Press {
+        //     // cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+        //     self.position += ((self.up.cross(self.forward).normalize()) * self.movement_speed) * delta as f32;
+        // }
+        // if window.get_key(Key::D) == Action::Press {
+        //     self.position -= ((self.up.cross(self.forward).normalize()) * self.movement_speed) * delta as f32;
+        // }
 
         // self.position.y = 0.5;
     }
