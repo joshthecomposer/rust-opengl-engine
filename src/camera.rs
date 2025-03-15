@@ -2,6 +2,8 @@
 use glam::{vec3, Mat4, Vec3};
 use glfw::{Action, Key, PWindow, WindowEvent};
 
+use crate::entity_manager::EntityManager;
+
 pub struct Camera {
     pub yaw: f64,
     pub pitch: f64,
@@ -56,8 +58,12 @@ impl Camera {
         }
     }
 
-    pub fn update(&mut self) {
-        // self.position.y = 1.75;
+    pub fn update(&mut self, em: &EntityManager) {
+        // let player_pos = em.transforms.get(0).unwrap();
+
+        // self.target = player_pos.position;
+
+        // self.position = self.target + vec3(3.0, 3.0, 0.0);
     }
 
     pub fn get_view_matrix(&mut self) {

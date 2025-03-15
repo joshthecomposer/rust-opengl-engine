@@ -177,7 +177,6 @@ impl GameState {
             gl_call!(gl::BindVertexArray(0));
         }
 
-        let grid = Grid::parse_grid_data("resources/test_level.txt");
 
         unsafe {
             gl_call!(gl::Enable(gl::BLEND));
@@ -193,12 +192,14 @@ impl GameState {
 
         let mut entity_manager = EntityManager::new(10_000);
 
-        // entity_manager.populate_cell_rng(&grid);
-        entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/tile_01.obj");
-        entity_manager.create_static_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(2.0), "resources/models/my_obj/donut.obj");
         entity_manager.create_animated_entity(EntityType::DemonLady, vec3(-3.0, 0.0, 0.0), Vec3::splat(0.01), "resources/model.txt", "resources/armature2.txt");
-        entity_manager.create_animated_entity(EntityType::DemonLady, vec3(4.0, 0.0, 0.0), Vec3::splat(0.03), "resources/big_guy_model.txt", "resources/big_guy_bones.txt");
+        entity_manager.create_animated_entity(EntityType::BigGuy, vec3(4.0, 0.0, 0.0), Vec3::splat(0.03), "resources/big_guy_model.txt", "resources/big_guy_bones.txt");
+        entity_manager.create_animated_entity(EntityType::BigGuy, vec3(0.0, 0.0, 4.0), Vec3::splat(0.01), "resources/moose_model.txt", "resources/moose_bones.txt");
+        entity_manager.create_static_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(2.0), "resources/models/my_obj/donut.obj");
 
+        let grid = Grid::parse_grid_data("resources/test_level2.txt");
+        // entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/tile_01.obj");
+        // entity_manager.populate_cell_rng(&grid);
 
         let mut light_manager = Lights::new(50);
         light_manager.dir_light = DirLight::default_white();
@@ -333,10 +334,10 @@ impl GameState {
         //panic!();
 
         if self.paused { return; }
-        self.entity_manager.update(&self.delta_time, self.elapsed as f32);
+        self.entity_manager.update(self.delta_time, self.elapsed as f32);
         self.light_manager.update(&self.delta_time);
 
-        self.camera.update();
+        self.camera.update(&self.entity_manager);
     }
 
     pub fn render(&mut self) {

@@ -266,7 +266,7 @@ impl Renderer {
         // SHADOW MUST GO FIRST
         self.skybox_pass(camera, fb_width, fb_height);
         // self.debug_light_pass(camera);
-        // self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
+        self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
         
         camera.reset_matrices(fb_width as f32 / fb_height as f32);
         let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
@@ -386,8 +386,8 @@ impl Renderer {
     fn shadow_pass(&mut self, em: &EntityManager, camera: &mut Camera, light_manager: &Lights, fb_width: u32, fb_height: u32) {
         let shader = self.shaders.get_mut(&ShaderType::Depth).unwrap();
         let near_plane = 1.0;
-        let far_plane = 20.0;
-        let light_projection = Mat4::orthographic_rh_gl(-10.0, 10.0, -10.0, 10.0, near_plane, far_plane);
+        let far_plane = 35.0;
+        let light_projection = Mat4::orthographic_rh_gl(-20.0, 20.0, -20.0, 20.0, near_plane, far_plane);
         let light_view = Mat4::look_at_rh(light_manager.dir_light.view_pos, vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
 
         camera.light_space = light_projection * light_view;

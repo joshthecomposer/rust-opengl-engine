@@ -493,7 +493,9 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {
             "INDEX_COUNT:" => {
                 let index_count: u32 = parts[1].parse().unwrap();
                 let indices: Vec<u32> = lines.next().unwrap().split_whitespace().map(|n| n.parse().unwrap()).collect();
-
+                
+                dbg!(indices.len());
+                dbg!(index_count);
                 assert!(index_count == indices.len() as u32);
                 model.indices = indices;
             }

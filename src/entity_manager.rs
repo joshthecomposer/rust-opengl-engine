@@ -138,7 +138,7 @@ impl EntityManager {
 
     }
 
-    pub fn update(&mut self, delta: &f64, elapsed_time: f32) {
+    pub fn update(&mut self, delta: f64, elapsed_time: f32) {
         for animator in self.animators.iter_mut() {
             if let Some(skellington) = self.skellingtons.get_mut(animator.key()) {
                 animator.value.update(elapsed_time, skellington);
