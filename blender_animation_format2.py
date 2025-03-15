@@ -104,19 +104,24 @@ def export_animation_data(filepath):
                     f.write(f"{qx:.5f} {qy:.5f} {qz:.5f} {qw:.5f}\n")
                     f.write(f"{scale.x:.5f} {scale.y:.5f} {scale.z:.5f}\n\n")
 
-                    
-
 def export_mesh_with_indices(filepath):
     with open(filepath, "w") as f:
         meshes = [obj for obj in bpy.context.selected_objects if obj.type == 'MESH']
         if not meshes:
             print("No mesh selected for export.")
             return
-        
+
         for mesh in meshes:
-            f.write(f"TEXTURE: {mesh.data.materials[0].name}\n")
+            mesh_data = mesh.data  # Get the actual mesh data
+
+            # Export all materials
+            if mesh_data.materials:
+                for i, material in enumerate(mesh_data.materials):
+                    f.write(f"MATERIAL_{i}: {material.name}\n")
+            else:
+                f.write("MATERIAL_0: None\n")  # Handle no material case
+
             # Ensure mesh is triangulated (prevents quads/n-gons causing errors)
-            # TODO: This doesn't work sometimes and we just have to clean it up in blender UI.
             bpy.ops.object.mode_set(mode='OBJECT')  # Ensure in object mode
             bpy.ops.object.select_all(action='DESELECT')
             mesh.select_set(True)
@@ -125,24 +130,20 @@ def export_mesh_with_indices(filepath):
             bpy.ops.mesh.quads_convert_to_tris()
             bpy.ops.object.mode_set(mode='OBJECT')
             bpy.ops.object.convert(target='MESH')
-            mesh_data = mesh.data
 
             f.write(f"MESH_NAME: {mesh.name}\n")
-            
+
             # Dictionary to store unique vertices
             unique_vertices = []
             vertex_map = {}  # Maps (position, normal, UV, weights) → index
-            indices = []  # Index buffer
-            submeshes = []
-            
-            
+
             # Ensure mesh is in world space
             mesh_eval = mesh.evaluated_get(bpy.context.evaluated_depsgraph_get())
             mesh_eval_data = mesh_eval.to_mesh()
 
             uv_layer = mesh_data.uv_layers.active  # Get UV layer (if exists)
-            submesh_count = max(1, len(mesh.data.materials))
-            index_buffers = [[] for i in range(submesh_count)]
+            submesh_count = max(1, len(mesh_eval_data.materials))  # FIXED MATERIAL ACCESS
+            index_buffers = [[] for _ in range(submesh_count)]  # Each material gets its own index buffer
 
             for poly in mesh_eval_data.polygons:
                 for loop_index in poly.loop_indices:
@@ -179,9 +180,14 @@ def export_mesh_with_indices(filepath):
                         vertex_map[vertex_key] = len(unique_vertices)
                         unique_vertices.append(vertex_key)
 
-                    
+                    # FIXED: Store the index properly in the correct material buffer
+                    material_index = poly.material_index
+                    index_buffers[material_index].append(vertex_map[vertex_key])
+
+            # Flatten index buffers and write them
+            indices = []
             for buffer in index_buffers:
-                indices.extend(buffer)
+                indices.extend(buffer)  # Collect all indices into one flat list
 
             # Export unique vertices
             f.write(f"VERTEX_COUNT: {len(unique_vertices)}\n")
@@ -202,7 +208,8 @@ def export_mesh_with_indices(filepath):
             # Export indices
             f.write(f"INDEX_COUNT: {len(indices)}\n")
             for i in range(0, len(indices), 3):
-                f.write(f"{indices[i]} {indices[i+1]} {indices[i+2]}")
+                if i + 2 < len(indices):  # Ensure we don't go out of bounds
+                    f.write(f"{indices[i]} {indices[i+1]} {indices[i+2]} ")
 
 armature_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/moose_bones.txt")
 mesh_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/moose_model.txt")
