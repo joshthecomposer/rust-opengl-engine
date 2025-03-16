@@ -283,7 +283,7 @@ impl Renderer {
             shader.set_dir_light("dir_light", &light_manager.dir_light);
             unsafe {
                 // TODO: This could clash, we need to make sure we reserve texture0 in our dynamic shader code.
-                gl_call!(gl::ActiveTexture(gl::TEXTURE2));
+                gl_call!(gl::ActiveTexture(gl::TEXTURE0));
                 gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
                 shader.set_int("shadow_map", 2);
             }

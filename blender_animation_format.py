@@ -114,7 +114,7 @@ def export_mesh_with_indices(filepath):
             return
         
         for mesh in meshes:
-            f.write(f"TEXTURE: {mesh.data.materials[0].name}\n")
+            f.write(f"TEXTURE: bear_diffuse.png\n")
             # Ensure mesh is triangulated (prevents quads/n-gons causing errors)
             # TODO: This doesn't work sometimes and we just have to clean it up in blender UI.
             bpy.ops.object.mode_set(mode='OBJECT')  # Ensure in object mode
@@ -153,7 +153,7 @@ def export_mesh_with_indices(filepath):
                     # Get UVs (if available)
                     if uv_layer:
                         uv = uv_layer.data[loop.index].uv
-                        uv_tuple = (round(uv.x, 6), round(uv.y, 6))
+                        uv_tuple = (round(uv.x, 6), round(1.0 - uv.y, 6))
                     else:
                         uv_tuple = (0.0, 0.0)
 
@@ -209,5 +209,3 @@ current_frame = bpy.context.scene.frame_current
 bpy.context.scene.frame_set(0)
 export_mesh_with_indices(mesh_output)
 bpy.context.scene.frame_set(current_frame)
-
-
