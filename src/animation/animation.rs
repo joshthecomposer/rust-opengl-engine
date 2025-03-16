@@ -1,10 +1,12 @@
 #![allow(dead_code)]
-use std::{collections::HashMap, ptr, str::Lines};
+use std::{collections::HashMap, ffi::c_void, path::Path, ptr, str::Lines};
 
 use glam::{Mat4, Quat, Vec2, Vec3, Vec4};
+use image::GenericImageView;
+use russimp::material::TextureType;
 use std::mem::{self, offset_of};
 
-use crate::{debug::write::write_data, gl_call, shaders::Shader, some_data::MAX_BONE_INFLUENCE};
+use crate::{debug::write::write_data, gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE};
 
 #[derive(Debug, Clone)]
 #[repr(C)]
@@ -25,6 +27,9 @@ pub struct AniModel {
 
     pub vertices: Vec<AniVertex>,
     pub indices: Vec<u32>,
+    pub textures: Vec<Texture>,
+
+    pub directory: String,
 }
 
 impl AniModel {
@@ -36,6 +41,9 @@ impl AniModel {
 
             vertices: vec![],
             indices: vec![],
+            textures: vec![],
+
+            directory: String::new(),
         }
     }
 
@@ -118,9 +126,38 @@ impl AniModel {
 
     pub fn draw(&self, shader: &mut Shader) {
         shader.activate();
+
+        let mut diffuse_nr = 1;
+        let mut specular_nr = 1;
+
+        for (i, texture) in self.textures.iter().enumerate() {
+            unsafe {
+                gl_call!(gl::ActiveTexture(gl::TEXTURE0 + i as u32));
+            }
+
+            let mut number = "".to_string();
+            let name = &texture._type;
+            if name == "texture_diffuse" {
+                number = diffuse_nr.to_string();
+
+                diffuse_nr += 1;
+            } else if name == "texture_specular" {
+                number = specular_nr.to_string();
+                specular_nr += 1;
+            }
+
+            let final_str = ("material.".to_string() + name.as_str()) + number.as_str();
+            shader.store_uniform_location(final_str.as_str());
+            shader.set_int(final_str.as_str(), i as u32);
+
+            unsafe {
+                gl_call!(gl::BindTexture(gl::TEXTURE_2D, texture.id));
+            }
+        }
+
         unsafe {
             gl_call!(gl::BindVertexArray(self.vao));
-             gl_call!(gl::DrawElements(
+            gl_call!(gl::DrawElements(
                 gl::TRIANGLES, 
                 self.indices.len() as i32, 
                 gl::UNSIGNED_INT, 
@@ -445,6 +482,12 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {
 
     let mut model = AniModel::new();
 
+    let directory = Path::new(file_path).parent().unwrap().to_str().unwrap();
+    println!("Directory of AniModel is: {}", &directory);
+    println!("=============================================================");
+
+    model.directory = directory.to_string();
+
     while let Some(line) = lines.next() {
         let parts: Vec<&str> = line.split_whitespace().collect();
 
@@ -499,11 +542,60 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {
                 assert!(index_count == indices.len() as u32);
                 model.indices = indices;
             }
+            "TEXTURE:" => {
+                let path = parts[1].to_string();
+                texture_from_file(&mut model, path);
+            }
             _ => {}
         }
     }
 
     model
+}
+
+fn texture_from_file(model: &mut AniModel, path: String) {
+    println!("texture is {}", &path);
+    let file_name = model.directory.clone() + "/" + path.as_str();
+
+    dbg!(&path);
+    dbg!(&file_name);
+
+    let mut texture_id = 0;
+    unsafe {
+        gl_call!(gl::GenTextures(1, &mut texture_id));
+
+        let img = image::open(file_name.clone()).unwrap();
+        let (img_width, img_height) = img.dimensions();
+        let rgba = img.to_rgba8();
+        let raw = rgba.as_raw();
+
+        gl_call!(gl::BindTexture(gl::TEXTURE_2D, texture_id));
+        gl_call!(gl::TexImage2D(
+            gl::TEXTURE_2D, 
+            0, 
+            gl::RGBA as i32, 
+            img_width as i32, 
+            img_height as i32, 
+            0, 
+            gl::RGBA, 
+            gl::UNSIGNED_BYTE, 
+            raw.as_ptr() as *const c_void
+        ));
+
+        gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32));
+        gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32));
+        gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32));
+        gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32));
+        gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));
+    }
+
+    let texture = Texture {
+        id: texture_id,
+        _type: "texture_diffuse".to_string(),
+        path: file_name,
+    };
+
+    model.textures.push(texture);
 }
 
 fn parse_bone_offset(lines: &mut Lines<'_>) -> Mat4 {
@@ -537,8 +629,8 @@ fn parse_vec3(input: &str) -> Vec3 {
 fn parse_vec2(input: &str) -> Vec2 {
     let parts: Vec<&str> = input.split_whitespace().collect();
     Vec2::new( 
-        parts[0].parse().unwrap(),
-        parts[1].parse().unwrap(),
+        parts[0].parse::<f32>().unwrap(),
+        parts[1].parse::<f32>().unwrap(),
     )
 }
 

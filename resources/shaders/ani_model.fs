@@ -6,6 +6,7 @@ in vec3 Normal;
 in vec3 FragPos;
 in vec4 FragPosLightSpace;
 
+uniform sampler2D texture_diffuse1;
 uniform sampler2D shadow_map;
 
 struct DirLight {
@@ -18,7 +19,6 @@ struct DirLight {
 };
 uniform DirLight dir_light;
 
-uniform sampler2D texture_diffuse1;
 
 float ShadowCalculation(float dot_light_normal) {
 	vec3 pos = FragPosLightSpace.xyz * 0.5 + 0.5;
@@ -43,7 +43,7 @@ float ShadowCalculation(float dot_light_normal) {
 
 vec3 calculate_directional_light() {
     vec3 lightColor = dir_light.diffuse;
-    // vec3 tex_color = texture(texture_diffuse1, TexCoords).rgb;
+    vec3 tex_color = texture(texture_diffuse1, TexCoords).rgb;
 
 	// Ambient
     vec3 ambient = vec3(dir_light.ambient);
@@ -58,7 +58,7 @@ vec3 calculate_directional_light() {
 
 	float shadow = ShadowCalculation(dot_light_normal);
 
-    return (shadow * (diffuse /* + specular */) + ambient) /** tex_color*/;
+    return (shadow * (diffuse /* + specular */) + ambient) * tex_color;
 }
 
 void main()

@@ -174,8 +174,8 @@ impl Grid {
     pub fn generate_texture() {
         let width: u32 = 10;
         let height: u32 = 10;
-        let color_dark: u8 = 25;
-        let color_light: u8 = 67;
+        let color_dark: u8 = 87;
+        let color_light: u8 = 91;
 
         let mut imgbuf = ImageBuffer::new(width, height);
 

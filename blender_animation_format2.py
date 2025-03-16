@@ -147,7 +147,7 @@ def export_mesh_with_indices(filepath):
 
             for poly in mesh_eval_data.polygons:
                 for loop_index in poly.loop_indices:
-                    loop = mesh_eval_data.loops[loop_index]
+                    loop = mesh_data.loops[loop_index]
                     vert = mesh_eval_data.vertices[loop.vertex_index]
 
                     # Get vertex position
@@ -158,8 +158,8 @@ def export_mesh_with_indices(filepath):
 
                     # Get UVs (if available)
                     if uv_layer:
-                        uv = uv_layer.data[loop_index].uv
-                        uv_tuple = (round(uv.x, 6), round(uv.y, 6))
+                        uv = uv_layer.data[loop.index].uv
+                        uv_tuple = (round(uv.x, 6), round(1.0 - uv.y, 6))
                     else:
                         uv_tuple = (0.0, 0.0)
 
