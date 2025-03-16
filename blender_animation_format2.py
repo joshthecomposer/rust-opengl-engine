@@ -117,9 +117,7 @@ def export_mesh_with_indices(filepath):
             # Export all materials
             if mesh_data.materials:
                 for i, material in enumerate(mesh_data.materials):
-                    f.write(f"MATERIAL_{i}: {material.name}\n")
-            else:
-                f.write("MATERIAL_0: None\n")  # Handle no material case
+                    f.write(f"TEXTURE: {material.name}\n")
 
             # Ensure mesh is triangulated (prevents quads/n-gons causing errors)
             bpy.ops.object.mode_set(mode='OBJECT')  # Ensure in object mode
@@ -211,8 +209,8 @@ def export_mesh_with_indices(filepath):
                 if i + 2 < len(indices):  # Ensure we don't go out of bounds
                     f.write(f"{indices[i]} {indices[i+1]} {indices[i+2]} ")
 
-armature_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/moose_bones.txt")
-mesh_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/moose_model.txt")
+armature_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/animated/002_y_robot/y_robot_run.txt")
+mesh_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/animated/002_y_robot/y_robot_model.txt")
 
 
 export_animation_data(armature_output)

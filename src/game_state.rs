@@ -193,8 +193,28 @@ impl GameState {
         let mut entity_manager = EntityManager::new(10_000);
 
         // entity_manager.create_animated_entity(EntityType::DemonLady, vec3(-3.0, 0.0, 0.0), Vec3::splat(0.01), Quat::IDENTITY, "resources/model.txt", "resources/armature2.txt");
-        entity_manager.create_animated_entity(EntityType::BigGuy, vec3(0.0, 0.0, 4.0), Vec3::splat(0.013), Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),"resources/models/001_moose/moose_model.txt", "resources/models/001_moose/moose_bones.txt");
-        entity_manager.create_static_entity(EntityType::Donut, vec3(1.0, 1.0, 1.0), Vec3::splat(2.0), Quat::IDENTITY,"resources/models/my_obj/donut.obj");
+        entity_manager.create_animated_entity(
+            EntityType::BigGuy, 
+            vec3(0.0, 0.0, 4.0), 
+            Vec3::splat(0.013), 
+            Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
+            "resources/models/animated/001_moose/moose_model.txt", 
+            "resources/models/animated/001_moose/moose_bones.txt"
+        );
+        entity_manager.create_animated_entity(
+            EntityType::BigGuy, 
+            vec3(4.0, 0.0, 3.0), 
+            Vec3::splat(0.01), 
+            Quat::from_xyzw(0.0, 1.0, 0.0, 0.0) /* Quat::from_xyzw(0.707, 0.0, 0.0, 0.707)*/,
+            "resources/models/animated/002_y_robot/y_robot_model.txt", 
+            "resources/models/animated/002_y_robot/y_robot_run.txt"
+        );
+        entity_manager.create_static_entity(
+            EntityType::Donut, 
+            vec3(1.0, 1.0, 1.0), 
+            Vec3::splat(2.0), 
+            Quat::IDENTITY,"resources/models/my_obj/donut.obj"
+        );
 
         let grid = Grid::parse_grid_data("resources/level_data/level.txt");
         // entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/tile_01.obj");

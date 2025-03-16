@@ -2,7 +2,7 @@
 use std::{collections::HashMap, ffi::c_void, path::Path, ptr, str::Lines};
 
 use glam::{Mat4, Quat, Vec2, Vec3, Vec4};
-use image::GenericImageView;
+use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
 use russimp::material::TextureType;
 use std::mem::{self, offset_of};
 
@@ -30,6 +30,7 @@ pub struct AniModel {
     pub textures: Vec<Texture>,
 
     pub directory: String,
+    pub full_path: String,
 }
 
 impl AniModel {
@@ -44,6 +45,7 @@ impl AniModel {
             textures: vec![],
 
             directory: String::new(),
+            full_path: String::new(),
         }
     }
 
@@ -141,7 +143,7 @@ impl AniModel {
                 number = diffuse_nr.to_string();
 
                 diffuse_nr += 1;
-            } else if name == "texture_specular" {
+} else if name == "texture_specular" {
                 number = specular_nr.to_string();
                 specular_nr += 1;
             }
@@ -487,6 +489,7 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {
     println!("=============================================================");
 
     model.directory = directory.to_string();
+    model.full_path = file_path.to_string();
 
     while let Some(line) = lines.next() {
         let parts: Vec<&str> = line.split_whitespace().collect();
@@ -564,7 +567,33 @@ fn texture_from_file(model: &mut AniModel, path: String) {
     unsafe {
         gl_call!(gl::GenTextures(1, &mut texture_id));
 
-        let img = image::open(file_name.clone()).unwrap();
+        let img = match image::open(file_name.clone()) {
+            Ok(data) => data,
+            Err(_) => {
+                //TODO: Parse BSDF color instead
+                let mut imgbuf = ImageBuffer::new(1,1);
+                let color_u8 = [
+                    198,
+                    198,
+                    198,
+                    255,
+                ];
+
+                for pixel in imgbuf.pixels_mut() {
+                    *pixel = Rgba(color_u8);
+                }
+                
+                let color_path = format!("{:.3}-{:.3}-{:.3}.png" ,color_u8[0], color_u8[1], color_u8[2]);
+                let save_loc = format!("{}/{}", model.directory, color_path);
+
+                imgbuf
+                    .save(save_loc)
+                    .expect("Failed to save texture image");
+
+                DynamicImage::ImageRgba8(imgbuf)
+            }
+        };
+
         let (img_width, img_height) = img.dimensions();
         let rgba = img.to_rgba8();
         let raw = rgba.as_raw();
