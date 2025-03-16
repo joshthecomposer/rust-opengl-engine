@@ -65,28 +65,31 @@ impl EntityManager {
             scale,
         };
 
-        // let mut model = AniModel::new();
-        // let mut found = false;
-        // for m in self.ani_models.iter_mut() {
-        //     if m.value().full_path == *model_path.to_string() {
-        //         model = m.value().clone();
-        //         found = true;
-        //     }
-        // }
-
-        // if !found {
         let (skellington, animation) = import_bone_data(animation_path);
-        let mut model = import_model_data(model_path, &animation);
-        model.setup_opengl();
+
+        let mut model = AniModel::new();
+        let mut found = false;
+        for m in self.ani_models.iter_mut() {
+            if m.value().full_path == *model_path.to_string() {
+                println!("FOUND DUPLICATE MODEL, CLONING");
+                model = m.value().clone();
+                found = true;
+            }
+        }
+
+        if !found {
+            model = import_model_data(model_path, &animation);
+            model.setup_opengl();
+        }         
+
         let mut animator = Animator::new(animation);
         animator.set_current_animation("Run");
-        // }
-        
+        self.animators.insert(self.next_entity_id, animator);
+
+        self.skellingtons.insert(self.next_entity_id, skellington.clone());
         self.transforms.insert(self.next_entity_id, transform);
         self.entity_types.insert(self.next_entity_id, entity_type);
         self.ani_models.insert(self.next_entity_id, model);
-        self.skellingtons.insert(self.next_entity_id, skellington.clone());
-        self.animators.insert(self.next_entity_id, animator);
 
         self.next_entity_id += 1;
     }
