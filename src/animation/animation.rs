@@ -501,10 +501,15 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {
         match parts[0] {
             "MEME" => {}
             "VERT:" => {
+
+                let position = parse_vec3(lines.next().unwrap());
+                let normal = parse_vec3(lines.next().unwrap());
+                let uv = parse_vec2(lines.next().unwrap());
+
                 let mut vertex = AniVertex {
-                    position: parse_vec3(lines.next().unwrap()),
-                    normal: parse_vec3(lines.next().unwrap()),
-                    uv: parse_vec2(lines.next().unwrap()),
+                    position,
+                    normal,
+                    uv,
                     bone_ids: [-1; MAX_BONE_INFLUENCE],
                     bone_weights: [0.0; MAX_BONE_INFLUENCE],
                 };
@@ -650,7 +655,7 @@ fn parse_vec3(input: &str) -> Vec3 {
     let parts: Vec<&str> = input.split_whitespace().collect();
     Vec3::new( 
         parts[0].parse().unwrap(),
-        parts[1].parse().unwrap(),
+        parts[1].parse::<f32>().unwrap(),
         parts[2].parse().unwrap(),
     )
 }
