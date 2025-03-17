@@ -205,9 +205,9 @@ impl GameState {
             EntityType::BigGuy, 
             vec3(4.0, 0.0, 3.0), 
             Vec3::splat(0.01), 
-            Quat::from_xyzw(0.0, 1.0, 0.0, 0.0) /* Quat::from_xyzw(0.707, 0.0, 0.0, 0.707)*/,
-            "resources/models/animated/002_y_robot/y_robot_model.txt", 
-            "resources/models/animated/002_y_robot/y_robot_run.txt"
+            Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
+            "resources/models/animated/002_y_robot/y_robot_model_FINAL.txt", 
+            "resources/models/animated/002_y_robot/y_robot_bones_FINAL.txt"
         );
         entity_manager.create_static_entity(
             EntityType::Donut, 
