@@ -1,9 +1,6 @@
-#![allow(dead_code)]
-use std::{collections::HashMap, ffi::c_void, path::Path, ptr, str::Lines};
-
 use glam::{Mat4, Quat, Vec2, Vec3, Vec4};
 use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
-use std::mem::{self, offset_of};
+use std::{collections::{HashMap, HashSet}, ffi::c_void, mem::{self, offset_of}, path::Path, ptr, str::Lines};
 
 use crate::{debug::write::write_data, enums_types::TextureType, gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE};
 
@@ -155,6 +152,8 @@ impl AniModel {
 
             gl_call!(gl::BindVertexArray(0));
 
+            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
             gl_call!(gl::ActiveTexture(gl::TEXTURE1));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
             gl_call!(gl::ActiveTexture(gl::TEXTURE2));
@@ -164,7 +163,6 @@ impl AniModel {
             gl_call!(gl::ActiveTexture(gl::TEXTURE4));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
         }
-
     }
 }
 
@@ -209,18 +207,17 @@ impl BoneTransformTrack {
     }
 }
 
+#[derive(Debug)]
 pub struct Animator {
     pub current_animation: String,
     pub animations: HashMap<String, Animation>,
 }
 
 impl Animator {
-    pub fn new(animation: Animation) -> Self {
-        let mut animations = HashMap::new();
-        animations.insert("Run".to_string(), animation);
+    pub fn new() -> Self {
         Self {
-            current_animation: "Run".to_string(),
-            animations,
+            current_animation: "".to_string(),
+            animations: HashMap::new(),
         }
     }
 
@@ -344,7 +341,7 @@ pub fn get_time_fraction(times: &[f32], dt: f32) -> (u32, f32) {
     (segment as u32, frac)
 }
 
-pub fn import_bone_data(file_path: &str) -> (Bone, Animation) {
+pub fn import_bone_data(file_path: &str) -> (Bone, Animator, Animation) {
     let data = std::fs::read_to_string(file_path).unwrap();
     let mut lines = data.lines();
 
@@ -402,11 +399,12 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animation) {
     // ============================================================
     lines = data.lines();
     let mut animation = Animation::default();
+    let mut current_anim_name = "".to_string();
 
     // Get gpu bone info to use for later to gather a final matrix array
     let mut model_animation_join = vec![];
 
-    for b in bones_no_children {
+    for b in &bones_no_children {
         model_animation_join.push(
             BoneJoinInfo {
                 name: b.name.clone(),
@@ -415,10 +413,14 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animation) {
         );
 
         animation.current_pose.push(b.offset);
-
         assert!(model_animation_join[b.id as usize].name == b.name);
         assert!(model_animation_join.len() == animation.current_pose.len());
+        
+        // T pose
     }
+
+    let mut animator = Animator::new();
+    let mut ticks_per_second = 0.0;
 
     while let Some(line) = lines.next() {
         let parts: Vec<&str> = line.split_whitespace().collect();
@@ -428,36 +430,61 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animation) {
         }
 
         match parts[0] {
+            "ANIMATION_NAME:" => {
+                if !current_anim_name.is_empty() {
+                    // Save the previous animation before creating a new one
+                    animation.model_animation_join = model_animation_join.clone();
+                    animation.ticks_per_second = ticks_per_second;
+
+                    animator.animations.insert(current_anim_name.clone(), animation.clone());
+                }
+
+                animation = Animation::default();
+                current_anim_name = parts[1].to_string();
+
+                for b in &bones_no_children {
+                    animation.current_pose.push(b.offset);
+                }
+            }
             "DURATION:" => {
                 animation.duration = parts[1].parse().unwrap()
             }
             "FPS:" => {
-                animation.ticks_per_second = parts[1].parse().unwrap()
+                ticks_per_second = parts[1].parse().unwrap()
             }
             "TIMESTAMP:" => {
                 let time_stamp = parts[1].parse().unwrap();
+
+                // let mut skipped_bones = HashSet::new(); 
 
                 for i in 0..bone_count {
                     let bone_name = model_animation_join[i as usize].name.clone();
 
                     let track = animation
                         .bone_transforms
-                        .entry(bone_name)
+                        .entry(bone_name.clone())
                         .or_insert_with(BoneTransformTrack::default);
-
-                    track.position_timestamps.push(time_stamp);
-                    track.rotation_timestamps.push(time_stamp);
-                    track.scale_timestamps.push(time_stamp);
 
                     let position = parse_vec3(lines.next().unwrap());
                     let rotation = parse_quat(lines.next().unwrap());
                     let scale = parse_vec3(lines.next().unwrap());
 
+                    lines.next();
+
+                    //   if !skipped_bones.contains(&bone_name) {
+                    //       skipped_bones.insert(bone_name);
+                    //       continue;
+                    //   }
+
+                    track.position_timestamps.push(time_stamp);
+                    track.rotation_timestamps.push(time_stamp);
+                    track.scale_timestamps.push(time_stamp);
+
+
                     track.positions.push(position);
                     track.rotations.push(rotation);
                     track.scales.push(scale);
 
-                    lines.next();
                 }
 
             }
@@ -465,11 +492,26 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animation) {
         }
     }
 
-    animation.model_animation_join = model_animation_join;
+    animation.model_animation_join = model_animation_join.clone();
+    animation.ticks_per_second = ticks_per_second;
 
-    write_data(&animation, "animation_out.txt");
 
-    (bone, animation)
+    animator.set_current_animation(current_anim_name.as_str());
+    animator.animations.insert(current_anim_name.clone(), animation.clone());
+
+    for (_, animation) in animator.animations.iter_mut() {
+        for (_, track) in animation.bone_transforms.iter_mut() {
+            track.positions.remove(0);
+            track.position_timestamps.remove(0);
+            track.rotations.remove(0);
+            track.rotation_timestamps.remove(0);
+            track.scales.remove(0);
+            track.scale_timestamps.remove(0);
+        }
+    }
+
+
+    (bone, animator, animation)
 }
 
 pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {

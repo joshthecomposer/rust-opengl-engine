@@ -71,40 +71,42 @@ def export_animation_data(filepath):
                 f.write(f"{row[0]:.5f} {row[1]:.5f} {row[2]:.5f} {row[3]:.5f}\n")
             f.write("\n")
 
-        if armature.animation_data and armature.animation_data.action:
-            action = armature.animation_data.action
+        for action in bpy.data.actions:  # Iterate over all actions
+            armature.animation_data.action = action  # Temporarily assign action to the armature
 
+            if armature.animation_data and armature.animation_data.action:
+                action = armature.animation_data.action
             
-            f.write(f"# ========== {action.name} ==========\n")
+                f.write(f"ANIMATION_NAME: {action.name}\n")
 
+                frame_start = int(action.frame_range[0])
+                frame_end = int(action.frame_range[1])
+                duration = (frame_end - frame_start) / fps
+                f.write(f"DURATION: {duration:.5f}\n\n")
 
-            frame_start = int(1)
-            frame_end = int(action.frame_range[1])
-            duration = (frame_end - frame_start) / fps
-            f.write(f"DURATION: {duration:.5f}\n\n")
+                for frame in range(frame_start, frame_end + 1):
+                    bpy.context.scene.frame_set(frame)
+                    timestamp = frame / fps
+                    f.write(f"KEYFRAME: {frame}\n")
+                    f.write(f"TIMESTAMP: {timestamp:.5f}\n")
 
-            for frame in range(frame_start, frame_end + 1):
-                bpy.context.scene.frame_set(frame)
-                timestamp = frame / fps
-                f.write(f"KEYFRAME: {frame}\n")
-                f.write(f"TIMESTAMP: {timestamp:.5f}\n")
+                    for bone in armature.pose.bones:
+                        parent_matrix = bone.parent.matrix if bone.parent else mathutils.Matrix.Identity(4)
+                        local_matrix = parent_matrix.inverted_safe() @ bone.matrix
+                        position = local_matrix.translation
 
-                for bone in armature.pose.bones:
-                    parent_matrix = bone.parent.matrix if bone.parent else mathutils.Matrix.Identity(4)
-                    local_matrix  = parent_matrix.inverted_safe() @ bone.matrix
-                    position = local_matrix.translation
+                        rotation = local_matrix.to_quaternion()
+                        qw = rotation.w
+                        qx = rotation.x
+                        qy = rotation.y
+                        qz = rotation.z
+                        scale = bone.scale
 
-                    rotation = local_matrix.to_quaternion()
-                    qw = rotation.w
-                    qx = rotation.x
-                    qy = rotation.y
-                    qz = rotation.z
-                    scale = bone.scale
+                        f.write(f"{position.x:.5f} {position.y:.5f} {position.z:.5f}\n")
+                        f.write(f"{qx:.5f} {qy:.5f} {qz:.5f} {qw:.5f}\n")
+                        f.write(f"{scale.x:.5f} {scale.y:.5f} {scale.z:.5f}\n\n")
 
-                    f.write(f"{position.x:.5f} {position.y:.5f} {position.z:.5f}\n")
-                    f.write(f"{qx:.5f} {qy:.5f} {qz:.5f} {qw:.5f}\n")
-                    f.write(f"{scale.x:.5f} {scale.y:.5f} {scale.z:.5f}\n\n")
-
+        armature.animation_data.action = None  # Clear the assigned action to avoid conflicts
 def export_mesh_with_indices(filepath):
     with open(filepath, "w") as f:
         meshes = [obj for obj in bpy.context.selected_objects if obj.type == 'MESH']
@@ -119,7 +121,7 @@ def export_mesh_with_indices(filepath):
             # Export all materials
             if mesh_data.materials:
                 for i, material in enumerate(mesh_data.materials):
-                    f.write(f"TEXTURE: {material.name}\n")
+                    f.write(f"TEXTURE_DIFFUSE: {material.name}\n")
 
             f.write(f"MESH_NAME: {mesh.name}\n")
 
@@ -203,8 +205,8 @@ def export_mesh_with_indices(filepath):
                 if i + 2 < len(indices):  # Ensure we don't go out of bounds
                     f.write(f"{indices[i]} {indices[i+1]} {indices[i+2]} ")
 
-armature_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/animated/001_moose/moose_test_bones.txt")
-mesh_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/animated/001_moose/moose_test_model.txt")
+armature_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/animated/002_y_robot/y_robot_idle_bones.txt")
+mesh_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/animated/002_y_robot/y_robot_idle_model.txt")
 
 
 export_animation_data(armature_output)

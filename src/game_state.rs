@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+use std::collections::HashSet;
+
 use glam::{vec3, Quat, Vec3};
 use glfw::{Action, Context, Glfw, GlfwReceiver, MouseButton, PWindow, WindowEvent};
 use image::GrayImage;
@@ -33,6 +35,8 @@ pub struct GameState {
     pub renderer: Renderer,
     pub glyph_tex: u32,
     pub tex_vao: u32,
+
+    pub pressed_keys: HashSet<glfw::Key>,
 }
 
 impl GameState {
@@ -188,16 +192,6 @@ impl GameState {
         }
 
         let mut entity_manager = EntityManager::new(10_000);
-
-        // entity_manager.create_animated_entity(EntityType::DemonLady, vec3(-3.0, 0.0, 0.0), Vec3::splat(0.01), Quat::IDENTITY, "resources/model.txt", "resources/armature2.txt");
-        entity_manager.create_animated_entity(
-            EntityType::BigGuy, 
-            vec3(0.0, 0.0, 4.0), 
-            Vec3::splat(0.013), 
-            Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
-            "resources/models/animated/001_moose/moose_test_model.txt", 
-            "resources/models/animated/001_moose/moose_test_bones.txt"
-        );
         entity_manager.create_animated_entity(
             EntityType::BigGuy, 
             vec3(4.0, 0.0, 3.0), 
@@ -205,6 +199,15 @@ impl GameState {
             Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
             "resources/models/animated/002_y_robot/y_robot_model_FINAL.txt", 
             "resources/models/animated/002_y_robot/y_robot_bones_FINAL.txt"
+        );
+
+        entity_manager.create_animated_entity(
+            EntityType::BigGuy, 
+            vec3(0.0, 0.0, 4.0), 
+            Vec3::splat(0.013), 
+            Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
+            "resources/models/animated/001_moose/moose_model_FINAL.txt", 
+            "resources/models/animated/001_moose/moose_bones_FINAL.txt"
         );
         // entity_manager.create_static_entity(
         //     EntityType::Donut, 
@@ -256,6 +259,8 @@ impl GameState {
             renderer,
             glyph_tex,
             tex_vao,
+
+            pressed_keys: HashSet::new(),
         }
     }
 
@@ -277,8 +282,38 @@ impl GameState {
                     // self.paused = !self.paused;
 
                 },
+
+                // ======================================================================
+                glfw::WindowEvent::Key(glfw::Key::A, _, glfw::Action::Press, _) => {
+                    self.pressed_keys.insert(glfw::Key::A);
+                },
+                glfw:: WindowEvent::Key(glfw::Key::A, _, glfw::Action::Release, _) => {
+                    self.pressed_keys.remove(&glfw::Key::A);
+                },
+                glfw::WindowEvent::Key(glfw::Key::D, _, glfw::Action::Press, _) => {
+                    self.pressed_keys.insert(glfw::Key::D);
+                },
+                glfw:: WindowEvent::Key(glfw::Key::D, _, glfw::Action::Release, _) => {
+                    self.pressed_keys.remove(&glfw::Key::D);
+                },
+                glfw::WindowEvent::Key(glfw::Key::S, _, glfw::Action::Press, _) => {
+                    self.pressed_keys.insert(glfw::Key::S);
+                },
+                glfw:: WindowEvent::Key(glfw::Key::S, _, glfw::Action::Release, _) => {
+                    self.pressed_keys.remove(&glfw::Key::S);
+                },
+                glfw::WindowEvent::Key(glfw::Key::W, _, glfw::Action::Press, _) => {
+                    self.pressed_keys.insert(glfw::Key::W);
+                },
+                glfw:: WindowEvent::Key(glfw::Key::W, _, glfw::Action::Release, _) => {
+                    self.pressed_keys.remove(&glfw::Key::W);
+                },
+
+                // ======================================================================
                 _ => {
                     self.camera.process_mouse_input(&self.window, &event);
+                    let animator = self.entity_manager.animators.get_mut(0).unwrap();
+                    animator.set_current_animation("Idle");
                 },
             }
         }
@@ -354,6 +389,51 @@ impl GameState {
         self.light_manager.update(&self.delta_time);
 
         self.camera.update(&self.entity_manager);
+
+
+        if !self.camera.free {
+            let animator = self.entity_manager.animators.get_mut(0).unwrap();
+            let transform = self.entity_manager.transforms.get_mut(0).unwrap();
+
+            let mut movement = Vec3::ZERO;
+            let mut rotation = None;
+            let mut is_moving = false;
+
+            if self.pressed_keys.contains(&glfw::Key::A) {
+                is_moving = true;
+                movement.z += 5.0 * self.delta_time as f32;
+                rotation = Some(Quat::from_rotation_y(std::f32::consts::PI));
+            }
+
+            if self.pressed_keys.contains(&glfw::Key::D) {
+                is_moving = true;
+                movement.z -= 5.0 * self.delta_time as f32;
+                rotation = Some(Quat::from_rotation_y(0.0));
+            }
+
+            if self.pressed_keys.contains(&glfw::Key::W) {
+                is_moving = true;
+                movement.x -= 5.0 * self.delta_time as f32;
+                rotation = Some(Quat::from_rotation_y(std::f32::consts::FRAC_PI_2));
+            }
+
+            if self.pressed_keys.contains(&glfw::Key::S) {
+                is_moving = true;
+                movement.x += 5.0 * self.delta_time as f32;
+                rotation = Some(Quat::from_rotation_y(-std::f32::consts::FRAC_PI_2));
+            }
+
+            if is_moving {
+                animator.set_current_animation("Run");
+                transform.position += movement;
+                if let Some(rot) = rotation {
+                    transform.rotation = rot * Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707);
+                }
+            } else {
+                animator.set_current_animation("Idle");
+            }
+        }
+
     }
 
     pub fn render(&mut self) {

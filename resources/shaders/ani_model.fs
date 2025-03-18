@@ -33,7 +33,7 @@ float ShadowCalculation(float dot_light_normal) {
 		pos.z = 1.0;
 	}
 
-	float bias = max(0.05 * (1.0 - dot_light_normal), 0.005);
+	float bias = max(0.005 * (1.0 - dot_light_normal), 0.005);
 
 	float shadow = 0.0;
 	vec2 texel_size = 1.0 / textureSize(shadow_map, 0);
