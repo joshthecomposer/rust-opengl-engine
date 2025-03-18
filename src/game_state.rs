@@ -190,21 +190,21 @@ impl GameState {
         let mut entity_manager = EntityManager::new(10_000);
 
         // entity_manager.create_animated_entity(EntityType::DemonLady, vec3(-3.0, 0.0, 0.0), Vec3::splat(0.01), Quat::IDENTITY, "resources/model.txt", "resources/armature2.txt");
-        entity_manager.create_animated_entity(
-            EntityType::BigGuy, 
-            vec3(0.0, 0.0, 4.0), 
-            Vec3::splat(0.013), 
-            Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
-            "resources/models/animated/001_moose/moose_test_model.txt", 
-            "resources/models/animated/001_moose/moose_test_bones.txt"
-        );
+        // entity_manager.create_animated_entity(
+        //     EntityType::BigGuy, 
+        //     vec3(0.0, 0.0, 4.0), 
+        //     Vec3::splat(0.013), 
+        //     Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
+        //     "resources/models/animated/001_moose/moose_test_model.txt", 
+        //     "resources/models/animated/001_moose/moose_test_bones.txt"
+        // );
         entity_manager.create_animated_entity(
             EntityType::BigGuy, 
             vec3(4.0, 0.0, 3.0), 
             Vec3::splat(0.01), 
             Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
-            "resources/models/animated/002_y_robot/y_robot_model_FINAL.txt", 
-            "resources/models/animated/002_y_robot/y_robot_bones_FINAL.txt"
+            "resources/models/animated/002_y_robot/y_robot_idle_model.txt", 
+            "resources/models/animated/002_y_robot/y_robot_idle_bones.txt"
         );
         // entity_manager.create_static_entity(
         //     EntityType::Donut, 

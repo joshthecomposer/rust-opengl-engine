@@ -269,6 +269,7 @@ impl Renderer {
            self.render_quad();
            return;
        }
+
        // SHADOW MUST GO FIRST
        self.skybox_pass(camera, fb_width, fb_height);
        // self.debug_light_pass(camera);
