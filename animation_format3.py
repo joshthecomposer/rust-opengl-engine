@@ -147,7 +147,7 @@ def export_mesh_with_indices(filepath):
                     # Get UVs (if available)
                     if uv_layer:
                         uv = uv_layer.data[loop.index].uv
-                        uv_tuple = (round(uv.x, 6), round(uv.y, 6))
+                        uv_tuple = (uv.x, uv.y)
                     else:
                         uv_tuple = (0.0, 0.0)
 

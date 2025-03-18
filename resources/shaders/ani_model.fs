@@ -62,7 +62,7 @@ vec3 calculate_directional_light() {
     vec3 norm = normalize(Normal);
 	float dot_light_normal = dot(lightDir, norm);
     float diff = max(dot_light_normal, 0.0);
-    vec3 diffuse = diff * lightColor * texture(material.Diffuse, TexCoords).rgb;
+    vec3 diffuse = diff * lightColor;
 	
 	// Specular
 	vec3 viewDir = normalize(view_position - FragPos);
