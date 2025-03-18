@@ -197,8 +197,8 @@ impl GameState {
             vec3(4.0, 0.0, 3.0), 
             Vec3::splat(0.01), 
             Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
-            "resources/models/animated/002_y_robot/y_robot_idle_model.txt", 
-            "resources/models/animated/002_y_robot/y_robot_idle_bones.txt"
+            "resources/models/animated/002_y_robot/y_robot_model_FINAL.txt", 
+            "resources/models/animated/002_y_robot/y_robot_bones_FINAL.txt"
         );
 
         entity_manager.create_animated_entity(
@@ -206,8 +206,8 @@ impl GameState {
             vec3(0.0, 0.0, 4.0), 
             Vec3::splat(0.013), 
             Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
-            "resources/models/animated/001_moose/moose_test_model.txt", 
-            "resources/models/animated/001_moose/moose_test_bones.txt"
+            "resources/models/animated/001_moose/moose_model_FINAL.txt", 
+            "resources/models/animated/001_moose/moose_bones_FINAL.txt"
         );
         // entity_manager.create_static_entity(
         //     EntityType::Donut, 
