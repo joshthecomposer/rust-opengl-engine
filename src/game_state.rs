@@ -194,9 +194,9 @@ impl GameState {
             EntityType::BigGuy, 
             vec3(0.0, 0.0, 4.0), 
             Vec3::splat(0.013), 
-            Quat::from_xyzw(0.0, 1.0, 0.0, 0.0),
-            "resources/models/animated/001_moose/testing_textures/moose_model.txt", 
-            "resources/models/animated/001_moose/testing_textures/moose_bones.txt"
+            Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
+            "resources/models/animated/001_moose/moose_test_model.txt", 
+            "resources/models/animated/001_moose/moose_test_bones.txt"
         );
         entity_manager.create_animated_entity(
             EntityType::BigGuy, 
