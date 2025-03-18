@@ -15,6 +15,7 @@ mod grid;
 mod renderer;
 mod animation;
 mod debug;
+mod input;
 
 use game_state::GameState;
 
