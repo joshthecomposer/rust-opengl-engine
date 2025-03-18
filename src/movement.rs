@@ -1,7 +1,9 @@
 use std::collections::HashSet;
 
-pub fn handle_player_movement(pressed_keys: HashSet<glfw::Key>) {
-    
+use crate::entity_manager::EntityManager;
+
+pub fn handle_player_movement(pressed_keys: HashSet<glfw::Key>, em: &mut EntityManager) {
+       
 }
                 /*
                 // ======================================================================
