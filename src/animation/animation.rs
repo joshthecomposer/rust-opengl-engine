@@ -3,10 +3,9 @@ use std::{collections::HashMap, ffi::c_void, path::Path, ptr, str::Lines};
 
 use glam::{Mat4, Quat, Vec2, Vec3, Vec4};
 use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
-use russimp::material::TextureType;
 use std::mem::{self, offset_of};
 
-use crate::{debug::write::write_data, gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE};
+use crate::{debug::write::write_data, enums_types::TextureType, gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE};
 
 #[derive(Debug, Clone)]
 #[repr(C)]
@@ -27,7 +26,7 @@ pub struct AniModel {
 
     pub vertices: Vec<AniVertex>,
     pub indices: Vec<u32>,
-    pub textures: Vec<Texture>,
+    pub textures: [Option<Texture>; 8],
 
     pub directory: String,
     pub full_path: String,
@@ -42,7 +41,7 @@ impl AniModel {
 
             vertices: vec![],
             indices: vec![],
-            textures: vec![],
+            textures: [None, None, None, None, None, None, None, None],
 
             directory: String::new(),
             full_path: String::new(),
@@ -128,32 +127,20 @@ impl AniModel {
 
     pub fn draw(&self, shader: &mut Shader) {
         shader.activate();
-
-        let mut diffuse_nr = 1;
-        let mut specular_nr = 1;
-
         for (i, texture) in self.textures.iter().enumerate() {
-            unsafe {
-                gl_call!(gl::ActiveTexture(gl::TEXTURE0 + i as u32));
-            }
+            if let Some(texture) = texture {
 
-            let mut number = "".to_string();
-            let name = &texture._type;
-            if name == "texture_diffuse" {
-                number = diffuse_nr.to_string();
+                let gl_tex_key = i;
 
-                diffuse_nr += 1;
-} else if name == "texture_specular" {
-                number = specular_nr.to_string();
-                specular_nr += 1;
-            }
+                unsafe { 
+                    gl_call!(gl::ActiveTexture(gl::TEXTURE0 + gl_tex_key as u32));
+                }
 
-            let final_str = ("material.".to_string() + name.as_str()) + number.as_str();
-            shader.store_uniform_location(final_str.as_str());
-            shader.set_int(final_str.as_str(), i as u32);
-
-            unsafe {
-                gl_call!(gl::BindTexture(gl::TEXTURE_2D, texture.id));
+                let final_str = format!("material.{}", texture._type);
+                shader.set_int(final_str.as_str(), gl_tex_key as u32);
+                unsafe {
+                    gl_call!(gl::BindTexture(gl::TEXTURE_2D, texture.id));
+                }
             }
         }
 
@@ -168,10 +155,8 @@ impl AniModel {
 
             gl_call!(gl::BindVertexArray(0));
         }
-    }
 
-    // pub fn shadow_pass(shader: &mut Shader) {
-    // }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -550,9 +535,17 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {
                 assert!(index_count == indices.len() as u32);
                 model.indices = indices;
             }
-            "TEXTURE:" => {
+            "TEXTURE_DIFFUSE:" => {
                 let path = parts[1].to_string();
-                texture_from_file(&mut model, path);
+                texture_from_file(&mut model, path, TextureType::Diffuse);
+            }
+            "TEXTURE_SPECULAR:" => {
+                let path = parts[1].to_string();
+                texture_from_file(&mut model, path, TextureType::Specular);
+            }
+            "TEXTURE_EMISSIVE:" => {
+                let path = parts[1].to_string();
+                texture_from_file(&mut model, path, TextureType::Emissive);
             }
             _ => {}
         }
@@ -561,7 +554,7 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {
     model
 }
 
-fn texture_from_file(model: &mut AniModel, path: String) {
+fn texture_from_file(model: &mut AniModel, path: String, texture_type: TextureType) {
     println!("texture is {}", &path);
     let file_name = model.directory.clone() + "/" + path.as_str();
 
@@ -573,63 +566,91 @@ fn texture_from_file(model: &mut AniModel, path: String) {
         gl_call!(gl::GenTextures(1, &mut texture_id));
 
         let img = match image::open(file_name.clone()) {
-            Ok(data) => data,
+            Ok(data) => Some(data),
             Err(_) => {
-                //TODO: Parse BSDF color instead
-                let mut imgbuf = ImageBuffer::new(1,1);
-                let color_u8 = [
-                    198,
-                    198,
-                    198,
-                    255,
-                ];
+                if texture_type == TextureType::Diffuse {
+                    //TODO: Parse BSDF color instead
+                    let mut imgbuf = ImageBuffer::new(1,1);
+                    let color_u8 = [
+                        198,
+                        198,
+                        198,
+                        255,
+                    ];
 
-                for pixel in imgbuf.pixels_mut() {
-                    *pixel = Rgba(color_u8);
+                    for pixel in imgbuf.pixels_mut() {
+                        *pixel = Rgba(color_u8);
+                    }
+
+                    let color_path = format!("{:.3}-{:.3}-{:.3}.png" ,color_u8[0], color_u8[1], color_u8[2]);
+                    let save_loc = format!("{}/{}", model.directory, color_path);
+
+                    imgbuf
+                        .save(save_loc)
+                        .expect("Failed to save texture image");
+
+                    Some(DynamicImage::ImageRgba8(imgbuf))
+                } else {
+                    None
                 }
-                
-                let color_path = format!("{:.3}-{:.3}-{:.3}.png" ,color_u8[0], color_u8[1], color_u8[2]);
-                let save_loc = format!("{}/{}", model.directory, color_path);
-
-                imgbuf
-                    .save(save_loc)
-                    .expect("Failed to save texture image");
-
-                DynamicImage::ImageRgba8(imgbuf)
             }
         };
 
-        let (img_width, img_height) = img.dimensions();
-        let rgba = img.to_rgba8();
-        let raw = rgba.as_raw();
+        if let Some(img) = img {
+            let (img_width, img_height) = img.dimensions();
+            let rgba = img.to_rgba8();
+            let raw = rgba.as_raw();
 
-        gl_call!(gl::BindTexture(gl::TEXTURE_2D, texture_id));
-        gl_call!(gl::TexImage2D(
-            gl::TEXTURE_2D, 
-            0, 
-            gl::RGBA as i32, 
-            img_width as i32, 
-            img_height as i32, 
-            0, 
-            gl::RGBA, 
-            gl::UNSIGNED_BYTE, 
-            raw.as_ptr() as *const c_void
-        ));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, texture_id));
+            gl_call!(gl::TexImage2D(
+                gl::TEXTURE_2D, 
+                0, 
+                gl::RGBA as i32, 
+                img_width as i32, 
+                img_height as i32, 
+                0, 
+                gl::RGBA, 
+                gl::UNSIGNED_BYTE, 
+                raw.as_ptr() as *const c_void
+            ));
 
-        gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32));
-        gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32));
-        gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32));
-        gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32));
-        gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32));
+            gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));
+
+            let texture = Texture {
+                id: texture_id,
+                _type: texture_type.clone().to_string(),
+                path: file_name,
+            };
+
+            match texture_type {
+                TextureType::Diffuse => {
+                    model.textures[1] = Some(texture);
+                }
+                TextureType::Specular => {
+                    model.textures[2] = Some(texture);
+                }
+                TextureType::Emissive => {
+                    model.textures[3] = Some(texture);
+                }
+                TextureType::NormalMap => {
+                    model.textures[4] = Some(texture);
+                }
+                TextureType::Roughness => {
+                    model.textures[5] = Some(texture);
+                }
+                TextureType::Metalness => {
+                    model.textures[6] = Some(texture);
+                }
+                TextureType::Displacement => {
+                    model.textures[7] = Some(texture);
+                }
+            }
+        }
     }
-
-    let texture = Texture {
-        id: texture_id,
-        _type: "texture_diffuse".to_string(),
-        path: file_name,
-    };
-
-    model.textures.push(texture);
 }
 
 fn parse_bone_offset(lines: &mut Lines<'_>) -> Mat4 {

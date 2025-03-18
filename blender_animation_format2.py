@@ -127,7 +127,6 @@ def export_mesh_with_indices(filepath):
             bpy.ops.object.mode_set(mode='EDIT')
             bpy.ops.mesh.quads_convert_to_tris()
             bpy.ops.object.mode_set(mode='OBJECT')
-            bpy.ops.object.convert(target='MESH')
 
             f.write(f"MESH_NAME: {mesh.name}\n")
 
@@ -209,8 +208,8 @@ def export_mesh_with_indices(filepath):
                 if i + 2 < len(indices):  # Ensure we don't go out of bounds
                     f.write(f"{indices[i]} {indices[i+1]} {indices[i+2]} ")
 
-armature_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/animated/002_y_robot/y_robot_run.txt")
-mesh_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/animated/002_y_robot/y_robot_model.txt")
+armature_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/animated/001_moose/testing_textures/moose_bones.txt")
+mesh_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/animated/001_moose/testing_textures/moose_model.txt")
 
 
 export_animation_data(armature_output)
