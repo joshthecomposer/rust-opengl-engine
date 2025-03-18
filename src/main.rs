@@ -16,6 +16,7 @@ mod renderer;
 mod animation;
 mod debug;
 mod input;
+mod movement;
 
 use game_state::GameState;
 
