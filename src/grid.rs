@@ -136,12 +136,20 @@ impl Grid {
                 vertices.push(Vertex { position: vec3(x, 0.0, z + cell_size), normal: vec3(0.0, 1.0, 0.0), tex_coords: tl });
 
                 // Add indices for two triangles
+                // flipped winding
                 indices.push(base_index);
+                indices.push(base_index + 2);
                 indices.push(base_index + 1);
-                indices.push(base_index + 2);
                 indices.push(base_index);
-                indices.push(base_index + 2);
                 indices.push(base_index + 3);
+                indices.push(base_index + 2);
+
+                // indices.push(base_index);
+                // indices.push(base_index + 1);
+                // indices.push(base_index + 2);
+                // indices.push(base_index);
+                // indices.push(base_index + 2);
+                // indices.push(base_index + 3);
 
                 // =============================================================
                 // Create cell object
