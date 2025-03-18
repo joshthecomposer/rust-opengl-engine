@@ -60,7 +60,7 @@ pub enum EntityType {
     BigGuy,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Faction {
     Enemy,
     Static,

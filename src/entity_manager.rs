@@ -145,6 +145,14 @@ impl EntityManager {
     }
 
     pub fn update(&mut self, delta: f64, elapsed_time: f32) {
+        if let Some(player_entry) = self.factions.iter().find(|e| e.value() == &Faction::Player) {
+            let player_key = player_entry.key();
+
+            let player_transform = self.transforms.get_mut(player_entry.key());
+
+            // handle_player_movement();
+        }
+
         for animator in self.animators.iter_mut() {
             if let Some(skellington) = self.skellingtons.get_mut(animator.key()) {
                 animator.value.update(elapsed_time, skellington);
