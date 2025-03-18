@@ -159,6 +159,8 @@ impl Mesh {
                 std::ptr::null(),
             ));
             gl_call!(gl::BindVertexArray(0));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
+
         }
     }
 }

@@ -65,7 +65,7 @@ impl EntityManager {
             scale,
         };
 
-        let (skellington, animation) = import_bone_data(animation_path);
+        let (skellington, mut animator, animation) = import_bone_data(animation_path);
 
         let mut model = AniModel::new();
         let mut found = false;
@@ -82,8 +82,6 @@ impl EntityManager {
             model.setup_opengl();
         }         
 
-        let mut animator = Animator::new(animation);
-        animator.set_current_animation("Run");
         self.animators.insert(self.next_entity_id, animator);
 
         self.skellingtons.insert(self.next_entity_id, skellington.clone());
