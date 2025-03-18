@@ -1,10 +1,11 @@
 #![allow(dead_code, clippy::too_many_arguments)]
 use std::{collections::HashMap, ffi::c_void, mem, ptr::null_mut};
 
+use gl::CULL_FACE;
 use glam::{vec3, vec4, Mat4, Quat, Vec3};
 use image::GenericImageView;
 
-use crate::{animation::animation::{Animation, AniModel}, camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}};
+use crate::{animation::animation::{AniModel, Animation}, camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, TextureType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}};
 
 pub struct Renderer {
     pub shaders: HashMap<ShaderType, Shader>, // TODO: make this an enum
@@ -60,6 +61,10 @@ impl Renderer {
         anim_shader.store_dir_light_location("dir_light");
         anim_shader.store_uniform_location("light_space_mat");
         anim_shader.store_uniform_location("shadow_map");
+        anim_shader.store_uniform_location("material.Diffuse");
+        anim_shader.store_uniform_location("material.Specular");
+        anim_shader.store_uniform_location("material.Emissive");
+        anim_shader.store_uniform_location("view_position");
 
         let mut vao = 0;
         let mut vbo = 0;
@@ -247,58 +252,51 @@ impl Renderer {
     }
 
     pub fn draw(&mut self, em: &EntityManager, camera: &mut Camera, light_manager: &Lights, grid: &mut Grid, fb_width: u32, fb_height: u32,) {
-        self.shadow_pass(em,  camera, light_manager, fb_width, fb_height);
-        unsafe {
-            gl_call!(gl::ClearColor(0.0, 0.0, 0.0, 1.0));
-            gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT));
-        }
-        let debug = false;
-        if debug {
-            unsafe {
-                let depth_debug_quad = self.shaders.get(&ShaderType::DebugShadowMap).unwrap();
-                depth_debug_quad.activate();
-                gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-                gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-            }
-            self.render_quad();
-            return;
-        }
-        // SHADOW MUST GO FIRST
-        self.skybox_pass(camera, fb_width, fb_height);
-        // self.debug_light_pass(camera);
-        self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
-        
         camera.reset_matrices(fb_width as f32 / fb_height as f32);
-        let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
-        shader.activate();
-        for model in em.models.iter() {
+       self.shadow_pass(em,  camera, light_manager, fb_width, fb_height);
+       unsafe {
+           gl_call!(gl::ClearColor(0.0, 0.0, 0.0, 1.0));
+           gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT));
+       }
+       let debug = false;
+       if debug {
+           unsafe {
+               let depth_debug_quad = self.shaders.get(&ShaderType::DebugShadowMap).unwrap();
+               depth_debug_quad.activate();
+               gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+               gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+           }
+           self.render_quad();
+           return;
+       }
+       // SHADOW MUST GO FIRST
+       self.skybox_pass(camera, fb_width, fb_height);
+       // self.debug_light_pass(camera);
+       self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
+        
+        // let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
+        // shader.activate();
+        // for model in em.models.iter() {
 
-            let trans = em.transforms.get(model.key()).unwrap();
-            camera.model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
+        //     let trans = em.transforms.get(model.key()).unwrap();
+        //     camera.model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
 
-            shader.set_mat4("model", camera.model);
-            shader.set_mat4("view", camera.view);
-            shader.set_mat4("projection", camera.projection);
-            shader.set_mat4("light_space_mat", camera.light_space);
-            shader.set_dir_light("dir_light", &light_manager.dir_light);
-            unsafe {
-                // TODO: This could clash, we need to make sure we reserve texture0 in our dynamic shader code.
-                gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-                gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-                shader.set_int("shadow_map", 2);
-            }
+        //     shader.set_mat4("model", camera.model);
+        //     shader.set_mat4("view", camera.view);
+        //     shader.set_mat4("projection", camera.projection);
+        //     shader.set_mat4("light_space_mat", camera.light_space);
+        //     shader.set_dir_light("dir_light", &light_manager.dir_light);
+        //     unsafe {
+        //         gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+        //         gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+        //         shader.set_int("shadow_map", 0);
+        //     }
 
-            model.value.draw(shader);
-
-            unsafe {
-                gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-                gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
-            }
-        }
+        //     model.value.draw(shader);
+        // }
 
         let ani_shader = self.shaders.get_mut(&ShaderType::AniModel).unwrap();
         ani_shader.activate();
-
         for ani_model in em.ani_models.iter() {
             if let Some(animator) = em.animators.get(ani_model.key()) {
                 let animation = animator.animations.get(&animator.current_animation).unwrap();
@@ -311,20 +309,15 @@ impl Renderer {
                 ani_shader.set_mat4("light_space_mat", camera.light_space);
                 ani_shader.set_dir_light("dir_light", &light_manager.dir_light);
                 ani_shader.set_mat4_array("bone_transforms", &animation.current_pose);
-
+                ani_shader.set_vec3("view_pos", camera.position);
                 unsafe {
-                    gl_call!(gl::ActiveTexture(gl::TEXTURE2));
+                    gl_call!(gl::ActiveTexture(gl::TEXTURE0));
                     gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-                    ani_shader.set_int("shadow_map", 2);
-                    gl_call!(gl::Disable(gl::CULL_FACE));
+                    ani_shader.set_int("shadow_map", 0);
                 }
+
                 ani_model.value.draw(ani_shader);
             }
-        }
-
-        unsafe {
-            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
         }
     }
 
@@ -339,10 +332,11 @@ impl Renderer {
         shader.set_mat4("light_space_mat", camera.light_space);
         shader.set_dir_light("dir_light", &light_manager.dir_light);
         unsafe {
+            gl_call!(gl::ActiveTexture(gl::TEXTURE5));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+            shader.set_int("shadow_map", 5);
             // TODO: Fix the wrapping of this quad
-            gl_call!(gl::Disable(gl::CULL_FACE));
             grid.draw(shader);
-            // gl_call!(gl::Enable(gl::CULL_FACE));
         }
     }
 
@@ -350,7 +344,6 @@ impl Renderer {
         camera.reset_matrices(fb_width as f32 / fb_height as f32);
         
         unsafe {
-            gl_call!(gl::Disable(gl::CULL_FACE));
             let status = gl::CheckFramebufferStatus(gl::FRAMEBUFFER);
             if status != gl::FRAMEBUFFER_COMPLETE {
                 println!("Framebuffer incomplete: {}", status);
@@ -373,13 +366,12 @@ impl Renderer {
             skybox_shader_prog.set_mat4("projection", camera.projection);
 
             gl_call!(gl::BindVertexArray(*self.vaos.get(&VaoType::Skybox).unwrap()));
-            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+            gl_call!(gl::ActiveTexture(gl::TEXTURE1));
             gl_call!(gl::BindTexture(gl::TEXTURE_CUBE_MAP, self.cubemap_texture));
             gl_call!(gl::DrawElements(gl::TRIANGLES, 36, gl::UNSIGNED_INT, std::ptr::null(),));
             gl_call!(gl::BindVertexArray(0));
 
             gl_call!(gl::DepthFunc(gl::LESS));
-            // gl_call!(gl::Enable(gl::CULL_FACE));
         }
     }
 
@@ -399,9 +391,11 @@ impl Renderer {
             gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER, *self.fbos.get(&FboType::DepthMap).unwrap()));
             gl_call!(gl::Clear(gl::DEPTH_BUFFER_BIT));
             // Render scene
+            gl_call!(gl::Enable(CULL_FACE));
             gl_call!(gl::CullFace(gl::FRONT));
             self.render_sample_depth(em);
-            gl_call!(gl::CullFace(gl::BACK)); 
+            // gl_call!(gl::CullFace(gl::BACK)); 
+            gl_call!(gl::Disable(CULL_FACE));
             // End render
             gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER,0));
             gl_call!(gl::Viewport(0, 0, fb_width as i32, fb_height as i32));

@@ -1,4 +1,6 @@
 #![allow(dead_code)]
+use std::fmt::{self, Display, Formatter};
+
 use glam::{Mat4, Quat, Vec3};
 
 #[derive(Debug, Eq, PartialEq, Hash)]
@@ -63,4 +65,29 @@ pub enum CellType {
     Grass,
     Tree,
     Path
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum TextureType {
+    Diffuse, 
+    Specular,
+    Emissive,
+    NormalMap,
+    Roughness,
+    Metalness,
+    Displacement,
+}
+
+impl Display for TextureType {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            TextureType::Diffuse => write!(f, "Diffuse"),
+            TextureType::Specular => write!(f, "Specular"),
+            TextureType::Emissive => write!(f, "Emissive"),
+            TextureType::NormalMap => write!(f, "Normal Map"),
+            TextureType::Roughness => write!(f, "Roughness"),
+            TextureType::Metalness => write!(f, "Metalness"),
+            TextureType::Displacement => write!(f, "Displacement"),
+        }
+    }
 }
