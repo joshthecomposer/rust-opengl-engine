@@ -35,13 +35,18 @@ void main()
         }
         vec4 localPosition = bone_transforms[bone_ids[i]] * vec4(a_pos,1.0f);
         totalPosition += localPosition * bone_weights[i];
-        totalNormal += mat3(bone_transforms[bone_ids[i]]) * a_normal * bone_weights[i];
+
+
+		mat3 boneNormalMatrix = transpose(inverse(mat3(bone_transforms[bone_ids[i]])));
+		totalNormal += boneNormalMatrix * a_normal * bone_weights[i];
     }
 	
 	FragPos = vec3(model * totalPosition);
 	FragPosLightSpace = light_space_mat * vec4(FragPos, 1.0);
 
-	Normal = totalNormal;
+	mat3 normalMatrix = transpose(inverse(mat3(model)));
+	Normal = normalize(normalMatrix * totalNormal);
+
     mat4 viewModel = view * model;
     gl_Position =  projection * viewModel * totalPosition;
     TexCoords = a_tex_coords;
