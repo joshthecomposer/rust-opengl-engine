@@ -1,6 +1,6 @@
 use glam::{Mat4, Quat, Vec2, Vec3, Vec4};
 use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
-use std::{collections::HashMap, ffi::c_void, mem::{self, offset_of}, path::Path, ptr, str::Lines};
+use std::{collections::{HashMap, HashSet}, ffi::c_void, mem::{self, offset_of}, path::Path, ptr, str::Lines};
 
 use crate::{debug::write::write_data, enums_types::TextureType, gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE};
 
@@ -163,7 +163,6 @@ impl AniModel {
             gl_call!(gl::ActiveTexture(gl::TEXTURE4));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
         }
-
     }
 }
 
@@ -227,7 +226,6 @@ impl Animator {
     }
 
     pub fn update(&mut self, elapsed_time: f32, skellington: &mut Bone) {
-        self.set_current_animation("Idle");
         if let Some(animation) = &mut self.animations.get_mut(&self.current_animation) {
             animation.update(elapsed_time, skellington);
         }
@@ -446,9 +444,6 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animator, Animation) {
 
                 for b in &bones_no_children {
                     animation.current_pose.push(b.offset);
-
-                    // assert!(&model_animation_join[b.id as usize].name == b.name);
-                    // assert!(model_animation_join.len() == animation.current_pose.len());
                 }
             }
             "DURATION:" => {
@@ -460,27 +455,36 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animator, Animation) {
             "TIMESTAMP:" => {
                 let time_stamp = parts[1].parse().unwrap();
 
+                // let mut skipped_bones = HashSet::new(); 
+
                 for i in 0..bone_count {
                     let bone_name = model_animation_join[i as usize].name.clone();
 
                     let track = animation
                         .bone_transforms
-                        .entry(bone_name)
+                        .entry(bone_name.clone())
                         .or_insert_with(BoneTransformTrack::default);
-
-                    track.position_timestamps.push(time_stamp);
-                    track.rotation_timestamps.push(time_stamp);
-                    track.scale_timestamps.push(time_stamp);
 
                     let position = parse_vec3(lines.next().unwrap());
                     let rotation = parse_quat(lines.next().unwrap());
                     let scale = parse_vec3(lines.next().unwrap());
 
+                    lines.next();
+
+                    //   if !skipped_bones.contains(&bone_name) {
+                    //       skipped_bones.insert(bone_name);
+                    //       continue;
+                    //   }
+
+                    track.position_timestamps.push(time_stamp);
+                    track.rotation_timestamps.push(time_stamp);
+                    track.scale_timestamps.push(time_stamp);
+
+
                     track.positions.push(position);
                     track.rotations.push(rotation);
                     track.scales.push(scale);
 
-                    lines.next();
                 }
 
             }
@@ -491,8 +495,20 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animator, Animation) {
     animation.model_animation_join = model_animation_join.clone();
     animation.ticks_per_second = ticks_per_second;
 
+
     animator.set_current_animation(current_anim_name.as_str());
     animator.animations.insert(current_anim_name.clone(), animation.clone());
+
+    for (_, animation) in animator.animations.iter_mut() {
+        for (_, track) in animation.bone_transforms.iter_mut() {
+            track.positions.remove(0);
+            track.position_timestamps.remove(0);
+            track.rotations.remove(0);
+            track.rotation_timestamps.remove(0);
+            track.scales.remove(0);
+            track.scale_timestamps.remove(0);
+        }
+    }
 
 
     (bone, animator, animation)
