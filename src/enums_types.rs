@@ -61,6 +61,14 @@ pub enum EntityType {
 }
 
 #[derive(Clone, Debug)]
+pub enum Faction {
+    Enemy,
+    Static,
+    World,
+    Player,
+}
+
+#[derive(Clone, Debug)]
 pub enum CellType {
     Grass,
     Tree,
