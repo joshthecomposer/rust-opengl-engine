@@ -114,7 +114,9 @@ def export_mesh_with_indices(filepath):
             return
         
         for mesh in meshes:
-            f.write(f"TEXTURE: bear_diffuse.png\n")
+            f.write(f"DIFFUSE: None\n")
+            f.write(f"SPECULAR: None\n")
+            f.write(f"EMISSIVE: None\n")
             # Ensure mesh is triangulated (prevents quads/n-gons causing errors)
             # TODO: This doesn't work sometimes and we just have to clean it up in blender UI.
             bpy.ops.object.mode_set(mode='OBJECT')  # Ensure in object mode
@@ -153,7 +155,7 @@ def export_mesh_with_indices(filepath):
                     # Get UVs (if available)
                     if uv_layer:
                         uv = uv_layer.data[loop.index].uv
-                        uv_tuple = (round(uv.x, 6), round(1.0 - uv.y, 6))
+                        uv_tuple = (round(uv.x, 6), round(uv.y, 6))
                     else:
                         uv_tuple = (0.0, 0.0)
 
@@ -168,7 +170,7 @@ def export_mesh_with_indices(filepath):
                             vertex_weights.append((bone_name, round(weight, 6)))
 
                     # Unique key for vertex
-                    vertex_key = (-position.x, position.z, position.y, -normal.x, normal.z, normal.y, uv_tuple, tuple(vertex_weights))
+                    vertex_key = (position.x, position.y, position.z, normal.x, normal.y, normal.z, uv_tuple, tuple(vertex_weights))
 
                     if vertex_key not in vertex_map:
                         vertex_map[vertex_key] = len(unique_vertices)
@@ -185,7 +187,7 @@ def export_mesh_with_indices(filepath):
                 uv = v[6]
                 weights = v[7]
 
-                f.write(f"VERT:\n{pos[0]:.5f} {pos[1]:.5f} {pos[2]:.5f}\n{norm[0]:.5f} {norm[1]:.5f} {norm[2]:.5f}\n{uv[0]:.5f} {uv[1]:.5f}\n")
+                f.write(f"VERT:\n{-pos[0]:.5f} {pos[2]:.5f} {pos[1]:.5f}\n{-norm[0]:.5f} {norm[2]:.5f} {norm[1]:.5f}\n{uv[0]:.5f} {uv[1]:.5f}\n")
 
                 if weights:
                     text = " ".join(f"{bone} {weight}" for bone, weight in weights)
@@ -198,8 +200,8 @@ def export_mesh_with_indices(filepath):
             for i in range(0, len(indices), 3):
                 f.write(f"{indices[i]} {indices[i+1]} {indices[i+2]} ")
 
-armature_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/animated/002_y_robot/y_robot_bones.txt")
-mesh_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/animated/002_y_robot/y_robot_model.txt")
+armature_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/animated/001_moose/testing_textures/moose_bones.txt")
+mesh_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/animated/001_moose/testing_textures/moose_model.txt")
 
 
 export_animation_data(armature_output)

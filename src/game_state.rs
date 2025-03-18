@@ -185,9 +185,6 @@ impl GameState {
             gl_call!(gl::Viewport(0, 0, width, height));
             gl_call!(gl::Enable(gl::DEPTH_TEST));
             gl::Enable(gl::DEBUG_OUTPUT);
-            // gl_call!(gl::Enable(gl::FRAMEBUFFER_SRGB)); 
-            gl::Enable(gl::CULL_FACE);  
-            gl::CullFace(gl::BACK);  
         }
 
         let mut entity_manager = EntityManager::new(10_000);
@@ -198,8 +195,8 @@ impl GameState {
             vec3(0.0, 0.0, 4.0), 
             Vec3::splat(0.013), 
             Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
-            "resources/models/animated/001_moose/moose_model_FINAL.txt", 
-            "resources/models/animated/001_moose/moose_bones_FINAL.txt"
+            "resources/models/animated/001_moose/moose_test_model.txt", 
+            "resources/models/animated/001_moose/moose_test_bones.txt"
         );
         entity_manager.create_animated_entity(
             EntityType::BigGuy, 
@@ -209,12 +206,12 @@ impl GameState {
             "resources/models/animated/002_y_robot/y_robot_model_FINAL.txt", 
             "resources/models/animated/002_y_robot/y_robot_bones_FINAL.txt"
         );
-        entity_manager.create_static_entity(
-            EntityType::Donut, 
-            vec3(1.0, 1.0, 1.0), 
-            Vec3::splat(2.0), 
-            Quat::IDENTITY,"resources/models/my_obj/donut.obj"
-        );
+        // entity_manager.create_static_entity(
+        //     EntityType::Donut, 
+        //     vec3(1.0, 1.0, 1.0), 
+        //     Vec3::splat(2.0), 
+        //     Quat::IDENTITY,"resources/models/my_obj/donut.obj"
+        // );
 
         let grid = Grid::parse_grid_data("resources/level_data/level.txt");
         // entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/tile_01.obj");

@@ -119,16 +119,6 @@ def export_mesh_with_indices(filepath):
                 for i, material in enumerate(mesh_data.materials):
                     f.write(f"TEXTURE: {material.name}\n")
 
-            # Ensure mesh is triangulated (prevents quads/n-gons causing errors)
-            bpy.ops.object.mode_set(mode='OBJECT')  # Ensure in object mode
-            bpy.ops.object.select_all(action='DESELECT')
-            mesh.select_set(True)
-            bpy.context.view_layer.objects.active = mesh
-            bpy.ops.object.mode_set(mode='EDIT')
-            bpy.ops.mesh.quads_convert_to_tris()
-            bpy.ops.object.mode_set(mode='OBJECT')
-            bpy.ops.object.convert(target='MESH')
-
             f.write(f"MESH_NAME: {mesh.name}\n")
 
             # Dictionary to store unique vertices
@@ -157,7 +147,7 @@ def export_mesh_with_indices(filepath):
                     # Get UVs (if available)
                     if uv_layer:
                         uv = uv_layer.data[loop.index].uv
-                        uv_tuple = (round(uv.x, 6), round(uv.y, 6))
+                        uv_tuple = (uv.x, uv.y)
                     else:
                         uv_tuple = (0.0, 0.0)
 
