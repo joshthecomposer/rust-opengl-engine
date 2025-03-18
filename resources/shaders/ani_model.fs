@@ -6,7 +6,6 @@ in vec3 Normal;
 in vec3 FragPos;
 in vec4 FragPosLightSpace;
 
-uniform sampler2D texture_diffuse1;
 uniform sampler2D shadow_map;
 
 struct DirLight {
@@ -19,6 +18,14 @@ struct DirLight {
 };
 uniform DirLight dir_light;
 
+struct Material {
+	sampler2D Diffuse;
+	sampler2D Specular;
+	sampler2D Emissive;
+};
+uniform Material material;
+
+uniform vec3 view_position;
 
 float ShadowCalculation(float dot_light_normal) {
 	vec3 pos = FragPosLightSpace.xyz * 0.5 + 0.5;
@@ -43,7 +50,8 @@ float ShadowCalculation(float dot_light_normal) {
 
 vec3 calculate_directional_light() {
     vec3 lightColor = dir_light.diffuse;
-    vec3 tex_color = texture(texture_diffuse1, TexCoords).rgb;
+
+	vec3 tex_color = texture(material.Diffuse, TexCoords).rgb;
 
 	// Ambient
     vec3 ambient = vec3(dir_light.ambient);
@@ -54,11 +62,21 @@ vec3 calculate_directional_light() {
     vec3 norm = normalize(Normal);
 	float dot_light_normal = dot(lightDir, norm);
     float diff = max(dot_light_normal, 0.0);
-    vec3 diffuse = diff * lightColor;
+    vec3 diffuse = diff * lightColor * texture(material.Diffuse, TexCoords).rgb;
+	
+	// Specular
+	vec3 viewDir = normalize(view_position - FragPos);
+	vec3 reflectDir = reflect(-lightDir, norm);
+	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 36.0);
+	vec3 specular = dir_light.specular * spec * texture(material.Specular, TexCoords).rgb;
+
+	// Emissive
+	vec3 emissive = texture(material.Emissive, TexCoords).rgb;
 
 	float shadow = ShadowCalculation(dot_light_normal);
 
-    return (shadow * (diffuse /* + specular */) + ambient) * tex_color;
+	return (shadow * (diffuse + specular) + ambient) * tex_color + emissive;
+   //  return (ambient + (shadow) * (diffuse + specular)) * tex_color + emissive;
 }
 
 void main()
