@@ -153,11 +153,6 @@ impl Camera {
             }
 
             // Zoom
-            if window.get_key(Key::U) == Action::Press {
-                self.fovy = 5.0_f32.to_radians();
-            } else {
-                self.fovy = 45.0_f32.to_radians();
-            }
 
         }
     }
@@ -178,6 +173,7 @@ impl Camera {
                 }
 
             }
+
         }
 
         self.last_f_state = f_pressed; // Update last state
@@ -199,6 +195,12 @@ impl Camera {
             }
 
             // self.position.y = 0.5;
+        }
+
+        if window.get_key(Key::U) == Action::Press {
+            self.fovy = 5.0_f32.to_radians();
+        } else {
+            self.fovy = 45.0_f32.to_radians();
         }
     }
 }
