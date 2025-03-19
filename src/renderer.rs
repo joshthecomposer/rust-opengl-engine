@@ -282,20 +282,21 @@ impl Renderer {
         for model in em.models.iter() {
 
             let trans = em.transforms.get(model.key()).unwrap();
-            camera.model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
+            camera.model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
 
             shader.set_mat4("model", camera.model);
             shader.set_mat4("view", camera.view);
             shader.set_mat4("projection", camera.projection);
             shader.set_mat4("light_space_mat", camera.light_space);
             shader.set_dir_light("dir_light", &light_manager.dir_light);
-            unsafe {
-                gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-                gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-                shader.set_int("shadow_map", 0);
-            }
-
+        unsafe {
+            gl_call!(gl::ActiveTexture(gl::TEXTURE5));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+            shader.set_int("shadow_map", 5);
             model.value.draw(shader);
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
+            // TODO: Fix the wrapping of this quad
+        }
         }
 
         let ani_shader = self.shaders.get_mut(&ShaderType::AniModel).unwrap();
