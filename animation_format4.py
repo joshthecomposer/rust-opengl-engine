@@ -44,6 +44,8 @@ def export_animation_data(filepath):
         armature = armatures[0]  # Assuming one armature per model
         f.write(f"BONECOUNT: {len(armature.pose.bones)}\n")
         
+
+        #WARNING: This is kinda destructive, it changes the axis_conversion for the blender file.
         conv = axis_conversion(from_forward='-Y', from_up='Z', to_forward='-Z', to_up='Y').to_4x4()
         armature.data.transform(conv)
         
