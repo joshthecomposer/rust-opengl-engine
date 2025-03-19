@@ -5,7 +5,7 @@ use glam::{vec3, Quat, Vec3};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-use crate::{animation::animation::{import_bone_data, import_model_data, AniModel, Animator, Bone}, camera::Camera, enums_types::{CellType, EntityType, Faction, Transform}, grid::Grid, model::Model, movement::handle_player_movement, some_data::{GRASSES, TREES}, sparse_set::SparseSet};
+use crate::{animation::animation::{import_bone_data, import_model_data, AniModel, Animator, Bone}, camera::Camera, enums_types::{CameraState, CellType, EntityType, Faction, Transform}, grid::Grid, model::Model, movement::{handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sparse_set::SparseSet};
 
 pub struct EntityManager {
     pub next_entity_id: usize,
@@ -151,13 +151,32 @@ impl EntityManager {
     }
 
     pub fn update(&mut self, pressed_keys: &HashSet<glfw::Key>, delta: f64, elapsed_time: f32, camera: &Camera) {
-        if !camera.free {
-            if let Some(player_entry) = self.factions.iter().find(|e| e.value() == &Faction::Player) {
-                let player_key = player_entry.key();
+        if let Some(player_entry) = self.factions.iter().find(|e| e.value() == &Faction::Player) {
+            let player_key = player_entry.key();
 
+            if camera.move_state != CameraState::Free {
                 handle_player_movement(pressed_keys, self, player_key, delta);
+             }
+
+            if let Some(donut) = self.entity_types.iter().find(|e| e.value() == &EntityType::Donut) {
+                let donut_key = donut.key();
+
+                let player_position = self.transforms.get(player_key).map(|t| t.position);
+
+                if let Some(donut_transform) = self.transforms.get_mut(donut_key) {
+                    if let Some(player_position) = player_position {
+                        revolve_around_something(
+                            &mut donut_transform.position,
+                            &player_position,
+                            elapsed_time,
+                            2.0,
+                            5.0
+                        );
+                    }
+                }
             }
         }
+
 
         for animator in self.animators.iter_mut() {
             if let Some(skellington) = self.skellingtons.get_mut(animator.key()) {

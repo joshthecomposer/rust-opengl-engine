@@ -51,7 +51,7 @@ pub struct Transform {
     pub original_rotation: Quat,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum EntityType {
     Donut,
     ArcherTower01,
@@ -101,3 +101,11 @@ impl Display for TextureType {
         }
     }
 }
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum CameraState {
+    Free,
+    Third,
+    Locked,
+}
+
