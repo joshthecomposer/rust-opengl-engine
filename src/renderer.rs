@@ -275,26 +275,26 @@ impl Renderer {
        // self.debug_light_pass(camera);
        self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
         
-        // let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
-        // shader.activate();
-        // for model in em.models.iter() {
+        let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
+        shader.activate();
+        for model in em.models.iter() {
 
-        //     let trans = em.transforms.get(model.key()).unwrap();
-        //     camera.model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
+            let trans = em.transforms.get(model.key()).unwrap();
+            camera.model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
 
-        //     shader.set_mat4("model", camera.model);
-        //     shader.set_mat4("view", camera.view);
-        //     shader.set_mat4("projection", camera.projection);
-        //     shader.set_mat4("light_space_mat", camera.light_space);
-        //     shader.set_dir_light("dir_light", &light_manager.dir_light);
-        //     unsafe {
-        //         gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-        //         gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-        //         shader.set_int("shadow_map", 0);
-        //     }
+            shader.set_mat4("model", camera.model);
+            shader.set_mat4("view", camera.view);
+            shader.set_mat4("projection", camera.projection);
+            shader.set_mat4("light_space_mat", camera.light_space);
+            shader.set_dir_light("dir_light", &light_manager.dir_light);
+            unsafe {
+                gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+                gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+                shader.set_int("shadow_map", 0);
+            }
 
-        //     model.value.draw(shader);
-        // }
+            model.value.draw(shader);
+        }
 
         let ani_shader = self.shaders.get_mut(&ShaderType::AniModel).unwrap();
         ani_shader.activate();

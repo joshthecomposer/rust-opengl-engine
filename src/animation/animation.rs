@@ -1,8 +1,8 @@
 use glam::{Mat4, Quat, Vec2, Vec3, Vec4};
 use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
-use std::{collections::{HashMap, HashSet}, ffi::c_void, mem::{self, offset_of}, path::Path, ptr, str::Lines};
+use std::{collections::HashMap, ffi::c_void, mem::{self, offset_of}, path::Path, ptr, str::Lines};
 
-use crate::{debug::write::write_data, enums_types::TextureType, gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE};
+use crate::{enums_types::TextureType, gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE};
 
 #[derive(Debug, Clone)]
 #[repr(C)]
