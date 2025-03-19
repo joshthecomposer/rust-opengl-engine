@@ -13,6 +13,8 @@ pub struct Renderer {
     pub fbos: HashMap<FboType, u32>,
     pub depth_map: u32,
     pub cubemap_texture: u32,
+
+    pub shadow_debug: bool,
 }
 
 impl Renderer {
@@ -248,6 +250,7 @@ impl Renderer {
             depth_map,
 
             cubemap_texture,
+            shadow_debug: false,
         }
     }
 
@@ -258,8 +261,7 @@ impl Renderer {
            gl_call!(gl::ClearColor(0.0, 0.0, 0.0, 1.0));
            gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT));
        }
-       let debug = false;
-       if debug {
+       if self.shadow_debug {
            unsafe {
                let depth_debug_quad = self.shaders.get(&ShaderType::DebugShadowMap).unwrap();
                depth_debug_quad.activate();

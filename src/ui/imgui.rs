@@ -1,6 +1,6 @@
 use glfw::{Action, MouseButton, PWindow, WindowEvent};
 
-use crate::{gl_call, lights::Lights};
+use crate::{gl_call, lights::Lights, renderer::Renderer};
 
 pub struct ImguiManager {
     pub imgui: imgui::Context,
@@ -59,7 +59,7 @@ impl ImguiManager {
         }
     }
 
-    pub fn draw(&mut self, window: &mut PWindow, width: f32, height: f32, delta: f64, lm: &mut Lights) {
+    pub fn draw(&mut self, window: &mut PWindow, width: f32, height: f32, delta: f64, lm: &mut Lights, rdr: &mut Renderer) {
 
         {
             let io = self.imgui.io_mut();
@@ -93,6 +93,8 @@ impl ImguiManager {
                     lm.dir_light.view_pos.y = lm.dir_light.direction.y * lm.dir_light.distance;
                     lm.dir_light.view_pos.z = lm.dir_light.direction.z * lm.dir_light.distance;
                 }
+
+                ui.checkbox("Shadow Debug",&mut rdr.shadow_debug);
             });
 
         self.renderer.render(&mut self.imgui);
