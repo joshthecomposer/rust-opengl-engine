@@ -65,6 +65,8 @@ pub struct DirLight {
     pub ambient: Vec3,
     pub diffuse: Vec3,
     pub specular: Vec3,
+
+    pub distance: f32,
 }
 
 impl DirLight {
@@ -80,7 +82,9 @@ impl DirLight {
             view_pos,
             ambient, 
             diffuse,
-            specular
+            specular,
+
+            distance: 20.0
         }
     }
 
@@ -88,7 +92,8 @@ impl DirLight {
         let direction = vec3(0.0, 1.0, -1.0);
         // let direction = vec3(0.0, 1.0, 0.0);
         // let view_pos = direction * 32.0;
-        let view_pos = direction * 6.0;
+        let distance = 10.0;
+        let view_pos = direction * distance;
         Self {
             direction,
             view_pos,
@@ -96,6 +101,8 @@ impl DirLight {
             ambient: Vec3::splat(0.3),
             diffuse: WHITE,
             specular: WHITE,
+
+            distance,
         }
     }
 }
