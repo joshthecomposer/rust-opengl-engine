@@ -13,6 +13,8 @@ pub struct Renderer {
     pub fbos: HashMap<FboType, u32>,
     pub depth_map: u32,
     pub cubemap_texture: u32,
+
+    pub shadow_debug: bool,
 }
 
 impl Renderer {
@@ -248,6 +250,7 @@ impl Renderer {
             depth_map,
 
             cubemap_texture,
+            shadow_debug: false,
         }
     }
 
@@ -258,8 +261,7 @@ impl Renderer {
            gl_call!(gl::ClearColor(0.0, 0.0, 0.0, 1.0));
            gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT));
        }
-       let debug = false;
-       if debug {
+       if self.shadow_debug {
            unsafe {
                let depth_debug_quad = self.shaders.get(&ShaderType::DebugShadowMap).unwrap();
                depth_debug_quad.activate();
@@ -380,8 +382,8 @@ impl Renderer {
     fn shadow_pass(&mut self, em: &EntityManager, camera: &mut Camera, light_manager: &Lights, fb_width: u32, fb_height: u32) {
         let shader = self.shaders.get_mut(&ShaderType::Depth).unwrap();
         let near_plane = 0.001;
-        let far_plane = 30.0;
-        let light_projection = Mat4::orthographic_rh_gl(-10.0, 10.0, -10.0, 10.0, near_plane, far_plane);
+        let far_plane = 35.0;
+        let light_projection = Mat4::orthographic_rh_gl(-15.0, 15.0, -15.0, 15.0, near_plane, far_plane);
         let light_view = Mat4::look_at_rh(light_manager.dir_light.view_pos, vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
 
         camera.light_space = light_projection * light_view;

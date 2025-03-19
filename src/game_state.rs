@@ -6,7 +6,7 @@ use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{EntityType, Faction}, gl_call, grid::Grid, input::handle_keyboard_input, lights::{DirLight, Lights}, renderer::Renderer};
+use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{CameraState, EntityType, Faction}, gl_call, grid::Grid, input::handle_keyboard_input, lights::{DirLight, Lights}, renderer::Renderer, ui::imgui::ImguiManager};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -27,8 +27,9 @@ pub struct GameState {
 
     pub entity_manager: EntityManager,
     pub light_manager: Lights,
-    pub imgui: imgui::Context,
-    pub im_renderer: imgui_opengl_renderer::Renderer,
+    pub imgui_manager: ImguiManager,
+
+
     pub paused: bool,
 
     pub grid: Grid,
@@ -54,8 +55,8 @@ impl GameState {
             .expect("Failed to create GLFW window.");
         window.set_key_polling(true);
         // window.set_sticky_keys(true); 
-        window.set_cursor_pos_polling(true);
         window.set_cursor_mode(glfw::CursorMode::Disabled);
+        window.set_all_polling(true);
         window.make_current();
 
         let (fb_width, fb_height) = window.get_framebuffer_size();
@@ -111,12 +112,7 @@ impl GameState {
         // =============================================================
         // imgui
         // =============================================================
-        let mut imgui = imgui::Context::create();
-        imgui.set_ini_filename(None);
-        
-        let im_renderer = imgui_opengl_renderer::Renderer::new(&mut imgui, |s| {
-            window.get_proc_address(s) as *const _
-        });
+        let imgui_manager = ImguiManager::new(&mut window);
 
         Self {
             delta_time: 0.0,
@@ -134,8 +130,8 @@ impl GameState {
 
             entity_manager,
             light_manager,
-            imgui,
-            im_renderer,
+            imgui_manager,
+
             paused: false,
 
             grid,
@@ -150,6 +146,7 @@ impl GameState {
         let events: Vec<(f64, glfw::WindowEvent)> = glfw::flush_messages(&self.events).collect();
 
         for (_, event) in events {
+            self.imgui_manager.handle_imgui_event(&event);
             match event {
                 glfw::WindowEvent::FramebufferSize(w, h) => {
                     self.window_width = w as u32;
@@ -191,7 +188,12 @@ impl GameState {
         self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
         self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, self.fb_width, self.fb_height);
 
-
+        if self.camera.move_state == CameraState::Locked {
+            self.window.set_cursor_mode(glfw::CursorMode::Normal);
+            self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer);
+        } else {
+            self.window.set_cursor_mode(glfw::CursorMode::Disabled);
+        }
         self.window.swap_buffers();
         self.glfw.poll_events()
     }
