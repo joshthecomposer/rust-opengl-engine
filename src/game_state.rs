@@ -97,9 +97,9 @@ impl GameState {
             Faction::Static,
             vec3(1.0, 1.0, 1.0), 
             Vec3::splat(2.0), 
-            Quat::IDENTITY,"resources/models/my_obj/donut.obj"
+            Quat::IDENTITY,
+            "resources/models/my_obj/donut.obj"
         );
-
         let grid = Grid::parse_grid_data("resources/level_data/level.txt");
         // entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/tile_01.obj");
         // entity_manager.populate_cell_rng(&grid);
