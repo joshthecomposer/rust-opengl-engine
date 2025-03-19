@@ -6,7 +6,7 @@ use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{EntityType, Faction}, gl_call, grid::Grid, input::handle_keyboard_input, lights::{DirLight, Lights}, renderer::Renderer, ui::imgui::ImguiManager};
+use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{CameraState, EntityType, Faction}, gl_call, grid::Grid, input::handle_keyboard_input, lights::{DirLight, Lights}, renderer::Renderer, ui::imgui::ImguiManager};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -188,8 +188,12 @@ impl GameState {
         self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
         self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, self.fb_width, self.fb_height);
 
-
-        // self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time);
+        if self.camera.move_state == CameraState::Locked {
+            self.window.set_cursor_mode(glfw::CursorMode::Normal);
+            self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager);
+        } else {
+            self.window.set_cursor_mode(glfw::CursorMode::Disabled);
+        }
         self.window.swap_buffers();
         self.glfw.poll_events()
     }

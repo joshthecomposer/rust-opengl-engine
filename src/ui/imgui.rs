@@ -1,6 +1,6 @@
 use glfw::{Action, MouseButton, PWindow, WindowEvent};
 
-use crate::gl_call;
+use crate::{gl_call, lights::Lights};
 
 pub struct ImguiManager {
     pub imgui: imgui::Context,
@@ -29,7 +29,6 @@ impl ImguiManager {
                 match btn {
                     MouseButton::Button1 => {
                         io.mouse_down[0] = pressed;
-                        println!("presed a thing");
                     },
                     MouseButton::Button2 => io.mouse_down[1] = pressed,
                     MouseButton::Button3 => io.mouse_down[2] = pressed,
@@ -60,8 +59,7 @@ impl ImguiManager {
         }
     }
 
-    pub fn draw(&mut self, window: &mut PWindow, width: f32, height: f32, delta: f64) {
-        window.set_cursor_mode(glfw::CursorMode::Normal);
+    pub fn draw(&mut self, window: &mut PWindow, width: f32, height: f32, delta: f64, lm: &mut Lights) {
 
         {
             let io = self.imgui.io_mut();
@@ -70,16 +68,31 @@ impl ImguiManager {
         }
 
         let ui = self.imgui.frame();
-        ui.window("A window")
-            .size([300.0, 200.0], imgui::Condition::FirstUseEver)
+        ui.window("Lights")
+            .size([500.0, 200.0], imgui::Condition::FirstUseEver)
             .position([50.0, 50.0], imgui::Condition::FirstUseEver)
             .build(|| {
-                ui.text("some text");
+                ui.text("Controls for Various Lights");
                 ui.separator();
-                ui.button("Button");
-                if ui.slider("slider", 0.0, 1.0, &mut 0.0) {
-                    println!("slid that shiz");
+                // ui.input_float("Dir Light distance", &mut lm.dir_light.distance).build();
+                if ui.slider("Dir Light X", -1.0, 1.0, &mut lm.dir_light.direction.x) {
+                    lm.dir_light.view_pos.x = lm.dir_light.direction.x * lm.dir_light.distance;
+                };                                                      
+                if ui.slider("Dir Light Y", -1.0, 1.0, &mut lm.dir_light.direction.y) {
+                    lm.dir_light.view_pos.y = lm.dir_light.direction.y * lm.dir_light.distance;
+                };                                                      
+                if ui.slider("Dir Light Z", -1.0, 1.0, &mut lm.dir_light.direction.z) {
+                    lm.dir_light.view_pos.z = lm.dir_light.direction.z * lm.dir_light.distance;
                 };
+
+                let old_distance = lm.dir_light.distance;
+
+                if ui.input_float("Dir Light distance", &mut lm.dir_light.distance).build() && (lm.dir_light.distance - old_distance).abs() > f32::EPSILON {
+                    // Update position when distance changes
+                    lm.dir_light.view_pos.x = lm.dir_light.direction.x * lm.dir_light.distance;
+                    lm.dir_light.view_pos.y = lm.dir_light.direction.y * lm.dir_light.distance;
+                    lm.dir_light.view_pos.z = lm.dir_light.direction.z * lm.dir_light.distance;
+                }
             });
 
         self.renderer.render(&mut self.imgui);
