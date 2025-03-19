@@ -2,7 +2,7 @@
 use glam::{vec3, Mat4, Vec3};
 use glfw::{Action, Key, PWindow, WindowEvent};
 
-use crate::entity_manager::EntityManager;
+use crate::{entity_manager::EntityManager, enums_types::{CameraState, Faction}};
 
 pub struct Camera {
     pub yaw: f64,
@@ -29,8 +29,9 @@ pub struct Camera {
     pub model: Mat4,
     pub light_space: Mat4,
 
-    pub free: bool,
     pub last_f_state: bool,
+
+    pub move_state: CameraState,
 }
 
 impl Camera {
@@ -59,16 +60,30 @@ impl Camera {
             model: Mat4::IDENTITY,
             light_space: Mat4::IDENTITY,
 
-            free: true,
             last_f_state: true,
+
+            move_state: CameraState::Free,
         }
     }
 
     pub fn update(&mut self, _em: &EntityManager) {
-        if !self.free {
-            self.target = vec3(2.5, 0.0, 0.0);
-            self.position = vec3(15.0, 20.0, 0.0);
-            self.forward = Vec3::normalize(self.target - self.position);
+        match self.move_state {
+            CameraState::Free => {
+            }
+            CameraState::Third => {
+                if let Some(player_key) = _em.factions.iter().find(|e| e.value() == &Faction::Player) {
+                    let player_transform = _em.transforms.get(player_key.key()).unwrap();
+
+                    self.target = player_transform.position + vec3(0.0, 1.1, 0.0);
+                    self.position = player_transform.position + vec3(3.3, 3.3, 0.0);
+                    self.forward = Vec3::normalize(self.target - self.position);
+                }
+            }
+            CameraState::Locked => {
+                self.target = vec3(2.5, 0.0, 0.0);
+                self.position = vec3(15.0, 20.0, 0.0);
+                self.forward = Vec3::normalize(self.target - self.position);
+            }
         }
     }
 
@@ -89,7 +104,7 @@ impl Camera {
     }
 
     pub fn process_mouse_input(&mut self, window: &PWindow, event: &WindowEvent) {
-        if self.free {
+        if self.move_state == CameraState::Free {
             match event {
                 // Pitch yaw stuff
                 glfw::WindowEvent::CursorPos(xpos, ypos) => {
@@ -151,12 +166,23 @@ impl Camera {
         let f_pressed = window.get_key(Key::F) == Action::Press;
 
         if f_pressed && !self.last_f_state {
-            self.free = !self.free;
+            match self.move_state {
+                CameraState::Free => {
+                    self.move_state = CameraState::Third;
+                }
+                CameraState::Third => {
+                    self.move_state = CameraState::Locked;
+                }
+                CameraState::Locked => {
+                    self.move_state = CameraState::Free;
+                }
+
+            }
         }
 
         self.last_f_state = f_pressed; // Update last state
 
-        if self.free {
+        if self.move_state == CameraState::Free {
             if window.get_key(Key::W) == Action::Press {
                 self.position += (self.movement_speed * self.forward) * delta as f32;
                 // self.position.z += (50.0 * delta) as f32;
