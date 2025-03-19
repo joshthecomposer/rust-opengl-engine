@@ -1,13 +1,16 @@
 #![allow(dead_code)]
-use glam::{vec3, Mat4, Quat, Vec3};
+use std::collections::HashSet;
+
+use glam::{vec3, Quat, Vec3};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-use crate::{animation::animation::{import_bone_data, import_model_data, AniModel, Animator, Bone}, enums_types::{CellType, EntityType, Transform}, grid::Grid, model::Model, some_data::{GRASSES, TREES}, sparse_set::SparseSet};
+use crate::{animation::animation::{import_bone_data, import_model_data, AniModel, Animator, Bone}, camera::Camera, enums_types::{CellType, EntityType, Faction, Transform}, grid::Grid, model::Model, movement::handle_player_movement, some_data::{GRASSES, TREES}, sparse_set::SparseSet};
 
 pub struct EntityManager {
     pub next_entity_id: usize,
     pub transforms: SparseSet<Transform>,
+    pub factions: SparseSet<Faction>,
     pub entity_types: SparseSet<EntityType>,
     pub models: SparseSet<Model>,
     pub ani_models: SparseSet<AniModel>,
@@ -21,6 +24,7 @@ impl EntityManager {
         Self {
             next_entity_id: 0,
             transforms: SparseSet::with_capacity(max_entities),
+            factions: SparseSet::with_capacity(max_entities),
             entity_types: SparseSet::with_capacity(max_entities),
             models: SparseSet::with_capacity(max_entities),
             ani_models: SparseSet::with_capacity(max_entities),
@@ -30,11 +34,13 @@ impl EntityManager {
         }
     }
 
-    pub fn create_static_entity(&mut self, entity_type: EntityType, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str) {
+    pub fn create_static_entity(&mut self,entity_type: EntityType, faction: Faction, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str) {
         let transform = Transform {
             position,
             rotation,
             scale,
+
+            original_rotation: rotation,
         };
 
         let mut model = Model::new();
@@ -52,20 +58,23 @@ impl EntityManager {
         }
         
         self.transforms.insert(self.next_entity_id, transform);
+        self.factions.insert(self.next_entity_id, faction);
         self.entity_types.insert(self.next_entity_id, entity_type);
         self.models.insert(self.next_entity_id, model);
 
         self.next_entity_id += 1;
     }
 
-    pub fn create_animated_entity(&mut self, entity_type: EntityType, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str, animation_path: &str) {
+    pub fn create_animated_entity(&mut self, faction: Faction, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str, animation_path: &str) {
         let transform = Transform {
             position,
             rotation,
             scale,
+            
+            original_rotation: rotation,
         };
 
-        let (skellington, mut animator, animation) = import_bone_data(animation_path);
+        let (skellington, animator, animation) = import_bone_data(animation_path);
 
         let mut model = AniModel::new();
         let mut found = false;
@@ -86,16 +95,17 @@ impl EntityManager {
 
         self.skellingtons.insert(self.next_entity_id, skellington.clone());
         self.transforms.insert(self.next_entity_id, transform);
-        self.entity_types.insert(self.next_entity_id, entity_type);
+        self.factions.insert(self.next_entity_id, faction);
         self.ani_models.insert(self.next_entity_id, model);
 
         self.next_entity_id += 1;
     }
 
+    // TODO: This should be in grid
     pub fn populate_floor_tiles(&mut self, grid: &Grid, model_path: &str) {
         for cell in grid.cells.iter() {
             let pos = cell.position;
-            self.create_static_entity(EntityType::BlockGrass, pos, vec3(1.0, 1.0, 1.0), Quat::IDENTITY, model_path);
+            self.create_static_entity(EntityType::BlockGrass, Faction::World, pos, vec3(1.0, 1.0, 1.0), Quat::IDENTITY, model_path);
         }
     }
 
@@ -127,6 +137,7 @@ impl EntityManager {
                     if num < entity_data.len() {
                         self.create_static_entity(
                             entity_type.clone(),
+                            Faction::World,
                             vec3(cell_pos.x + offset_x + smoff, 0.0, cell_pos.z + offset_z + smoff),
                             Vec3::splat(scale),
                             Quat::IDENTITY,
@@ -139,7 +150,15 @@ impl EntityManager {
 
     }
 
-    pub fn update(&mut self, delta: f64, elapsed_time: f32) {
+    pub fn update(&mut self, pressed_keys: &HashSet<glfw::Key>, delta: f64, elapsed_time: f32, camera: &Camera) {
+        if !camera.free {
+            if let Some(player_entry) = self.factions.iter().find(|e| e.value() == &Faction::Player) {
+                let player_key = player_entry.key();
+
+                handle_player_movement(pressed_keys, self, player_key, delta);
+            }
+        }
+
         for animator in self.animators.iter_mut() {
             if let Some(skellington) = self.skellingtons.get_mut(animator.key()) {
                 animator.value.update(elapsed_time, skellington);
