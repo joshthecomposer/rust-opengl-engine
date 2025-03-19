@@ -1,9 +1,11 @@
 #![allow(dead_code)]
+use std::collections::HashSet;
+
 use glam::{vec3, Mat4, Quat, Vec3};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-use crate::{animation::animation::{import_bone_data, import_model_data, AniModel, Animator, Bone}, enums_types::{CellType, EntityType, Faction, Transform}, grid::Grid, model::Model, some_data::{GRASSES, TREES}, sparse_set::SparseSet};
+use crate::{animation::animation::{import_bone_data, import_model_data, AniModel, Animator, Bone}, camera::Camera, enums_types::{CellType, EntityType, Faction, Transform}, grid::Grid, model::Model, movement::handle_player_movement, some_data::{GRASSES, TREES}, sparse_set::SparseSet};
 
 pub struct EntityManager {
     pub next_entity_id: usize,
@@ -144,13 +146,13 @@ impl EntityManager {
 
     }
 
-    pub fn update(&mut self, delta: f64, elapsed_time: f32) {
-        if let Some(player_entry) = self.factions.iter().find(|e| e.value() == &Faction::Player) {
-            let player_key = player_entry.key();
+    pub fn update(&mut self, pressed_keys: &HashSet<glfw::Key>, delta: f64, elapsed_time: f32, camera: &Camera) {
+        if !camera.free {
+            if let Some(player_entry) = self.factions.iter().find(|e| e.value() == &Faction::Player) {
+                let player_key = player_entry.key();
 
-            let player_transform = self.transforms.get_mut(player_entry.key());
-
-            // handle_player_movement();
+                handle_player_movement(pressed_keys, self, player_key, delta);
+            }
         }
 
         for animator in self.animators.iter_mut() {

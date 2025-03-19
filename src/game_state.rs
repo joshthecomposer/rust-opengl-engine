@@ -182,11 +182,9 @@ impl GameState {
         }
 
         // UPDATE SYSTEMS
-        self.entity_manager.update(self.delta_time, self.elapsed as f32);
+        self.entity_manager.update(&self.pressed_keys, self.delta_time, self.elapsed as f32, &self.camera);
         self.light_manager.update(&self.delta_time);
         self.camera.update(&self.entity_manager);
-
-
     }
 
     pub fn render(&mut self) {
