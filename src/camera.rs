@@ -64,7 +64,7 @@ impl Camera {
         }
     }
 
-    pub fn update(&mut self, em: &EntityManager) {
+    pub fn update(&mut self, _em: &EntityManager) {
         if !self.free {
             self.target = vec3(2.5, 0.0, 0.0);
             self.position = vec3(15.0, 20.0, 0.0);

@@ -45,55 +45,6 @@
 
 
 
-
-
-
-        if !self.camera.free {
-            let animator = self.entity_manager.animators.get_mut(0).unwrap();
-            let transform = self.entity_manager.transforms.get_mut(0).unwrap();
-
-            let mut movement = Vec3::ZERO;
-            let mut rotation = None;
-            let mut is_moving = false;
-
-            if self.pressed_keys.contains(&glfw::Key::A) {
-                is_moving = true;
-                movement.z += 5.0 * self.delta_time as f32;
-                rotation = Some(Quat::from_rotation_y(std::f32::consts::PI));
-            }
-
-            if self.pressed_keys.contains(&glfw::Key::D) {
-                is_moving = true;
-                movement.z -= 5.0 * self.delta_time as f32;
-                rotation = Some(Quat::from_rotation_y(0.0));
-            }
-
-            if self.pressed_keys.contains(&glfw::Key::W) {
-                is_moving = true;
-                movement.x -= 5.0 * self.delta_time as f32;
-                rotation = Some(Quat::from_rotation_y(std::f32::consts::FRAC_PI_2));
-            }
-
-            if self.pressed_keys.contains(&glfw::Key::S) {
-                is_moving = true;
-                movement.x += 5.0 * self.delta_time as f32;
-                rotation = Some(Quat::from_rotation_y(-std::f32::consts::FRAC_PI_2));
-            }
-
-            if is_moving {
-                animator.set_current_animation("Run");
-                transform.position += movement;
-                if let Some(rot) = rotation {
-                    transform.rotation = rot * Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707);
-                }
-            } else {
-                animator.set_current_animation("Idle");
-            }
-        }
-
-
-
-
         // =============================================================
         // Render test text
         // =============================================================
