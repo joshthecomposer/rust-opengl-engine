@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use std::fmt::{self, Display, Formatter};
 
-use glam::{Mat4, Quat, Vec3};
+use glam::{Quat, Vec3};
 
 #[derive(Debug, Eq, PartialEq, Hash)]
 pub enum VaoType {
@@ -47,6 +47,8 @@ pub struct Transform {
     pub position: Vec3,
     pub rotation: Quat,
     pub scale: Vec3,
+
+    pub original_rotation: Quat,
 }
 
 #[derive(Clone, Debug)]

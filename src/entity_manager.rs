@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use std::collections::HashSet;
 
-use glam::{vec3, Mat4, Quat, Vec3};
+use glam::{vec3, Quat, Vec3};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
@@ -39,6 +39,8 @@ impl EntityManager {
             position,
             rotation,
             scale,
+
+            original_rotation: rotation,
         };
 
         let mut model = Model::new();
@@ -68,9 +70,11 @@ impl EntityManager {
             position,
             rotation,
             scale,
+            
+            original_rotation: rotation,
         };
 
-        let (skellington, mut animator, animation) = import_bone_data(animation_path);
+        let (skellington, animator, animation) = import_bone_data(animation_path);
 
         let mut model = AniModel::new();
         let mut found = false;
