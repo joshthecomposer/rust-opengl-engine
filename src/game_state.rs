@@ -190,7 +190,7 @@ impl GameState {
 
         if self.camera.move_state == CameraState::Locked {
             self.window.set_cursor_mode(glfw::CursorMode::Normal);
-            self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager);
+            self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer);
         } else {
             self.window.set_cursor_mode(glfw::CursorMode::Disabled);
         }
