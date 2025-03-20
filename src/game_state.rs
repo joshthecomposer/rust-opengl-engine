@@ -100,6 +100,14 @@ impl GameState {
             Quat::IDENTITY,
             "resources/models/my_obj/donut.obj"
         );
+        // entity_manager.create_static_entity(
+        //     EntityType::Donut, 
+        //     Faction::Static,
+        //     vec3(0.0, 0.0, 0.0), 
+        //     Vec3::splat(1.0), 
+        //     Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
+        //     "resources/models/my_obj/test_arena.fbx"
+        // );
         let grid = Grid::parse_grid_data("resources/level_data/level.txt");
         // entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/tile_01.obj");
         // entity_manager.populate_cell_rng(&grid);
