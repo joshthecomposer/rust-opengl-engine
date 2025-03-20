@@ -84,7 +84,7 @@ impl DirLight {
             diffuse,
             specular,
 
-            distance: 20.0
+            distance: 20.0,
         }
     }
 
@@ -103,6 +103,7 @@ impl DirLight {
             specular: WHITE,
 
             distance,
+
         }
     }
 }
@@ -114,6 +115,12 @@ pub struct Lights {
     pub point_strengths: HashMap<u32, PointStrength>,
 
     pub dir_light: DirLight,
+
+    pub near: f32,
+    pub far: f32,
+    pub bounds: f32,
+    
+    pub bias_scalar: f32
 }
 
 impl Lights {
@@ -125,7 +132,13 @@ impl Lights {
             velocities: SparseSet::with_capacity(max_lights),
             point_strengths,
 
-            dir_light: DirLight::default_white()
+            dir_light: DirLight::default_white(),
+
+            near: 1.0,
+            far: 35.0,
+            bounds: 15.0,
+
+            bias_scalar: 0.005,
         }
     }
 

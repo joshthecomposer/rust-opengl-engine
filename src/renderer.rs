@@ -4,6 +4,7 @@ use std::{collections::HashMap, ffi::c_void, mem, ptr::null_mut};
 use gl::CULL_FACE;
 use glam::{vec3, vec4, Mat4, Quat, Vec3};
 use image::GenericImageView;
+use russimp::light;
 
 use crate::{animation::animation::{AniModel, Animation}, camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, TextureType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}};
 
@@ -52,6 +53,7 @@ impl Renderer {
         model_shader.store_dir_light_location("dir_light");
         model_shader.store_uniform_location("light_space_mat");
         model_shader.store_uniform_location("shadow_map");
+        model_shader.store_uniform_location("bias_scalar");
 
         let text_shader = Shader::new("resources/shaders/text.vs", "resources/shaders/text.fs");
 
@@ -275,7 +277,7 @@ impl Renderer {
        // SHADOW MUST GO FIRST
        self.skybox_pass(camera, fb_width, fb_height);
        // self.debug_light_pass(camera);
-       // self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
+       self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
         
         let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
         shader.activate();
@@ -289,6 +291,7 @@ impl Renderer {
             shader.set_mat4("projection", camera.projection);
             shader.set_mat4("light_space_mat", camera.light_space);
             shader.set_dir_light("dir_light", &light_manager.dir_light);
+            shader.set_float("bias_scalar", light_manager.bias_scalar);
         unsafe {
             gl_call!(gl::ActiveTexture(gl::TEXTURE5));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
@@ -382,9 +385,10 @@ impl Renderer {
 
     fn shadow_pass(&mut self, em: &EntityManager, camera: &mut Camera, light_manager: &Lights, fb_width: u32, fb_height: u32) {
         let shader = self.shaders.get_mut(&ShaderType::Depth).unwrap();
-        let near_plane = 0.001;
-        let far_plane = 35.0;
-        let light_projection = Mat4::orthographic_rh_gl(-15.0, 15.0, -15.0, 15.0, near_plane, far_plane);
+        let near_plane = light_manager.near;
+        let far_plane = light_manager.far;
+        let bound = light_manager.bounds;
+        let light_projection = Mat4::orthographic_rh_gl(-bound, bound, -bound, bound, near_plane, far_plane);
         let light_view = Mat4::look_at_rh(light_manager.dir_light.view_pos, vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
 
         camera.light_space = light_projection * light_view;

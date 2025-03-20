@@ -29,8 +29,14 @@ uniform vec3 view_position;
 
 float ShadowCalculation(float dot_light_normal) {
 	vec3 pos = FragPosLightSpace.xyz * 0.5 + 0.5;
-	if (pos.z > 1.0) {
-		pos.z = 1.0;
+	// if (pos.z > 1.0) {
+	// 	pos.z = 1.0;
+	// }
+	if (pos.x < 0.0 || pos.x > 1.0 ||
+		pos.y < 0.0 || pos.y > 1.0 ||
+		pos.z < 0.0 || pos.z > 1.0) {
+		// treat outside the map as lit
+		return 1.0;
 	}
 
 	float bias = max(0.005 * (1.0 - dot_light_normal), 0.0005);
