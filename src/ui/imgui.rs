@@ -84,17 +84,27 @@ impl ImguiManager {
                 if ui.slider("Dir Light Z", -1.0, 1.0, &mut lm.dir_light.direction.z) {
                     lm.dir_light.view_pos.z = lm.dir_light.direction.z * lm.dir_light.distance;
                 };
-
-                let old_distance = lm.dir_light.distance;
-
-                if ui.input_float("Dir Light distance", &mut lm.dir_light.distance).build() && (lm.dir_light.distance - old_distance).abs() > f32::EPSILON {
-                    // Update position when distance changes
-                    lm.dir_light.view_pos.x = lm.dir_light.direction.x * lm.dir_light.distance;
-                    lm.dir_light.view_pos.y = lm.dir_light.direction.y * lm.dir_light.distance;
-                    lm.dir_light.view_pos.z = lm.dir_light.direction.z * lm.dir_light.distance;
-                }
+                if ui.slider("Dir Light distance",0.0, 100.0, &mut lm.dir_light.distance) {
+                };
 
                 ui.checkbox("Shadow Debug",&mut rdr.shadow_debug);
+
+
+                ui.separator();
+
+                if ui.slider("Ortho Near", 0.0, 10.0, &mut lm.near) {
+                };
+                if ui.slider("Ortho Far", 0.0, 500.0, &mut lm.far) {
+                };
+                if ui.slider("Bounds", 0.0, 100.0, &mut lm.bounds) {
+                };
+
+                if ui.slider("Bias Scalar", 0.0, 1.0, &mut lm.bias_scalar) {
+                };
+
+                lm.dir_light.view_pos.x = lm.dir_light.direction.x * lm.dir_light.distance;
+                lm.dir_light.view_pos.y = lm.dir_light.direction.y * lm.dir_light.distance;
+                lm.dir_light.view_pos.z = lm.dir_light.direction.z * lm.dir_light.distance;
             });
 
         self.renderer.render(&mut self.imgui);
