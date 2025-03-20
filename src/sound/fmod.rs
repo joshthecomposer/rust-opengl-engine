@@ -1,0 +1,68 @@
+#![allow(non_camel_case_types)]
+extern crate libc;
+use libc::{c_int, c_void, c_char, c_uint};
+
+pub type FMOD_STUDIO_SYSTEM = *mut c_void;
+pub type FMOD_STUDIO_BANK = *mut c_void;
+pub type FMOD_STUDIO_EVENTDESCRIPTION = *mut c_void;
+pub type FMOD_RESULT = c_int;
+pub const FMOD_STUDIO_INIT_NORMAL:u32 = 0;
+pub const FMOD_INIT_NORMAL: u32 = 0;
+pub const FMOD_VERSION: u32 = 0x00020214;
+pub type FMOD_STUDIO_EVENTINSTANCE = *mut libc::c_void;
+
+/*
+#[repr(C)]
+pub enum FMOD_STUDIO_STOP_MODE {
+    FMOD_STUDIO_STOP_IMMEDIATE = 1,
+    FMOD_STUDIO_STOP_ALLOWFADEOUT = 2,
+}
+*/
+
+#[cfg(any(target_os = "macos", target_os = "windows"))]
+#[link(name = "fmodstudio")]
+extern "C" {
+    pub fn FMOD_Studio_System_Create(
+        system: *mut FMOD_STUDIO_SYSTEM, 
+        headerversion: c_uint
+        ) -> FMOD_RESULT;
+
+    pub fn FMOD_Studio_System_Initialize(
+        system: FMOD_STUDIO_SYSTEM,
+        maxchannels: libc::c_int,
+        studioflags: libc::c_uint,
+        studioextraflags: libc::c_uint,
+        extradriverdata: *mut c_void,
+    ) -> FMOD_RESULT;
+
+    pub fn FMOD_Studio_System_LoadBankFile(
+        system: FMOD_STUDIO_SYSTEM,
+        filename: *const c_char,
+        flags: c_int,
+        bank: *mut FMOD_STUDIO_BANK,
+        )-> FMOD_RESULT;
+
+    pub fn FMOD_Studio_System_GetEvent(
+        system: FMOD_STUDIO_SYSTEM,
+        path: *const c_char,
+        event: *mut FMOD_STUDIO_EVENTDESCRIPTION,
+        ) -> FMOD_RESULT;
+
+    pub fn FMOD_Studio_EventDescription_CreateInstance(
+        eventDescription: FMOD_STUDIO_EVENTDESCRIPTION,
+        eventInstance: *mut FMOD_STUDIO_EVENTINSTANCE,
+    ) -> FMOD_RESULT;
+
+    pub fn FMOD_Studio_EventInstance_Start(
+        eventInstance: FMOD_STUDIO_EVENTINSTANCE,
+    ) -> FMOD_RESULT;
+
+    /*
+    pub fn FMOD_Studio_EventInstance_Stop(
+        eventInstance: FMOD_STUDIO_EVENTINSTANCE,
+        mode: FMOD_STUDIO_STOP_MODE, 
+        ) -> FMOD_RESULT;
+    */
+
+    pub fn FMOD_Studio_System_Update(system: FMOD_STUDIO_SYSTEM) -> FMOD_RESULT;
+}
