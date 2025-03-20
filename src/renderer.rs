@@ -275,7 +275,7 @@ impl Renderer {
        // SHADOW MUST GO FIRST
        self.skybox_pass(camera, fb_width, fb_height);
        // self.debug_light_pass(camera);
-       self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
+       // self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
         
         let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
         shader.activate();
