@@ -257,12 +257,12 @@ impl Animation {
             one_shots: vec![
                 OneShot {
                     sound_type: "footstep".to_string(),
-                    segment: 9,
+                    segment: 8,
                     triggered: false.into(),
                 },
                 OneShot {
                     sound_type: "footstep".to_string(),
-                    segment: 20,
+                    segment: 19,
                     triggered: false.into(),
                 }
             ],

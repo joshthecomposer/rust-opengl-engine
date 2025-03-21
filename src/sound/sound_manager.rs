@@ -144,7 +144,7 @@ impl SoundManager {
     pub fn stop_sound(&mut self, sound_type: String){
         let sound_data = self.sounds.get(&sound_type).unwrap();
         unsafe {
-            FMOD_Studio_EventInstance_Stop(sound_data.instance, super::fmod::FMOD_STUDIO_STOP_MODE::FMOD_STUDIO_STOP_ALLOWFADEOUT);
+            FMOD_Studio_EventInstance_Stop(sound_data.instance, super::fmod::FMOD_STUDIO_STOP_MODE::FMOD_STUDIO_STOP_IMMEDIATE);
         }
     }
 
