@@ -119,8 +119,7 @@ impl GameState {
 
         let renderer = Renderer::new();
         let game_config = GameConfig::load_from_file("config/game_config.json");
-        let mut sound_manager = SoundManager::new(&game_config);
-        sound_manager.play_sound("music".to_string());
+        let sound_manager = SoundManager::new(&game_config);
 
         // =============================================================
         // imgui
@@ -206,7 +205,7 @@ impl GameState {
 
         if self.camera.move_state == CameraState::Locked {
             self.window.set_cursor_mode(glfw::CursorMode::Normal);
-            self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer);
+            self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager);
         } else {
             self.window.set_cursor_mode(glfw::CursorMode::Disabled);
         }
