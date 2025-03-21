@@ -1,6 +1,6 @@
 use glfw::{Action, MouseButton, PWindow, WindowEvent};
 
-use crate::{gl_call, lights::Lights, renderer::Renderer};
+use crate::{gl_call, lights::Lights, renderer::Renderer, sound::sound_manager::SoundManager};
 
 pub struct ImguiManager {
     pub imgui: imgui::Context,
@@ -59,7 +59,7 @@ impl ImguiManager {
         }
     }
 
-    pub fn draw(&mut self, window: &mut PWindow, width: f32, height: f32, delta: f64, lm: &mut Lights, rdr: &mut Renderer) {
+    pub fn draw(&mut self, window: &mut PWindow, width: f32, height: f32, delta: f64, lm: &mut Lights, rdr: &mut Renderer, sm: &mut SoundManager) {
 
         {
             let io = self.imgui.io_mut();
@@ -105,6 +105,28 @@ impl ImguiManager {
                 lm.dir_light.view_pos.x = lm.dir_light.direction.x * lm.dir_light.distance;
                 lm.dir_light.view_pos.y = lm.dir_light.direction.y * lm.dir_light.distance;
                 lm.dir_light.view_pos.z = lm.dir_light.direction.z * lm.dir_light.distance;
+
+
+            });
+
+        ui.window("Sound")
+            .size([500.0, 200.0], imgui::Condition::FirstUseEver)
+            .position([500.0, 50.0], imgui::Condition::FirstUseEver)
+            .build(|| {
+                ui.text("Controls Fmod Sounds");
+                ui.separator();
+
+                if ui.button("Pause") {
+                    sm.stop_sound("music".to_string());
+                }
+
+                if ui.button("Play") {
+                    sm.play_sound("music".to_string());
+                }
+
+                if ui.slider("Volume", 0.0, 1.0, &mut sm.master_volume) {
+                    sm.set_master_volume();
+                };
             });
 
         self.renderer.render(&mut self.imgui);

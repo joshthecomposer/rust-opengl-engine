@@ -4,23 +4,25 @@ use std::{ffi::CString, collections::HashMap};
 
 use crate::config::game_config::GameConfig;
 
-use super::fmod::{FMOD_STUDIO_SYSTEM, FMOD_STUDIO_EVENTDESCRIPTION, FMOD_STUDIO_EVENTINSTANCE, FMOD_Studio_System_Create, FMOD_Studio_System_Initialize, FMOD_STUDIO_BANK, FMOD_Studio_System_LoadBankFile, FMOD_Studio_System_GetEvent, FMOD_Studio_EventDescription_CreateInstance, FMOD_Studio_EventInstance_Start, FMOD_STUDIO_INIT_NORMAL, FMOD_INIT_NORMAL, FMOD_VERSION, FMOD_Studio_System_Update};
+use super::fmod::{FMOD_Studio_EventDescription_CreateInstance, FMOD_Studio_EventInstance_SetParameterByName, FMOD_Studio_EventInstance_Start, FMOD_Studio_EventInstance_Stop, FMOD_Studio_System_Create, FMOD_Studio_System_GetEvent, FMOD_Studio_System_Initialize, FMOD_Studio_System_LoadBankFile, FMOD_Studio_System_Update, FMOD_INIT_NORMAL, FMOD_STUDIO_BANK, FMOD_STUDIO_EVENTDESCRIPTION, FMOD_STUDIO_EVENTINSTANCE, FMOD_STUDIO_INIT_NORMAL, FMOD_STUDIO_SYSTEM, FMOD_VERSION};
 
 pub struct SoundData {
     description: FMOD_STUDIO_EVENTDESCRIPTION,
     instance: FMOD_STUDIO_EVENTINSTANCE,
 }
 
-pub struct SoundManager {
-    pub fmod_system: FMOD_STUDIO_SYSTEM,
-    pub sounds: HashMap<String, SoundData>, //The key (String) is the sound_name in the game_config.json
-} 
-
 #[derive(Clone, Debug)]
 pub struct SoundTrigger {
     pub sound_type: String, //TODO: JW - This sound_type should probably be an enum of SoundType?? Maybe?
     pub frame: usize,
 }
+
+pub struct SoundManager {
+    pub fmod_system: FMOD_STUDIO_SYSTEM,
+    pub sounds: HashMap<String, SoundData>, //The key (String) is the sound_name in the game_config.json
+    pub playing_bg: bool,
+    pub master_volume: f32,
+} 
 
 impl SoundManager {
     pub fn new(config: &GameConfig) -> SoundManager {
@@ -106,6 +108,8 @@ impl SoundManager {
         SoundManager {
             fmod_system,
             sounds,
+            playing_bg: false,
+            master_volume: 1.0,
         }
 
     }
@@ -124,6 +128,24 @@ impl SoundManager {
         let sound_data = self.sounds.get(&sound_type).unwrap();
         unsafe {
             FMOD_Studio_EventInstance_Start(sound_data.instance);
+        }
+    }
+    pub fn stop_sound(&mut self, sound_type: String){
+        let sound_data = self.sounds.get(&sound_type).unwrap();
+        unsafe {
+            FMOD_Studio_EventInstance_Stop(sound_data.instance, super::fmod::FMOD_STUDIO_STOP_MODE::FMOD_STUDIO_STOP_ALLOWFADEOUT);
+        }
+    }
+
+    pub fn set_master_volume(&mut self) {
+        println!("Setting master volume to {}", self.master_volume);
+        let sound_data = self.sounds.get("music").unwrap();
+        let vol = CString::new("main_volume").unwrap();
+        unsafe {
+            let result = FMOD_Studio_EventInstance_SetParameterByName(sound_data.instance, vol.as_ptr(), self.master_volume, 0);
+            if result != 0 {
+                println!("Updating volume failed with error code: {}", result);
+            }
         }
     }
 }

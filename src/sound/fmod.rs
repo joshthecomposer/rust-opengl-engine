@@ -11,13 +11,11 @@ pub const FMOD_INIT_NORMAL: u32 = 0;
 pub const FMOD_VERSION: u32 = 0x00020214;
 pub type FMOD_STUDIO_EVENTINSTANCE = *mut libc::c_void;
 
-/*
 #[repr(C)]
 pub enum FMOD_STUDIO_STOP_MODE {
     FMOD_STUDIO_STOP_IMMEDIATE = 1,
     FMOD_STUDIO_STOP_ALLOWFADEOUT = 2,
 }
-*/
 
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 #[link(name = "fmodstudio")]
@@ -57,12 +55,18 @@ extern "C" {
         eventInstance: FMOD_STUDIO_EVENTINSTANCE,
     ) -> FMOD_RESULT;
 
-    /*
     pub fn FMOD_Studio_EventInstance_Stop(
         eventInstance: FMOD_STUDIO_EVENTINSTANCE,
         mode: FMOD_STUDIO_STOP_MODE, 
         ) -> FMOD_RESULT;
-    */
+
+    pub fn FMOD_Studio_EventInstance_SetParameterByName(
+        event: FMOD_STUDIO_EVENTINSTANCE,
+        name: *const c_char,
+        value: f32,
+        ignoreseekspeed: u8,
+    ) -> FMOD_RESULT;
+
 
     pub fn FMOD_Studio_System_Update(system: FMOD_STUDIO_SYSTEM) -> FMOD_RESULT;
 }
