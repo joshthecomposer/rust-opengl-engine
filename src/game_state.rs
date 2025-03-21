@@ -86,14 +86,14 @@ impl GameState {
             "resources/models/animated/002_y_robot/y_robot_bones_FINAL.txt"
         );
 
-        entity_manager.create_animated_entity(
-            Faction::Enemy, 
-            vec3(0.0, 0.0, 4.0), 
-            Vec3::splat(0.013), 
-            Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
-            "resources/models/animated/001_moose/moose_model_FINAL.txt", 
-            "resources/models/animated/001_moose/moose_bones_FINAL.txt"
-        );
+        //entity_manager.create_animated_entity(
+        //    Faction::Enemy, 
+        //    vec3(0.0, 0.0, 4.0), 
+        //    Vec3::splat(0.013), 
+        //    Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
+        //    "resources/models/animated/001_moose/moose_model_FINAL.txt", 
+        //    "resources/models/animated/001_moose/moose_bones_FINAL.txt"
+        //);
         entity_manager.create_static_entity(
             EntityType::Donut, 
             Faction::Static,
@@ -201,7 +201,7 @@ impl GameState {
 
     pub fn render(&mut self) {
         self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
-        self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, self.fb_width, self.fb_height);
+        self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, self.fb_width, self.fb_height, &mut self.sound_manager);
 
         if self.camera.move_state == CameraState::Locked {
             self.window.set_cursor_mode(glfw::CursorMode::Normal);

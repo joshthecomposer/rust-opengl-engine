@@ -9,6 +9,7 @@
   "debug_mode": true,
   "fps_counter": true,
   "sounds": {
-	  "music":"event:/Music"
+	  "music":"event:/Music",
+	  "footstep":"event:/footstep"
   }
 }
