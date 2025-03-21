@@ -18,6 +18,8 @@ mod debug;
 mod input;
 mod movement;
 mod ui;
+mod sound;
+mod config;
 
 use game_state::GameState;
 

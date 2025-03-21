@@ -6,7 +6,7 @@ use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{CameraState, EntityType, Faction}, gl_call, grid::Grid, input::handle_keyboard_input, lights::{DirLight, Lights}, renderer::Renderer, ui::imgui::ImguiManager};
+use crate::{camera::Camera, config::game_config::GameConfig, entity_manager::EntityManager, enums_types::{CameraState, EntityType, Faction}, gl_call, grid::Grid, input::handle_keyboard_input, lights::{DirLight, Lights}, renderer::Renderer, sound::sound_manager::SoundManager, ui::imgui::ImguiManager};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -36,6 +36,8 @@ pub struct GameState {
     pub renderer: Renderer,
 
     pub pressed_keys: HashSet<glfw::Key>,
+
+    pub sound_manager: SoundManager,
 }
 
 impl GameState {
@@ -116,6 +118,8 @@ impl GameState {
         light_manager.dir_light = DirLight::default_white();
 
         let renderer = Renderer::new();
+        let game_config = GameConfig::load_from_file("config/game_config.json");
+        let sound_manager = SoundManager::new(&game_config);
 
         // =============================================================
         // imgui
@@ -146,6 +150,7 @@ impl GameState {
             renderer,
 
             pressed_keys: HashSet::new(),
+            sound_manager,
         }
     }
 
@@ -180,6 +185,7 @@ impl GameState {
         self.last_frame = current_frame;
         self.elapsed += self.delta_time;
 
+
         // CHECK IF PAUSED OR SHOULD QUIT
         if self.paused { return; }
         if self.pressed_keys.contains(&glfw::Key::Escape) {
@@ -187,6 +193,7 @@ impl GameState {
         }
 
         // UPDATE SYSTEMS
+        self.sound_manager.update();
         self.entity_manager.update(&self.pressed_keys, self.delta_time, self.elapsed as f32, &self.camera);
         self.light_manager.update(&self.delta_time);
         self.camera.update(&self.entity_manager);
@@ -198,7 +205,7 @@ impl GameState {
 
         if self.camera.move_state == CameraState::Locked {
             self.window.set_cursor_mode(glfw::CursorMode::Normal);
-            self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer);
+            self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager);
         } else {
             self.window.set_cursor_mode(glfw::CursorMode::Disabled);
         }
