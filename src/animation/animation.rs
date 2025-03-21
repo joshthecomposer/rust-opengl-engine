@@ -240,6 +240,7 @@ pub struct Animation {
     model_animation_join: Vec<BoneJoinInfo>,
     bone_transforms: HashMap<String, BoneTransformTrack>,
     pub current_pose: Vec<Mat4>,
+
     pub current_segment: u32,
     pub one_shots: Vec<OneShot>,
 }
@@ -257,12 +258,12 @@ impl Animation {
             one_shots: vec![
                 OneShot {
                     sound_type: "footstep".to_string(),
-                    segment: 8,
+                    segment: 7,
                     triggered: false.into(),
                 },
                 OneShot {
                     sound_type: "footstep".to_string(),
-                    segment: 19,
+                    segment: 18,
                     triggered: false.into(),
                 }
             ],

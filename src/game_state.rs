@@ -185,7 +185,6 @@ impl GameState {
         self.last_frame = current_frame;
         self.elapsed += self.delta_time;
 
-
         // CHECK IF PAUSED OR SHOULD QUIT
         if self.paused { return; }
         if self.pressed_keys.contains(&glfw::Key::Escape) {
