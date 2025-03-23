@@ -2,10 +2,11 @@
 use std::collections::HashSet;
 
 use glam::{vec3, Quat, Vec3};
+use imgui::drag_drop::PayloadIsWrongType;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-use crate::{animation::animation::{import_bone_data, import_model_data, AniModel, Animator, Bone}, camera::Camera, enums_types::{CameraState, CellType, EntityType, Faction, Transform}, grid::Grid, model::Model, movement::{handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sparse_set::SparseSet};
+use crate::{animation::animation::{import_bone_data, import_model_data, AniModel, Animator, Bone}, camera::Camera, config::{entity_config::{AnimationPropHelper, EntityConfig}, game_config::GameConfig}, enums_types::{CameraState, CellType, EntityType, Faction, Transform}, grid::Grid, model::Model, movement::{handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{OneShot, SoundManager}, sparse_set::SparseSet};
 
 pub struct EntityManager {
     pub next_entity_id: usize,
@@ -31,6 +32,38 @@ impl EntityManager {
             animators: SparseSet::with_capacity(max_entities),
             skellingtons: SparseSet::with_capacity(max_entities),
             rng: ChaCha8Rng::seed_from_u64(1)
+        }
+    }
+
+    pub fn populate_initial_entity_data(&mut self, ec: &mut EntityConfig) {
+        for entity in ec.entities.iter() {
+            let rotation = match entity.rotation.as_str() {
+                "-FRAC_PI_2" => Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
+                _ => Quat::IDENTITY,
+            };
+            match entity.faction {
+                Faction::Player | Faction::Enemy => {
+                    self.create_animated_entity(
+                        entity.faction.clone(),
+                        vec3(entity.position[0], entity.position[1], entity.position[2]), 
+                        vec3(entity.scale[0], entity.scale[1], entity.scale[2]), 
+                        rotation, 
+                        &entity.mesh_path, 
+                        &entity.bone_path,
+                        &entity.animation_properties,
+                    );
+                },
+                Faction::World | Faction::Static => {
+                    self.create_static_entity(
+                        entity.entity_type.clone(),
+                        entity.faction.clone(),
+                        vec3(entity.position[0], entity.position[1], entity.position[2]), 
+                        vec3(entity.scale[0], entity.scale[1], entity.scale[2]), 
+                        rotation, 
+                        &entity.mesh_path, 
+                    );
+                },
+            }
         }
     }
 
@@ -65,7 +98,7 @@ impl EntityManager {
         self.next_entity_id += 1;
     }
 
-    pub fn create_animated_entity(&mut self, faction: Faction, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str, animation_path: &str) {
+    pub fn create_animated_entity(&mut self, faction: Faction, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str, animation_path: &str, animation_props: &Vec<AnimationPropHelper>) {
         let transform = Transform {
             position,
             rotation,
@@ -74,7 +107,20 @@ impl EntityManager {
             original_rotation: rotation,
         };
 
-        let (skellington, animator, animation) = import_bone_data(animation_path);
+        let (skellington, mut animator, animation) = import_bone_data(animation_path);
+
+        for prop in animation_props.iter() {
+            let mut anim = animator.animations.get_mut(&prop.name).unwrap();
+            for (k, v) in prop.one_shots.iter() {
+                for frame in v.iter() {
+                    anim.one_shots.push(OneShot {
+                        sound_type: k.clone(),
+                        segment: *frame,
+                        triggered: false.into(),
+                    });
+                }
+            }
+        }
 
         let mut model = AniModel::new();
         let mut found = false;

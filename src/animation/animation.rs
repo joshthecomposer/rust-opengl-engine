@@ -256,16 +256,16 @@ impl Animation {
             current_pose: vec![],
             current_segment: 0,
             one_shots: vec![
-                OneShot {
-                    sound_type: "footstep".to_string(),
-                    segment: 7,
-                    triggered: false.into(),
-                },
-                OneShot {
-                    sound_type: "footstep".to_string(),
-                    segment: 18,
-                    triggered: false.into(),
-                }
+               //  OneShot {
+               //      sound_type: "footstep".to_string(),
+               //      segment: 7,
+               //      triggered: false.into(),
+               //  },
+               //  OneShot {
+               //      sound_type: "footstep".to_string(),
+               //      segment: 18,
+               //      triggered: false.into(),
+               //  }
             ],
         }
     }
