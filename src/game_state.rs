@@ -78,86 +78,25 @@ impl GameState {
             gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
         }
 
-        let mut entity_manager = EntityManager::new(10_000);
-        // entity_manager.create_animated_entity(
-        //     Faction::Player, 
-        //     vec3(4.0, 0.0, 3.0), 
-        //     Vec3::splat(0.01), 
-        //     Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
-        //     // Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
-        //     "resources/models/animated/002_y_robot/y_robot_model_FINAL.txt", 
-        //     "resources/models/animated/002_y_robot/y_robot_bones_FINAL.txt"
-        // );
-
-        // //entity_manager.create_animated_entity(
-        // //    Faction::Enemy, 
-        // //    vec3(0.0, 0.0, 4.0), 
-        // //    Vec3::splat(0.013), 
-        // //    Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
-        // //    "resources/models/animated/001_moose/moose_model_FINAL.txt", 
-        // //    "resources/models/animated/001_moose/moose_bones_FINAL.txt"
-        // //);
-        // entity_manager.create_static_entity(
-        //     EntityType::Donut, 
-        //     Faction::Static,
-        //     vec3(1.0, 1.0, 1.0), 
-        //     Vec3::splat(2.0), 
-        //     Quat::IDENTITY,
-        //     "resources/models/my_obj/donut.obj"
-        // );
-        // entity_manager.create_static_entity(
-        //     EntityType::BigGuy, 
-        //     Faction::Static,
-        //     vec3(0.0, 0.0, 0.0), 
-        //     Vec3::splat(1.0), 
-        //     // Quat::IDENTITY,
-        //     Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
-        //     "resources/models/tree/tree.fbx"
-        // );
-        // entity_manager.create_static_entity(
-        //     EntityType::BigGuy, 
-        //     Faction::Static,
-        //     vec3(3.0, 0.0, 2.0), 
-        //     Vec3::splat(1.0), 
-        //     // Quat::IDENTITY,
-        //     Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
-        //     "resources/models/tree/tree.fbx"
-        // );
-        // entity_manager.create_static_entity(
-        //     EntityType::BigGuy, 
-        //     Faction::Static,
-        //     vec3(-2.0, 0.0, 4.0), 
-        //     Vec3::splat(1.0), 
-        //     // Quat::IDENTITY,
-        //     Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
-        //     "resources/models/tree/tree.fbx"
-        // );
-        // entity_manager.create_static_entity(
-        //     EntityType::BigGuy, 
-        //     Faction::Static,
-        //     vec3(-4.2, 0.0, -3.1), 
-        //     Vec3::splat(1.0), 
-        //     // Quat::IDENTITY,
-        //     Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
-        //     "resources/models/tree/tree.fbx"
-        // );
-        let grid = Grid::parse_grid_data("resources/level_data/level.txt");
-        // entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/tile_01.obj");
-        // entity_manager.populate_cell_rng(&grid);
-
+        // =============================================================
+        // Set up systems
+        // =============================================================
         let mut light_manager = Lights::new(50);
         light_manager.dir_light = DirLight::default_white();
 
         let renderer = Renderer::new();
-        let game_config = GameConfig::load_from_file("config/game_config.json");
-        let sound_manager = SoundManager::new(&game_config);
-        let mut entity_config = EntityConfig::load_from_file("config/entity_config.json");
 
+        let game_config = GameConfig::load_from_file("config/game_config.json");
+        
+        let sound_manager = SoundManager::new(&game_config);
+    
+        let mut entity_config = EntityConfig::load_from_file("config/entity_config.json");
+        let mut entity_manager = EntityManager::new(10_000);
         entity_manager.populate_initial_entity_data(&mut entity_config);
 
-        // =============================================================
-        // imgui
-        // =============================================================
+        let mut grid = Grid::new(game_config.grid_width, game_config.grid_height, game_config.cell_size);
+        grid.generate();
+
         let imgui_manager = ImguiManager::new(&mut window);
 
         Self {

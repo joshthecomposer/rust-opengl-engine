@@ -1,10 +1,10 @@
 {
 	"game_title": "The Greatest 2D Engine Ever Made",
-	"cell_size": 60.0,
+	"cell_size": 1.0,
 	"win_width": 1920.0,
 	"win_height": 1080.0,
-	"grid_height": 50,
-	"grid_width": 50,
+	"grid_height": 100,
+	"grid_width": 100,
 	"vsync": true,
 	"debug_mode": true,
 	"fps_counter": true,

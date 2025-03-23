@@ -19,6 +19,7 @@ pub struct GridCell {
     pub cell_type: CellType,
 }
 
+#[derive(Debug)]
 pub struct Grid {
     // pub cells: HashMap<usize, GridCell>,
     pub cells: Vec<GridCell>,
@@ -30,24 +31,24 @@ pub struct Grid {
 }
 
 impl Grid {
-    fn new(width: usize, height: usize) -> Grid {
+    pub fn new(width: usize, height: usize, cell_size: f32) -> Grid {
         Grid {
             cells: Vec::with_capacity(width * height) ,
             next_cell_id: 0,
             model: Model::new(),
-            cell_size: 0.0,
+            cell_size,
             width,
             height,
         }
     }
 
-    pub fn parse_grid_data(file_path: &str) -> Grid {
+    pub fn parse_grid_data(file_path: &str, cell_size: f32) -> Grid {
         let file = read_to_string(file_path).unwrap().replace(' ', "");
 
         let grid_width = file.lines().last().unwrap().len();
         let grid_height = file.lines().count();
 
-        let mut grid = Grid::new(grid_width, grid_height);
+        let mut grid = Grid::new(grid_width, grid_height, cell_size);
         grid.generate();
 
         for (y, l) in file.lines().enumerate() {
@@ -68,14 +69,14 @@ impl Grid {
         grid
     }
 
-    fn generate(&mut self) {
+    pub fn generate(&mut self) {
         Self::generate_texture();
         self.generate_model();
     }
 
     fn generate_model(&mut self) {
         // TODO: This only works with even numbered grid sizes, fix
-        let mut mesh = self.generate_grid_mesh(1.0);
+        let mut mesh = self.generate_grid_mesh();
         self.model.directory = "resources/textures".to_string();
 
         let tex_id = Model::texture_from_file(&self.model, "half_dark_half_light.png".to_string());
@@ -92,20 +93,19 @@ impl Grid {
         self.model.textures_loaded.push(tex);
     }
 
-    fn generate_grid_mesh(&mut self, cell_size: f32) -> Mesh {
-        self.cell_size = cell_size;
+    fn generate_grid_mesh(&mut self) -> Mesh {
         let mut vertices = Vec::<Vertex>::new();
         let mut indices = Vec::<u32>::new();
         let mut mesh = Mesh::new();
         let mut dark = false;
 
-        let total_width = self.width as f32 * cell_size;
-        let total_height = self.height as f32 * cell_size;
+        let total_width = self.width as f32 * self.cell_size;
+        let total_height = self.height as f32 * self.cell_size;
 
         for row in 0..self.width {
             for col in 0..self.height {
-                let x = (col as f32 * cell_size) - (total_width / 2.0);
-                let z = (row as f32 * cell_size) - (total_height / 2.0);
+                let x = (col as f32 * self.cell_size) - (total_width / 2.0);
+                let z = (row as f32 * self.cell_size) - (total_height / 2.0);
 
 
                 let (bl, br, tr, tl) = if dark {
@@ -131,9 +131,9 @@ impl Grid {
 
                 // Add vertices for the cell
                 vertices.push(Vertex { position: vec3(x, 0.0, z), normal: vec3(0.0, 1.0, 0.0), tex_coords: bl });
-                vertices.push(Vertex { position: vec3(x + cell_size, 0.0, z), normal: vec3(0.0, 1.0, 0.0), tex_coords: br });
-                vertices.push(Vertex { position: vec3(x + cell_size, 0.0, z + cell_size), normal: vec3(0.0, 1.0, 0.0), tex_coords: tr });
-                vertices.push(Vertex { position: vec3(x, 0.0, z + cell_size), normal: vec3(0.0, 1.0, 0.0), tex_coords: tl });
+                vertices.push(Vertex { position: vec3(x + self.cell_size, 0.0, z), normal: vec3(0.0, 1.0, 0.0), tex_coords: br });
+                vertices.push(Vertex { position: vec3(x + self.cell_size, 0.0, z + self.cell_size), normal: vec3(0.0, 1.0, 0.0), tex_coords: tr });
+                vertices.push(Vertex { position: vec3(x, 0.0, z + self.cell_size), normal: vec3(0.0, 1.0, 0.0), tex_coords: tl });
 
                 // Add indices for two triangles
                 // flipped winding
@@ -156,8 +156,8 @@ impl Grid {
                 // =============================================================
                 let cell = GridCell {
                     id: self.next_cell_id,
-                    position: vec3(x + (cell_size / 2.0), 0.0, z + (cell_size / 2.0)),
-                    width: cell_size, 
+                    position: vec3(x + (self.cell_size / 2.0), 0.0, z + (self.cell_size / 2.0)),
+                    width: self.cell_size, 
                     blocked: false,
                     adjacent_cells: vec![],
                     cell_type: CellType::Grass,

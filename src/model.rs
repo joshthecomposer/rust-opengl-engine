@@ -7,7 +7,7 @@ use russimp::{material::{Material as RMaterial, PropertyTypeInfo, TextureType}, 
 
 use crate::{debug::write::write_data, gl_call, mesh::{Mesh, Texture, Vertex}, shaders::Shader};
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Model {
     pub meshes: Vec<Mesh>,
     pub directory: String,
