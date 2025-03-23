@@ -281,6 +281,7 @@ impl Renderer {
         
         let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
         shader.activate();
+
         for model in em.models.iter() {
 
             let trans = em.transforms.get(model.key()).unwrap();
@@ -308,17 +309,15 @@ impl Renderer {
             if let Some(animator) = em.animators.get(ani_model.key()) {
                 let animation = animator.animations.get(&animator.current_animation).unwrap();
                 
-                if animator.current_animation == "Run" {
-                    for os in animation.one_shots.iter() {
-                        if animation.current_segment == os.segment {
-                            if !os.triggered.get() {
-                                // TODO: DOn't clone, we really need an enum here.
-                                sound_manager.play_sound(os.sound_type.clone());
-                                os.triggered.set(true);
-                            }
-                        } else {
-                            os.triggered.set(false);
+                for os in animation.one_shots.iter() {
+                    if animation.current_segment == os.segment {
+                        if !os.triggered.get() {
+                            // TODO: DOn't clone, we really need an enum here.
+                            sound_manager.play_sound(os.sound_type.clone());
+                            os.triggered.set(true);
                         }
+                    } else {
+                        os.triggered.set(false);
                     }
                 }
 

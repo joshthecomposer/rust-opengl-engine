@@ -9,19 +9,15 @@
 			"faction": "Player",
 			"mesh_path": "resources/models/animated/002_y_robot/y_robot_model_FINAL.txt", 
 			"bone_path":"resources/models/animated/002_y_robot/y_robot_bones_FINAL.txt",
-			"animation_properties" : [
-				{
-					"name": "Run",
-					"one_shots": {
-						"footstep": [7, 18]
-					}
-				},
-				{
-					"name": "Idle",
-					"one_shots": { }
-				}
-			]
+			"animation_properties" : []
 		},
+
+
+
+
+
+
+
 		{
 			"entity_type": "MooseMan",
 			"position": [0.0, 0.0, 4.0],
@@ -31,12 +27,7 @@
 			"faction": "Enemy",
 			"mesh_path": "resources/models/animated/001_moose/moose_model_FINAL.txt", 
 			"bone_path": "resources/models/animated/001_moose/moose_bones_FINAL.txt",
-			"animation_properties" : [
-				{
-					"name": "Idle",
-					"one_shots": { }
-				}
-			]
+			"animation_properties" : []
 		},
 
 

@@ -17,9 +17,26 @@ pub enum FMOD_STUDIO_STOP_MODE {
     FMOD_STUDIO_STOP_ALLOWFADEOUT = 2,
 }
 
+#[repr(C)]
+pub struct FMOD_VECTOR {
+    pub x: f32,
+    pub y: f32,
+    pub z: f32,
+}
+
+#[repr(C)]
+pub struct FMOD_3D_ATTRIBUTES {
+    pub position: FMOD_VECTOR,
+    pub velocity: FMOD_VECTOR,
+    pub forward: FMOD_VECTOR,
+    pub up: FMOD_VECTOR,
+}
+
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 #[link(name = "fmodstudio")]
 extern "C" {
+    pub fn FMOD_Studio_System_Update(system: FMOD_STUDIO_SYSTEM) -> FMOD_RESULT;
+
     pub fn FMOD_Studio_System_Create(
         system: *mut FMOD_STUDIO_SYSTEM, 
         headerversion: c_uint
@@ -71,5 +88,17 @@ extern "C" {
         description: FMOD_STUDIO_EVENTDESCRIPTION,
     ) -> FMOD_RESULT;
 
-    pub fn FMOD_Studio_System_Update(system: FMOD_STUDIO_SYSTEM) -> FMOD_RESULT;
+    //
+    // 3D stuff
+    //
+    pub fn FMOD_Studio_EventInstance_Set3DAttributes(
+        event: FMOD_STUDIO_EVENTINSTANCE,
+        attributes: *const FMOD_3D_ATTRIBUTES,
+    ) -> FMOD_RESULT;
+
+    pub fn FMOD_Studio_System_SetListenerAttributes(
+        system: FMOD_STUDIO_SYSTEM,
+        listener: c_int,
+        attributes: *const FMOD_3D_ATTRIBUTES,
+    ) -> FMOD_RESULT;
 }
