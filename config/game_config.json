@@ -1,14 +1,15 @@
 {
-  "game_title": "The Greatest 2D Engine Ever Made",
-  "cell_size": 60.0,
-  "win_width": 1920.0,
-  "win_height": 1080.0,
-  "grid_height": 50,
-  "grid_width": 50,
-  "vsync": true,
-  "debug_mode": true,
-  "fps_counter": true,
-  "sounds": {
-	  "music":"event:/Music"
-  }
+	"game_title": "The Greatest 2D Engine Ever Made",
+	"cell_size": 60.0,
+	"win_width": 1920.0,
+	"win_height": 1080.0,
+	"grid_height": 50,
+	"grid_width": 50,
+	"vsync": true,
+	"debug_mode": true,
+	"fps_counter": true,
+	"sounds": {
+		"music":"event:/Music",
+		"footstep":"event:/footstep"
+	}
 }

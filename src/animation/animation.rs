@@ -2,7 +2,7 @@ use glam::{Mat4, Quat, Vec2, Vec3, Vec4};
 use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
 use std::{collections::HashMap, ffi::c_void, mem::{self, offset_of}, path::Path, ptr, str::Lines};
 
-use crate::{enums_types::TextureType, gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE};
+use crate::{enums_types::TextureType, gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE, sound::sound_manager::OneShot};
 
 #[derive(Debug, Clone)]
 #[repr(C)]
@@ -232,6 +232,7 @@ impl Animator {
     }
 }
 
+
 #[derive(Debug, Clone)]
 pub struct Animation {
     duration: f32,
@@ -239,16 +240,33 @@ pub struct Animation {
     model_animation_join: Vec<BoneJoinInfo>,
     bone_transforms: HashMap<String, BoneTransformTrack>,
     pub current_pose: Vec<Mat4>,
+
+    pub current_segment: u32,
+    pub one_shots: Vec<OneShot>,
 }
 
 impl Animation {
     pub fn default() -> Self {
+
         Self {
             duration: 0.0,
             ticks_per_second: 0.0,
             model_animation_join: vec![],
             bone_transforms: HashMap::new(),
             current_pose: vec![],
+            current_segment: 0,
+            one_shots: vec![
+               //  OneShot {
+               //      sound_type: "footstep".to_string(),
+               //      segment: 7,
+               //      triggered: false.into(),
+               //  },
+               //  OneShot {
+               //      sound_type: "footstep".to_string(),
+               //      segment: 18,
+               //      triggered: false.into(),
+               //  }
+            ],
         }
     }
 
@@ -263,6 +281,8 @@ impl Animation {
         let dt = elapsed_time % self.duration;
 
         let (segment, fraction) = get_time_fraction(&btt.position_timestamps, dt);
+
+        self.current_segment = segment;
 
         let local_transform = if segment == 0 {
             // Use the first keyframe

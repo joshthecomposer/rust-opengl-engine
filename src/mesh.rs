@@ -121,6 +121,7 @@ impl Mesh {
     pub fn draw(&self, shader: &mut Shader) {
         let mut diffuse_nr = 1;
         let mut specular_nr = 1;
+        let mut alpha_nr = 1;
 
         shader.activate();
 
@@ -138,6 +139,13 @@ impl Mesh {
             } else if name == "texture_specular" {
                 number = specular_nr.to_string();
                 specular_nr += 1;
+            } else if name == "texture_alpha" {
+
+                shader.store_uniform_location("has_opacity_texture");
+                shader.set_bool("has_opacity_texture", true);
+                number = alpha_nr.to_string();
+
+                alpha_nr += 1;
             }
 
             let final_str = ("material.".to_string() + name.as_str()) + number.as_str();

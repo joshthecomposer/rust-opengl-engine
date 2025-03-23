@@ -5,7 +5,7 @@ use glam::{vec3, Vec3};
 use image::{GenericImageView, ImageBuffer, Rgba};
 use russimp::{material::{Material as RMaterial, PropertyTypeInfo, TextureType}, mesh::Mesh as RMesh, node::Node, scene::{PostProcess, Scene}, Vector3D};
 
-use crate::{gl_call, mesh::{Mesh, Texture, Vertex}, shaders::Shader};
+use crate::{debug::write::write_data, gl_call, mesh::{Mesh, Texture, Vertex}, shaders::Shader};
 
 #[derive(Clone)]
 pub struct Model {
@@ -35,7 +35,7 @@ impl Model {
         let scene = Scene::from_file(
             path, 
             vec![
-                 PostProcess::Triangulate,
+                PostProcess::Triangulate,
                 // PostProcess::GenerateSmoothNormals,
                 PostProcess::FlipUVs,
             ],
@@ -108,8 +108,10 @@ impl Model {
             if let Some(ai_mat) = scene.materials.get(material_index as usize) {
                 let mut diffuse_textures = self.load_material_textures(ai_mat, TextureType::Diffuse, "texture_diffuse".to_string());
                 let mut specular_textures = self.load_material_textures(ai_mat, TextureType::Specular, "texture_specular".to_string());
+            let mut alpha_textures = self.load_material_textures(ai_mat, TextureType::Opacity, "texture_alpha".to_string());
                 mesh.textures.append(&mut diffuse_textures);
                 mesh.textures.append(&mut specular_textures);
+                mesh.textures.append(&mut alpha_textures);
             }
         // }
         mesh.setup_mesh();
@@ -127,6 +129,9 @@ impl Model {
             path = ai_tex.filename.clone();
         } else if let Some(found_path) = Self::try_parse_diffuse_texture_path(ai_mat, texture_type) {
                 path = found_path.clone();
+
+        } else if let Some(found_path) = Self::try_parse_alpha_texture_path(ai_mat, texture_type) {
+            path = found_path.clone();
         } else if let Some(diffuse_color) = Self::try_parse_diffuse_color(ai_mat) {
             dbg!("Falling back to diffuse_color");
             // TODO: This overwrites multiple times potentially, we should check if the texture has already been saved.
@@ -191,6 +196,7 @@ impl Model {
 
     pub fn try_parse_diffuse_texture_path(ai_mat: &RMaterial, tex_type: TextureType) -> Option<String> {
         for prop in ai_mat.properties.iter() {
+            write_data(&prop, "prop_pout.txt");
             if prop.key == "$tex.file" && prop.semantic == tex_type {
                 if let PropertyTypeInfo::String(ref filename) = prop.data {
                     return Some(filename.clone());
@@ -198,6 +204,18 @@ impl Model {
             }
         }
         None
+    }
+
+    pub fn try_parse_alpha_texture_path(ai_mat: &RMaterial, tex_type: TextureType)  -> Option<String> {
+        for prop in ai_mat.properties.iter() {
+            if prop.key == "$tex.file" && prop.semantic == tex_type {
+                if let PropertyTypeInfo::String(ref filename) = prop.data {
+                    return Some(filename.clone());
+                }
+            }
+        }
+        None
+
     }
 
     pub fn texture_from_file(model: &Model, path: String) -> u32 {

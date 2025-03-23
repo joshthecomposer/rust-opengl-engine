@@ -6,7 +6,7 @@ use glam::{vec3, vec4, Mat4, Quat, Vec3};
 use image::GenericImageView;
 use russimp::light;
 
-use crate::{animation::animation::{AniModel, Animation}, camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, TextureType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}};
+use crate::{animation::animation::{AniModel, Animation}, camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, TextureType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}, sound::sound_manager::SoundManager};
 
 pub struct Renderer {
     pub shaders: HashMap<ShaderType, Shader>, // TODO: make this an enum
@@ -256,7 +256,7 @@ impl Renderer {
         }
     }
 
-    pub fn draw(&mut self, em: &EntityManager, camera: &mut Camera, light_manager: &Lights, grid: &mut Grid, fb_width: u32, fb_height: u32,) {
+    pub fn draw(&mut self, em: &EntityManager, camera: &mut Camera, light_manager: &Lights, grid: &mut Grid, fb_width: u32, fb_height: u32, sound_manager: &mut SoundManager) {
         camera.reset_matrices(fb_width as f32 / fb_height as f32);
        self.shadow_pass(em,  camera, light_manager, fb_width, fb_height);
        unsafe {
@@ -307,6 +307,21 @@ impl Renderer {
         for ani_model in em.ani_models.iter() {
             if let Some(animator) = em.animators.get(ani_model.key()) {
                 let animation = animator.animations.get(&animator.current_animation).unwrap();
+                
+                if animator.current_animation == "Run" {
+                    for os in animation.one_shots.iter() {
+                        if animation.current_segment == os.segment {
+                            if !os.triggered.get() {
+                                // TODO: DOn't clone, we really need an enum here.
+                                sound_manager.play_sound(os.sound_type.clone());
+                                os.triggered.set(true);
+                            }
+                        } else {
+                            os.triggered.set(false);
+                        }
+                    }
+                }
+
                 let trans = em.transforms.get(ani_model.key()).unwrap();
                 camera.model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
 
@@ -418,7 +433,8 @@ impl Renderer {
         depth_shader.set_bool("is_animated", false);
         for model in em.models.iter() {
             let trans = em.transforms.get(model.key()).unwrap();
-            let model_model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
+
+            let model_model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
             for mesh in model.value().meshes.iter() {
                 unsafe {
                     gl::BindVertexArray(mesh.vao);

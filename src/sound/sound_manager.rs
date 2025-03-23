@@ -1,8 +1,8 @@
 #![allow(dead_code)]
 
-use std::{ffi::CString, collections::HashMap};
+use std::{cell::Cell, collections::HashMap, ffi::CString};
 
-use crate::config::game_config::GameConfig;
+use crate::{animation::animation::Animation, config::game_config::GameConfig, sound::fmod::FMOD_Studio_EventDescription_LoadSampleData};
 
 use super::fmod::{FMOD_Studio_EventDescription_CreateInstance, FMOD_Studio_EventInstance_SetParameterByName, FMOD_Studio_EventInstance_Start, FMOD_Studio_EventInstance_Stop, FMOD_Studio_System_Create, FMOD_Studio_System_GetEvent, FMOD_Studio_System_Initialize, FMOD_Studio_System_LoadBankFile, FMOD_Studio_System_Update, FMOD_INIT_NORMAL, FMOD_STUDIO_BANK, FMOD_STUDIO_EVENTDESCRIPTION, FMOD_STUDIO_EVENTINSTANCE, FMOD_STUDIO_INIT_NORMAL, FMOD_STUDIO_SYSTEM, FMOD_VERSION};
 
@@ -15,6 +15,13 @@ pub struct SoundData {
 pub struct SoundTrigger {
     pub sound_type: String, //TODO: JW - This sound_type should probably be an enum of SoundType?? Maybe?
     pub frame: usize,
+}
+
+#[derive(Clone, Debug)]
+pub struct OneShot {
+    pub sound_type: String, 
+    pub segment: u32,
+    pub triggered: Cell<bool>,
 }
 
 pub struct SoundManager {
@@ -102,6 +109,7 @@ impl SoundManager {
                     // Handle error
                     panic!("Failed to create event instance {}", result);
                 }
+                FMOD_Studio_EventDescription_LoadSampleData(description);
                 sounds.insert(sound_name.to_string(), SoundData {description, instance});
             }
         }
@@ -127,13 +135,16 @@ impl SoundManager {
     pub fn play_sound(&mut self, sound_type: String){
         let sound_data = self.sounds.get(&sound_type).unwrap();
         unsafe {
-            FMOD_Studio_EventInstance_Start(sound_data.instance);
+            let result = FMOD_Studio_EventInstance_Start(sound_data.instance);
+            if result != 0 {
+                    eprintln!("FMOD sound failed with error code {}", result);
+            }
         }
     }
     pub fn stop_sound(&mut self, sound_type: String){
         let sound_data = self.sounds.get(&sound_type).unwrap();
         unsafe {
-            FMOD_Studio_EventInstance_Stop(sound_data.instance, super::fmod::FMOD_STUDIO_STOP_MODE::FMOD_STUDIO_STOP_ALLOWFADEOUT);
+            FMOD_Studio_EventInstance_Stop(sound_data.instance, super::fmod::FMOD_STUDIO_STOP_MODE::FMOD_STUDIO_STOP_IMMEDIATE);
         }
     }
 

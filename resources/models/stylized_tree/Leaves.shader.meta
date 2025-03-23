@@ -1,0 +1,17 @@
+fileFormatVersion: 2
+guid: a472f014eba10b14a902b7ed871289ac
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures: []
+  nonModifiableTextures: []
+  preprocessorOverride: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 307784
+  packageName: Free Fantasy Trees
+  packageVersion: 1.0
+  assetPath: Assets/FREE Fantasy Trees/Materials/Leaves.shader
+  uploadId: 723627

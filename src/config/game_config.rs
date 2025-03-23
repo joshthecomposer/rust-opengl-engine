@@ -18,7 +18,7 @@ pub struct GameConfig {
 
 impl GameConfig {
     pub fn load_from_file(file_name: &str) -> GameConfig {
-        println!("loading configuration from {}", &file_name);
+        println!("loading game configuration from {}", &file_name);
         let config_str = read_to_string(file_name).unwrap();
 
         serde_json::from_str(&config_str).expect("The gameconfig file was missing")

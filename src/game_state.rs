@@ -6,7 +6,7 @@ use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{camera::Camera, config::game_config::GameConfig, entity_manager::EntityManager, enums_types::{CameraState, EntityType, Faction}, gl_call, grid::Grid, input::handle_keyboard_input, lights::{DirLight, Lights}, renderer::Renderer, sound::sound_manager::SoundManager, ui::imgui::ImguiManager};
+use crate::{camera::Camera, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, entity_manager::EntityManager, enums_types::{CameraState, EntityType, Faction}, gl_call, grid::Grid, input::handle_keyboard_input, lights::{DirLight, Lights}, renderer::Renderer, sound::sound_manager::SoundManager, ui::imgui::ImguiManager};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -74,41 +74,72 @@ impl GameState {
             gl_call!(gl::Viewport(0, 0, width, height));
             gl_call!(gl::Enable(gl::DEPTH_TEST));
             gl::Enable(gl::DEBUG_OUTPUT);
+            gl::Enable(gl::BLEND);
+            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
         }
 
         let mut entity_manager = EntityManager::new(10_000);
-        entity_manager.create_animated_entity(
-            Faction::Player, 
-            vec3(4.0, 0.0, 3.0), 
-            Vec3::splat(0.01), 
-            Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
-            "resources/models/animated/002_y_robot/y_robot_model_FINAL.txt", 
-            "resources/models/animated/002_y_robot/y_robot_bones_FINAL.txt"
-        );
+        // entity_manager.create_animated_entity(
+        //     Faction::Player, 
+        //     vec3(4.0, 0.0, 3.0), 
+        //     Vec3::splat(0.01), 
+        //     Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
+        //     // Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
+        //     "resources/models/animated/002_y_robot/y_robot_model_FINAL.txt", 
+        //     "resources/models/animated/002_y_robot/y_robot_bones_FINAL.txt"
+        // );
 
-        entity_manager.create_animated_entity(
-            Faction::Enemy, 
-            vec3(0.0, 0.0, 4.0), 
-            Vec3::splat(0.013), 
-            Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
-            "resources/models/animated/001_moose/moose_model_FINAL.txt", 
-            "resources/models/animated/001_moose/moose_bones_FINAL.txt"
-        );
-        entity_manager.create_static_entity(
-            EntityType::Donut, 
-            Faction::Static,
-            vec3(1.0, 1.0, 1.0), 
-            Vec3::splat(2.0), 
-            Quat::IDENTITY,
-            "resources/models/my_obj/donut.obj"
-        );
+        // //entity_manager.create_animated_entity(
+        // //    Faction::Enemy, 
+        // //    vec3(0.0, 0.0, 4.0), 
+        // //    Vec3::splat(0.013), 
+        // //    Quat::from_xyzw(-0.707, 0.0, 0.0, 0.707),
+        // //    "resources/models/animated/001_moose/moose_model_FINAL.txt", 
+        // //    "resources/models/animated/001_moose/moose_bones_FINAL.txt"
+        // //);
         // entity_manager.create_static_entity(
         //     EntityType::Donut, 
         //     Faction::Static,
+        //     vec3(1.0, 1.0, 1.0), 
+        //     Vec3::splat(2.0), 
+        //     Quat::IDENTITY,
+        //     "resources/models/my_obj/donut.obj"
+        // );
+        // entity_manager.create_static_entity(
+        //     EntityType::BigGuy, 
+        //     Faction::Static,
         //     vec3(0.0, 0.0, 0.0), 
         //     Vec3::splat(1.0), 
+        //     // Quat::IDENTITY,
         //     Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
-        //     "resources/models/my_obj/test_arena.fbx"
+        //     "resources/models/tree/tree.fbx"
+        // );
+        // entity_manager.create_static_entity(
+        //     EntityType::BigGuy, 
+        //     Faction::Static,
+        //     vec3(3.0, 0.0, 2.0), 
+        //     Vec3::splat(1.0), 
+        //     // Quat::IDENTITY,
+        //     Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
+        //     "resources/models/tree/tree.fbx"
+        // );
+        // entity_manager.create_static_entity(
+        //     EntityType::BigGuy, 
+        //     Faction::Static,
+        //     vec3(-2.0, 0.0, 4.0), 
+        //     Vec3::splat(1.0), 
+        //     // Quat::IDENTITY,
+        //     Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
+        //     "resources/models/tree/tree.fbx"
+        // );
+        // entity_manager.create_static_entity(
+        //     EntityType::BigGuy, 
+        //     Faction::Static,
+        //     vec3(-4.2, 0.0, -3.1), 
+        //     Vec3::splat(1.0), 
+        //     // Quat::IDENTITY,
+        //     Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
+        //     "resources/models/tree/tree.fbx"
         // );
         let grid = Grid::parse_grid_data("resources/level_data/level.txt");
         // entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/tile_01.obj");
@@ -120,6 +151,9 @@ impl GameState {
         let renderer = Renderer::new();
         let game_config = GameConfig::load_from_file("config/game_config.json");
         let sound_manager = SoundManager::new(&game_config);
+        let mut entity_config = EntityConfig::load_from_file("config/entity_config.json");
+
+        entity_manager.populate_initial_entity_data(&mut entity_config);
 
         // =============================================================
         // imgui
@@ -185,7 +219,6 @@ impl GameState {
         self.last_frame = current_frame;
         self.elapsed += self.delta_time;
 
-
         // CHECK IF PAUSED OR SHOULD QUIT
         if self.paused { return; }
         if self.pressed_keys.contains(&glfw::Key::Escape) {
@@ -201,7 +234,7 @@ impl GameState {
 
     pub fn render(&mut self) {
         self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
-        self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, self.fb_width, self.fb_height);
+        self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, self.fb_width, self.fb_height, &mut self.sound_manager);
 
         if self.camera.move_state == CameraState::Locked {
             self.window.set_cursor_mode(glfw::CursorMode::Normal);

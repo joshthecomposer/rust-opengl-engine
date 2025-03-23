@@ -127,6 +127,10 @@ impl ImguiManager {
                 if ui.slider("Volume", 0.0, 1.0, &mut sm.master_volume) {
                     sm.set_master_volume();
                 };
+
+                if ui.button("Footstep") {
+                    sm.play_sound("footstep".to_string());
+                }
             });
 
         self.renderer.render(&mut self.imgui);

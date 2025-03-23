@@ -67,6 +67,9 @@ extern "C" {
         ignoreseekspeed: u8,
     ) -> FMOD_RESULT;
 
+    pub fn FMOD_Studio_EventDescription_LoadSampleData(
+        description: FMOD_STUDIO_EVENTDESCRIPTION,
+    ) -> FMOD_RESULT;
 
     pub fn FMOD_Studio_System_Update(system: FMOD_STUDIO_SYSTEM) -> FMOD_RESULT;
 }
