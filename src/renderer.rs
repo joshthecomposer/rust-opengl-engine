@@ -433,7 +433,8 @@ impl Renderer {
         depth_shader.set_bool("is_animated", false);
         for model in em.models.iter() {
             let trans = em.transforms.get(model.key()).unwrap();
-            let model_model = Mat4::IDENTITY * Mat4::from_translation(trans.position) * Mat4::from_scale(trans.scale);
+
+            let model_model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
             for mesh in model.value().meshes.iter() {
                 unsafe {
                     gl::BindVertexArray(mesh.vao);

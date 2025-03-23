@@ -74,6 +74,8 @@ impl GameState {
             gl_call!(gl::Viewport(0, 0, width, height));
             gl_call!(gl::Enable(gl::DEPTH_TEST));
             gl::Enable(gl::DEBUG_OUTPUT);
+            gl::Enable(gl::BLEND);
+            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
         }
 
         let mut entity_manager = EntityManager::new(10_000);
@@ -102,14 +104,42 @@ impl GameState {
             Quat::IDENTITY,
             "resources/models/my_obj/donut.obj"
         );
-        // entity_manager.create_static_entity(
-        //     EntityType::Donut, 
-        //     Faction::Static,
-        //     vec3(0.0, 0.0, 0.0), 
-        //     Vec3::splat(1.0), 
-        //     Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
-        //     "resources/models/my_obj/test_arena.fbx"
-        // );
+        entity_manager.create_static_entity(
+            EntityType::BigGuy, 
+            Faction::Static,
+            vec3(0.0, 0.0, 0.0), 
+            Vec3::splat(1.0), 
+            // Quat::IDENTITY,
+            Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
+            "resources/models/tree/tree.fbx"
+        );
+        entity_manager.create_static_entity(
+            EntityType::BigGuy, 
+            Faction::Static,
+            vec3(3.0, 0.0, 2.0), 
+            Vec3::splat(1.0), 
+            // Quat::IDENTITY,
+            Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
+            "resources/models/tree/tree.fbx"
+        );
+        entity_manager.create_static_entity(
+            EntityType::BigGuy, 
+            Faction::Static,
+            vec3(-2.0, 0.0, 4.0), 
+            Vec3::splat(1.0), 
+            // Quat::IDENTITY,
+            Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
+            "resources/models/tree/tree.fbx"
+        );
+        entity_manager.create_static_entity(
+            EntityType::BigGuy, 
+            Faction::Static,
+            vec3(-4.2, 0.0, -3.1), 
+            Vec3::splat(1.0), 
+            // Quat::IDENTITY,
+            Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
+            "resources/models/tree/tree.fbx"
+        );
         let grid = Grid::parse_grid_data("resources/level_data/level.txt");
         // entity_manager.populate_floor_tiles(&grid, "resources/models/my_obj/tile_01.obj");
         // entity_manager.populate_cell_rng(&grid);

@@ -7,7 +7,10 @@ in vec2 TexCoords;
 in vec4 FragPosLightSpace;
 
 uniform sampler2D texture_diffuse1;
+// uniform sampler2D texture_opacity1;
 uniform sampler2D shadow_map;
+
+uniform bool has_opacity_texture;
 
 struct DirLight {
  	vec3 direction;
@@ -49,7 +52,16 @@ float ShadowCalculation(float dot_light_normal) {
 
 vec3 calculate_directional_light() {
     vec3 lightColor = dir_light.diffuse;
-    vec3 tex_color = texture(texture_diffuse1, TexCoords).rgb;
+    vec4 tex_color = texture(texture_diffuse1, TexCoords).rgba;
+
+	// float alpha = tex_color.a;
+
+	// if (has_opacity_texture) {
+	// 	alpha = texture(texture_opacity1, TexCoords).r;
+	// }
+	// 
+    // if (alpha < 0.1)
+    //     discard;
 
 	// Ambient
     vec3 ambient = vec3(dir_light.ambient);
@@ -64,10 +76,11 @@ vec3 calculate_directional_light() {
 
 	float shadow = ShadowCalculation(dot_light_normal);
 
-    return (shadow * (diffuse /* + specular */) + ambient) * tex_color;
+    return (shadow * (diffuse /* + specular */) + ambient) * tex_color.rgb;
 }
 
 void main() {    
 	vec3 result = calculate_directional_light();
+	// FragColor = vec4(normalize(Normal) * 0.5 + 0.5, 1.0);
     FragColor = vec4(result, 1.0);
 }
