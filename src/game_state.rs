@@ -167,14 +167,11 @@ impl GameState {
         }
 
         // UPDATE SYSTEMS
+        self.camera.update(&self.entity_manager);
         self.sound_manager.update(&self.camera);
 
-        // if self.elapsed % 3.0 < 0.01 {
-        //     self.sound_manager.play_sound_3d("moose3D".to_string(), &vec3(0.0, 0.0, 4.0));
-        // };
         self.entity_manager.update(&self.pressed_keys, self.delta_time, self.elapsed as f32, &self.camera);
         self.light_manager.update(&self.delta_time);
-        self.camera.update(&self.entity_manager);
     }
 
     pub fn render(&mut self) {

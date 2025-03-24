@@ -4,7 +4,7 @@ use std::{cell::Cell, collections::HashMap, ffi::CString};
 
 use glam::{vec3, Vec3};
 
-use crate::{animation::animation::Animation, camera::Camera, config::game_config::GameConfig, sound::fmod::{FMOD_Debug_Initialize, FMOD_Studio_EventDescription_LoadSampleData, FMOD_DEBUG_LEVEL_LOG}};
+use crate::{animation::animation::Animation, camera::Camera, config::game_config::GameConfig, sound::fmod::{FMOD_Debug_Initialize, FMOD_Studio_EventDescription_LoadSampleData, FMOD_DEBUG_LEVEL_LOG, FMOD_INIT_3D_RIGHTHANDED}};
 
 use super::fmod::{FMOD_Studio_EventDescription_CreateInstance, FMOD_Studio_EventInstance_Release, FMOD_Studio_EventInstance_Set3DAttributes, FMOD_Studio_EventInstance_SetParameterByName, FMOD_Studio_EventInstance_Start, FMOD_Studio_EventInstance_Stop, FMOD_Studio_System_Create, FMOD_Studio_System_GetEvent, FMOD_Studio_System_Initialize, FMOD_Studio_System_LoadBankFile, FMOD_Studio_System_SetListenerAttributes, FMOD_Studio_System_Update, FMOD_3D_ATTRIBUTES, FMOD_INIT_NORMAL, FMOD_STUDIO_BANK, FMOD_STUDIO_EVENTDESCRIPTION, FMOD_STUDIO_EVENTINSTANCE, FMOD_STUDIO_INIT_NORMAL, FMOD_STUDIO_SYSTEM, FMOD_VECTOR, FMOD_VERSION};
 
@@ -52,7 +52,7 @@ impl SoundManager {
                 fmod_system, 
                 512, 
                 FMOD_STUDIO_INIT_NORMAL, 
-                FMOD_INIT_NORMAL, 
+                FMOD_INIT_NORMAL | FMOD_INIT_3D_RIGHTHANDED,
                 std::ptr::null_mut(), 
             );
             if result != 0 {
@@ -130,6 +130,8 @@ impl SoundManager {
     }
 
     pub fn set_listener_attributes(&self, camera: &Camera) {
+        let forward = -camera.forward.normalize();
+        let up = camera.up.normalize();
         let attributes = FMOD_3D_ATTRIBUTES {
             position: FMOD_VECTOR {
                 x: camera.position.x,
@@ -142,14 +144,14 @@ impl SoundManager {
                 z: 0.0,
             },
             forward: FMOD_VECTOR {
-                x: 0.0,
-                y: 0.0,
-                z: 1.0,
+                x: forward.x,
+                y: forward.y,
+                z: forward.z,
             },
             up: FMOD_VECTOR {
-                x: 0.0,
-                y: 1.0,
-                z: 0.0, 
+                x: up.x,
+                y: up.y,
+                z: up.z, 
             }
         };
         

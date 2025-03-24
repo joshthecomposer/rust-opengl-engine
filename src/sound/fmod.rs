@@ -7,6 +7,7 @@ pub type FMOD_STUDIO_BANK = *mut c_void;
 pub type FMOD_STUDIO_EVENTDESCRIPTION = *mut c_void;
 pub type FMOD_RESULT = c_int;
 pub const FMOD_STUDIO_INIT_NORMAL:u32 = 0;
+pub const FMOD_INIT_3D_RIGHTHANDED: u32 = 0x00000010;
 pub const FMOD_INIT_NORMAL: u32 = 0;
 pub const FMOD_VERSION: u32 = 0x00020214;
 pub type FMOD_STUDIO_EVENTINSTANCE = *mut libc::c_void;
