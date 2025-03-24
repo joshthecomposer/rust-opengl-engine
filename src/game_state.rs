@@ -100,7 +100,7 @@ impl GameState {
 
         let imgui_manager = ImguiManager::new(&mut window);
         
-        sound_manager.play_sound_3d("moose3D".to_string(), &vec3(0.0, 0.0, 4.0));
+        // sound_manager.play_sound_3d("moose3D".to_string(), &vec3(0.0, 0.0, 4.0));
 
         Self {
             delta_time: 0.0,

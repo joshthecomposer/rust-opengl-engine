@@ -26,6 +26,12 @@ pub struct OneShot {
     pub triggered: Cell<bool>,
 }
 
+#[derive(Clone, Debug)]
+pub struct ContinuousSound {
+    pub sound_type: String,
+    pub playing: Cell<bool>,
+}
+
 pub struct SoundManager {
     pub fmod_system: FMOD_STUDIO_SYSTEM,
     pub sounds: HashMap<String, SoundData>, //The key (String) is the sound_name in the game_config.json
@@ -107,8 +113,6 @@ impl SoundManager {
                     description, 
                 });
             }
-
-            
         }
         SoundManager {
             fmod_system,

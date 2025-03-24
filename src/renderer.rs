@@ -307,13 +307,15 @@ impl Renderer {
         ani_shader.activate();
         for ani_model in em.ani_models.iter() {
             if let Some(animator) = em.animators.get(ani_model.key()) {
+
+                let trans = em.transforms.get(ani_model.key()).unwrap();
                 let animation = animator.animations.get(&animator.current_animation).unwrap();
                 
                 for os in animation.one_shots.iter() {
                     if animation.current_segment == os.segment {
                         if !os.triggered.get() {
                             // TODO: DOn't clone, we really need an enum here.
-                            // sound_manager.play_sound(os.sound_type.clone());
+                            sound_manager.play_sound_3d(os.sound_type.clone(), &trans.position);
                             os.triggered.set(true);
                         }
                     } else {
@@ -321,7 +323,13 @@ impl Renderer {
                     }
                 }
 
-                let trans = em.transforms.get(ani_model.key()).unwrap();
+                for cs in animation.continuous_sounds.iter() {
+                    if !cs.playing.get() {
+                        sound_manager.play_sound_3d(cs.sound_type.clone(), &trans.position);
+                        cs.playing.set(true);
+                    }
+                }
+
                 camera.model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
 
                 ani_shader.set_mat4("model", camera.model);

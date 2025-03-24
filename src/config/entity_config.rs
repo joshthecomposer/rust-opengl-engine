@@ -1,4 +1,4 @@
-use std::{fs::read_to_string, collections::HashMap};
+use std::{collections::{HashMap, HashSet}, fs::read_to_string};
 
 use serde::Deserialize;
 
@@ -27,6 +27,7 @@ impl EntityConfig {
 pub struct AnimationPropHelper {
     pub name: String,
     pub one_shots: HashMap<String, Vec<u32>>,
+    pub continuous_sounds: Vec<String>,
 }
 
 #[derive(Deserialize, Debug)]

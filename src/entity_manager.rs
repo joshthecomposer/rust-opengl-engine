@@ -6,7 +6,7 @@ use imgui::drag_drop::PayloadIsWrongType;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-use crate::{animation::animation::{import_bone_data, import_model_data, AniModel, Animator, Bone}, camera::Camera, config::{entity_config::{AnimationPropHelper, EntityConfig}, game_config::GameConfig}, enums_types::{CameraState, CellType, EntityType, Faction, Transform}, grid::Grid, model::Model, movement::{handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{OneShot, SoundManager}, sparse_set::SparseSet};
+use crate::{animation::animation::{import_bone_data, import_model_data, AniModel, Animator, Bone}, camera::Camera, config::{entity_config::{AnimationPropHelper, EntityConfig}, game_config::GameConfig}, enums_types::{CameraState, CellType, EntityType, Faction, Transform}, grid::Grid, model::Model, movement::{handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot, SoundManager}, sparse_set::SparseSet};
 
 pub struct EntityManager {
     pub next_entity_id: usize,
@@ -119,6 +119,13 @@ impl EntityManager {
                         triggered: false.into(),
                     });
                 }
+            }
+
+            for cs in prop.continuous_sounds.iter() {
+                anim.continuous_sounds.push(ContinuousSound {
+                    sound_type: cs.clone(),
+                    playing: false.into(),
+                });
             }
         }
 
