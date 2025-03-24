@@ -41,7 +41,7 @@ impl Camera {
         Self {
             yaw: -90.0,
             pitch: 0.0,
-            direction: vec3(0.0, 0.0, 0.0),
+            direction: vec3(0.0, 0.0, -1.0),
             position: vec3(0.0, 0.0, 15.0),
             forward: vec3(0.0, 0.0, -1.0),
             up: vec3(0.0, 1.0, 0.0),

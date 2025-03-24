@@ -20,6 +20,7 @@ pub enum FMOD_STUDIO_STOP_MODE {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct FMOD_VECTOR {
     pub x: f32,
     pub y: f32,
@@ -27,6 +28,7 @@ pub struct FMOD_VECTOR {
 }
 
 #[repr(C)]
+#[derive(Debug)]
 pub struct FMOD_3D_ATTRIBUTES {
     pub position: FMOD_VECTOR,
     pub velocity: FMOD_VECTOR,
