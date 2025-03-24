@@ -2,7 +2,7 @@ use glam::{Mat4, Quat, Vec2, Vec3, Vec4};
 use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
 use std::{collections::HashMap, ffi::c_void, mem::{self, offset_of}, path::Path, ptr, str::Lines};
 
-use crate::{enums_types::TextureType, gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE, sound::sound_manager::OneShot};
+use crate::{enums_types::TextureType, gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE, sound::sound_manager::{ContinuousSound, OneShot}};
 
 #[derive(Debug, Clone)]
 #[repr(C)]
@@ -243,6 +243,7 @@ pub struct Animation {
 
     pub current_segment: u32,
     pub one_shots: Vec<OneShot>,
+    pub continuous_sounds: Vec<ContinuousSound>,
 }
 
 impl Animation {
@@ -255,18 +256,8 @@ impl Animation {
             bone_transforms: HashMap::new(),
             current_pose: vec![],
             current_segment: 0,
-            one_shots: vec![
-               //  OneShot {
-               //      sound_type: "footstep".to_string(),
-               //      segment: 7,
-               //      triggered: false.into(),
-               //  },
-               //  OneShot {
-               //      sound_type: "footstep".to_string(),
-               //      segment: 18,
-               //      triggered: false.into(),
-               //  }
-            ],
+            one_shots: vec![],
+            continuous_sounds: vec![],
         }
     }
 

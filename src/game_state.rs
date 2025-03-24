@@ -95,18 +95,21 @@ impl GameState {
         let mut entity_manager = EntityManager::new(10_000);
         entity_manager.populate_initial_entity_data(&mut entity_config);
 
+        let mut camera = Camera::new();
+        camera.update(&entity_manager);
+
         let mut grid = Grid::new(game_config.grid_width, game_config.grid_height, game_config.cell_size);
         grid.generate();
 
         let imgui_manager = ImguiManager::new(&mut window);
         
-        sound_manager.play_sound_3d("moose3D".to_string(), &vec3(0.0, 0.0, 4.0));
+        // sound_manager.play_sound_3d("moose3D".to_string(), &vec3(0.0, 0.0, 4.0));
 
         Self {
             delta_time: 0.0,
             last_frame: 0.0,
             elapsed: 0.0,
-            camera: Camera::new(),
+            camera,
             window_width: width as u32,
             window_height: height as u32,
             fb_width:  fb_width as u32,
