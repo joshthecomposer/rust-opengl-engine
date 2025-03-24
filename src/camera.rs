@@ -34,6 +34,10 @@ pub struct Camera {
     pub move_state: CameraState,
 
     pub distance_from_target: f32,
+    
+
+    pub locked_position: Vec3,
+    pub locked_target: Vec3,
 }
 
 impl Camera {
@@ -67,6 +71,9 @@ impl Camera {
             move_state: CameraState::Free,
 
             distance_from_target: 5.0,
+
+            locked_position: vec3(0.0, 15.0, 0.0),
+            locked_target: vec3(2.5, 0.0, 0.0),
         }
     }
 
@@ -94,8 +101,8 @@ impl Camera {
                 }
             }
             CameraState::Locked => {
-                self.target = vec3(2.5, 0.0, 0.0);
-                self.position = vec3(15.0, 20.0, 0.0);
+                self.target = self.locked_target;
+                self.position = self.locked_position;
                 self.forward = Vec3::normalize(self.target - self.position);
             }
         }
@@ -256,6 +263,11 @@ impl Camera {
             self.fovy = 5.0_f32.to_radians();
         } else {
             self.fovy = 45.0_f32.to_radians();
+        }
+        
+        if window.get_key(Key::L) == Action::Press {
+            self.locked_target = self.target;
+            self.locked_position  = self.position;
         }
     }
 }
