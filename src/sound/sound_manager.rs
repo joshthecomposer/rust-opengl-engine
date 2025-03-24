@@ -35,6 +35,7 @@ pub struct ContinuousSound {
 pub struct SoundManager {
     pub fmod_system: FMOD_STUDIO_SYSTEM,
     pub sounds: HashMap<String, SoundData>, //The key (String) is the sound_name in the game_config.json
+    pub active_sounds: HashMap<String, FMOD_STUDIO_EVENTINSTANCE>,
     pub playing_bg: bool,
     pub master_volume: f32,
 } 
@@ -119,6 +120,7 @@ impl SoundManager {
             sounds,
             playing_bg: false,
             master_volume: 1.0,
+            active_sounds: HashMap::new(),
         }
 
     }
@@ -214,31 +216,52 @@ impl SoundManager {
         }
     }
 
-    // pub fn play_sound(&mut self, sound_type: String){
-    //     let sound_data = self.sounds.get(&sound_type).unwrap();
-    //     unsafe {
-    //         let result = FMOD_Studio_EventInstance_Start(sound_data.instance);
-    //         if result != 0 {
-    //                 eprintln!("FMOD sound failed with error code {}", result);
-    //         }
-    //     }
-    // }
-    // pub fn stop_sound(&mut self, sound_type: String){
-    //     let sound_data = self.sounds.get(&sound_type).unwrap();
-    //     unsafe {
-    //         FMOD_Studio_EventInstance_Stop(sound_data.instance, super::fmod::FMOD_STUDIO_STOP_MODE::FMOD_STUDIO_STOP_IMMEDIATE);
-    //     }
-    // }
+    pub fn play_sound_2d(&mut self, sound_type: String) {
+        let sound_data = match self.sounds.get(&sound_type) {
+            Some(data) => data,
+            None => {
+                eprintln!("Sound {} not found", sound_type);
+                return;
+            }
+        };
+        let mut instance: FMOD_STUDIO_EVENTINSTANCE = std::ptr::null_mut();
+        unsafe {
+            let create_result = FMOD_Studio_EventDescription_CreateInstance(
+                sound_data.description, 
+                &mut instance
+            );
+            if create_result != 0 {
+                eprintln!("Failed to create event instance: {}", create_result)
+            }
+            if self.active_sounds.contains_key(&sound_type) {
+                return;
+            }
+            let play_result = FMOD_Studio_EventInstance_Start(instance);
+            if play_result != 0 {
+                eprintln!("FMOD sound failed to start: {}", play_result);
+            }
+            self.active_sounds.insert(sound_type, instance);
+        }
+    }
 
-    // pub fn set_master_volume(&mut self) {
-    //     println!("Setting master volume to {}", self.master_volume);
-    //     let sound_data = self.sounds.get("music").unwrap();
-    //     let vol = CString::new("main_volume").unwrap();
-    //     unsafe {
-    //         let result = FMOD_Studio_EventInstance_SetParameterByName(sound_data.instance, vol.as_ptr(), self.master_volume, 0);
-    //         if result != 0 {
-    //             println!("Updating volume failed with error code: {}", result);
-    //         }
-    //     }
-    // }
+    pub fn stop_sound(&mut self, sound_type: &str){
+        if let Some(instance) = self.active_sounds.get(sound_type) {
+            unsafe {
+                FMOD_Studio_EventInstance_Stop(*instance, super::fmod::FMOD_STUDIO_STOP_MODE::FMOD_STUDIO_STOP_IMMEDIATE);
+                FMOD_Studio_EventInstance_Release(*instance);
+            }
+        }
+    }
+
+    pub fn set_master_volume(&mut self, sound_type: &str) {
+        if let Some(instance) = self.active_sounds.get(sound_type) {
+            let vol = CString::new("main_volume").unwrap();
+            unsafe {
+                let result = FMOD_Studio_EventInstance_SetParameterByName(*instance, vol.as_ptr(), self.master_volume, 0);
+                if result != 0 {
+                    println!("Updating volume failed with error code: {}", result);
+                }
+            }
+        }
+    }
 }

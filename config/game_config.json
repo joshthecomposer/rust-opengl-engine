@@ -10,6 +10,7 @@
 	"fps_counter": true,
 	"sounds": {
 		"moose3D":"event:/moose3D",
-		"footstep":"event:/footstep"
+		"footstep":"event:/footstep",
+		"music":"event:/music"
 	}
 }
