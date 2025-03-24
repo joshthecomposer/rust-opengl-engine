@@ -90,7 +90,6 @@ impl GameState {
         
         let mut sound_manager = SoundManager::new(&game_config);
 
-        sound_manager.play_sound_3d("moose3D".to_string(), &vec3(0.0, 0.0, 4.0));
     
         let mut entity_config = EntityConfig::load_from_file("config/entity_config.json");
         let mut entity_manager = EntityManager::new(10_000);
@@ -100,6 +99,8 @@ impl GameState {
         grid.generate();
 
         let imgui_manager = ImguiManager::new(&mut window);
+        
+        sound_manager.play_sound_3d("moose3D".to_string(), &vec3(0.0, 0.0, 4.0));
 
         Self {
             delta_time: 0.0,
