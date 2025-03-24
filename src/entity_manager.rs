@@ -208,7 +208,7 @@ impl EntityManager {
             let player_key = player_entry.key();
 
             if camera.move_state != CameraState::Free {
-                handle_player_movement(pressed_keys, self, player_key, delta);
+                handle_player_movement(pressed_keys, self, player_key, delta, camera);
              }
 
             if let Some(donut) = self.entity_types.iter().find(|e| e.value() == &EntityType::Donut) {

@@ -32,6 +32,8 @@ pub struct Camera {
     pub last_f_state: bool,
 
     pub move_state: CameraState,
+
+    pub distance_from_target: f32,
 }
 
 impl Camera {
@@ -63,6 +65,8 @@ impl Camera {
             last_f_state: true,
 
             move_state: CameraState::Free,
+
+            distance_from_target: 5.0,
         }
     }
 
@@ -76,7 +80,16 @@ impl Camera {
                     let player_transform = _em.transforms.get(player_key.key()).unwrap();
 
                     self.target = player_transform.position + vec3(0.0, 1.1, 0.0);
-                    self.position = player_transform.position + vec3(3.3, 3.3, 0.0);
+
+                    let yaw_rad = self.yaw.to_radians() as f32;
+                    let pitch_rad = self.pitch.to_radians() as f32;
+
+                    let x = self.distance_from_target * yaw_rad.cos() * pitch_rad.cos();
+                    let y = self.distance_from_target * pitch_rad.sin();
+                    let z = self.distance_from_target * yaw_rad.sin() * pitch_rad.cos();
+
+                    self.position = self.target + vec3(x, y, z);
+
                     self.forward = Vec3::normalize(self.target - self.position);
                 }
             }
@@ -137,13 +150,51 @@ impl Camera {
                     }
                     
                     self.pitch = self.pitch.clamp(-89.0, 89.0);
-                    // if self.pitch > 89.0 {
-                    //     self.pitch = 89.0;
-                    // }
 
-                    // if self.pitch < -89.0 {
-                    //     self.pitch = -89.0;
-                    // }
+                    self.direction.x = (self.yaw.to_radians().cos() * self.pitch.to_radians().cos()) as f32;
+                    self.direction.y = self.pitch.to_radians().sin() as f32;
+                    self.direction.z = (self.yaw.to_radians().sin() * self.pitch.to_radians().cos()) as f32;
+                    self.direction = self.direction.normalize();
+
+                    self.forward = self.direction;
+                },
+                _ => {}
+
+            }
+
+            // Zoom
+
+        }
+
+        if self.move_state == CameraState::Third{
+            match event {
+                // Pitch yaw stuff
+                glfw::WindowEvent::CursorPos(xpos, ypos) => {
+                    if self.first_mousing {
+                        self.last_x = *xpos;
+                        self.last_y = *ypos;
+                        self.first_mousing = false;
+                        return;
+                    }
+
+                    let mut x_offset = xpos - self.last_x;
+                    let mut y_offset = self.last_y - ypos;
+
+                    self.last_x = *xpos;
+                    self.last_y = *ypos;
+
+                    x_offset *= self.sensitivity; 
+                    y_offset *= self.sensitivity;
+                    self.yaw += x_offset;
+                    self.pitch -= y_offset;
+
+                    if self.yaw >= 360.0 { 
+                        self.yaw -= 360.0;
+                    } else if self.yaw < 0.0 {
+                        self.yaw += 360.0;
+                    }
+                    
+                    self.pitch = self.pitch.clamp(-89.0, 89.0);
 
                     self.direction.x = (self.yaw.to_radians().cos() * self.pitch.to_radians().cos()) as f32;
                     self.direction.y = self.pitch.to_radians().sin() as f32;
