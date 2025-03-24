@@ -70,8 +70,6 @@ impl Camera {
         match self.move_state {
             CameraState::Free => {
                 self.forward = self.direction.normalize();
-                self.right = self.forward.cross(vec3(0.0, 1.0, 0.0)).normalize();
-                self.up = self.right.cross(self.forward).normalize();
             }
             CameraState::Third => {
                 if let Some(player_key) = _em.factions.iter().find(|e| e.value() == &Faction::Player) {
@@ -89,6 +87,8 @@ impl Camera {
             }
         }
 
+        self.right = self.forward.cross(vec3(0.0, 1.0, 0.0)).normalize();
+        self.up = self.right.cross(self.forward).normalize();
     }
 
     pub fn get_view_matrix(&mut self) {
