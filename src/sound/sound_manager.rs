@@ -2,21 +2,15 @@
 
 use std::{cell::Cell, collections::HashMap, ffi::CString};
 
-use glam::Vec3;
+use glam::{vec3, Vec3};
 
-use crate::{animation::animation::Animation, camera::Camera, config::game_config::GameConfig, sound::fmod::FMOD_Studio_EventDescription_LoadSampleData};
+use crate::{animation::animation::Animation, camera::Camera, config::game_config::GameConfig, sound::fmod::{FMOD_Debug_Initialize, FMOD_Studio_EventDescription_LoadSampleData, FMOD_DEBUG_LEVEL_LOG}};
 
-use super::fmod::{FMOD_Studio_EventDescription_CreateInstance, FMOD_Studio_EventInstance_Set3DAttributes, FMOD_Studio_EventInstance_SetParameterByName, FMOD_Studio_EventInstance_Start, FMOD_Studio_EventInstance_Stop, FMOD_Studio_System_Create, FMOD_Studio_System_GetEvent, FMOD_Studio_System_Initialize, FMOD_Studio_System_LoadBankFile, FMOD_Studio_System_SetListenerAttributes, FMOD_Studio_System_Update, FMOD_3D_ATTRIBUTES, FMOD_INIT_NORMAL, FMOD_STUDIO_BANK, FMOD_STUDIO_EVENTDESCRIPTION, FMOD_STUDIO_EVENTINSTANCE, FMOD_STUDIO_INIT_NORMAL, FMOD_STUDIO_SYSTEM, FMOD_VECTOR, FMOD_VERSION};
-
-pub enum SoundDimension {
-    TwoD,
-    ThreeD,
-}
+use super::fmod::{FMOD_Studio_EventDescription_CreateInstance, FMOD_Studio_EventInstance_Release, FMOD_Studio_EventInstance_Set3DAttributes, FMOD_Studio_EventInstance_SetParameterByName, FMOD_Studio_EventInstance_Start, FMOD_Studio_EventInstance_Stop, FMOD_Studio_System_Create, FMOD_Studio_System_GetEvent, FMOD_Studio_System_Initialize, FMOD_Studio_System_LoadBankFile, FMOD_Studio_System_SetListenerAttributes, FMOD_Studio_System_Update, FMOD_3D_ATTRIBUTES, FMOD_INIT_NORMAL, FMOD_STUDIO_BANK, FMOD_STUDIO_EVENTDESCRIPTION, FMOD_STUDIO_EVENTINSTANCE, FMOD_STUDIO_INIT_NORMAL, FMOD_STUDIO_SYSTEM, FMOD_VECTOR, FMOD_VERSION};
 
 pub struct SoundData {
     description: FMOD_STUDIO_EVENTDESCRIPTION,
-    instance: FMOD_STUDIO_EVENTINSTANCE,
-    dimension: SoundDimension
+    // instance: FMOD_STUDIO_EVENTINSTANCE,
 }
 
 #[derive(Clone, Debug)]
@@ -98,7 +92,6 @@ impl SoundManager {
             for (sound_name, path) in sound_props {
                 let event_path = CString::new(path.as_str()).expect("CString::new failed");
                 let mut description: FMOD_STUDIO_EVENTDESCRIPTION = std::ptr::null_mut();
-                let mut instance: FMOD_STUDIO_EVENTINSTANCE = std::ptr::null_mut();
 
                 let result = FMOD_Studio_System_GetEvent(
                     fmod_system, 
@@ -109,17 +102,13 @@ impl SoundManager {
                     panic!("Failed to load the event for {:?} with code {}", sound_name, result);
                 }
 
-                let result = FMOD_Studio_EventDescription_CreateInstance(
-                    description, 
-                    &mut instance
-                );
-                if result != 0 {
-                    // Handle error
-                    panic!("Failed to create event instance {}", result);
-                }
                 FMOD_Studio_EventDescription_LoadSampleData(description);
-                sounds.insert(sound_name.to_string(), SoundData {description, instance, dimension: SoundDimension::ThreeD});
+                sounds.insert(sound_name.to_string(), SoundData {
+                    description, 
+                });
             }
+
+            
         }
         SoundManager {
             fmod_system,
@@ -131,24 +120,13 @@ impl SoundManager {
     }
 
     pub fn update(&self, camera: &Camera) {
-        let pos = camera.position;
-        let fwd = camera.forward;
-        let up = camera.up;
-
-        assert!(pos.is_finite(), "Camera position is invalid: {:?}", pos);
-        assert!(fwd.is_finite(), "Camera forward is invalid: {:?}", fwd);
-        assert!(up.is_finite(), "Camera up is invalid: {:?}", up);
-        assert!(fwd.length_squared() > 0.0001, "Camera forward is too small");
-        assert!(up.length_squared() > 0.0001, "Camera up is too small");
-        assert!(fwd.cross(up).length_squared() > 0.0001, "Camera forward and up are parallel");
-        self.set_listener_attributes(camera);
         unsafe {
             let result = FMOD_Studio_System_Update(self.fmod_system);
             if result != 0 {
                 eprintln!("FMOD update failed with error code {}", result);
             }
         }
-
+        self.set_listener_attributes(camera);
     }
 
     pub fn set_listener_attributes(&self, camera: &Camera) {
@@ -164,14 +142,14 @@ impl SoundManager {
                 z: 0.0,
             },
             forward: FMOD_VECTOR {
-                x: camera.forward.x,
-                y: camera.forward.y,
-                z: camera.forward.z,
+                x: 0.0,
+                y: 0.0,
+                z: 1.0,
             },
             up: FMOD_VECTOR {
-                x: camera.up.x,
-                y: camera.up.y,
-                z: camera.up.z,
+                x: 0.0,
+                y: 1.0,
+                z: 0.0, 
             }
         };
         
@@ -183,74 +161,78 @@ impl SoundManager {
         }
     }
 
+
     pub fn play_sound_3d(&mut self, sound_type: String, position: &Vec3) {
-        let sound_data = self.sounds.get(&sound_type).unwrap();
-        assert!(!sound_data.instance.is_null(), "FMOD instance pointer is null!");
-
-        let attributes = FMOD_3D_ATTRIBUTES {
-            position: FMOD_VECTOR {
-                x: position.x,
-                y: position.y,
-                z: position.z,
-            },
-            velocity: FMOD_VECTOR {
-                x: 0.0, 
-                y: 0.0,
-                z: 0.0,
-            },
-
-            // TODO: Set the character's forward here later
-            forward: FMOD_VECTOR {
-                x: 0.0,
-                y: 0.0,
-                z: 1.0,
-            },
-            up: FMOD_VECTOR {
-                x: 0.0,
-                y: 1.0,
-                z: 0.0,
+        let sound_data = match self.sounds.get(&sound_type) {
+            Some(data) => data,
+            None => {
+                eprintln!("Sound {} not found", sound_type);
+                return;
             }
         };
 
+        let mut instance: FMOD_STUDIO_EVENTINSTANCE = std::ptr::null_mut();
         unsafe {
-            let set_result = FMOD_Studio_EventInstance_Set3DAttributes(sound_data.instance, &attributes);
+            // Create a new instance each time
+            let create_result = FMOD_Studio_EventDescription_CreateInstance(
+                sound_data.description, 
+                &mut instance
+            );
+            if create_result != 0 {
+                eprintln!("Failed to create event instance: {}", create_result);
+                return;
+            }
+
+            let attributes = FMOD_3D_ATTRIBUTES {
+                position: FMOD_VECTOR {
+                    x: position.x,
+                    y: position.y,
+                    z: position.z,
+                },
+                velocity: FMOD_VECTOR { x: 0.0, y: 0.0, z: 0.0 },
+                forward: FMOD_VECTOR { x: 0.0, y: 0.0, z: -1.0 },
+                up: FMOD_VECTOR { x: 0.0, y: 1.0, z: 0.0 }
+            };
+
+            let set_result = FMOD_Studio_EventInstance_Set3DAttributes(instance, &attributes);
             if set_result != 0 {
                 eprintln!("Failed to set 3D attributes: {}", set_result);
             }
 
-            let play_result = FMOD_Studio_EventInstance_Start(sound_data.instance);
+            let play_result = FMOD_Studio_EventInstance_Start(instance);
             if play_result != 0 {
                 eprintln!("FMOD sound failed to start: {}", play_result);
             }
-        }
 
-    }
-
-    pub fn play_sound(&mut self, sound_type: String){
-        let sound_data = self.sounds.get(&sound_type).unwrap();
-        unsafe {
-            let result = FMOD_Studio_EventInstance_Start(sound_data.instance);
-            if result != 0 {
-                    eprintln!("FMOD sound failed with error code {}", result);
-            }
-        }
-    }
-    pub fn stop_sound(&mut self, sound_type: String){
-        let sound_data = self.sounds.get(&sound_type).unwrap();
-        unsafe {
-            FMOD_Studio_EventInstance_Stop(sound_data.instance, super::fmod::FMOD_STUDIO_STOP_MODE::FMOD_STUDIO_STOP_IMMEDIATE);
+            FMOD_Studio_EventInstance_Release(instance);
         }
     }
 
-    pub fn set_master_volume(&mut self) {
-        println!("Setting master volume to {}", self.master_volume);
-        let sound_data = self.sounds.get("music").unwrap();
-        let vol = CString::new("main_volume").unwrap();
-        unsafe {
-            let result = FMOD_Studio_EventInstance_SetParameterByName(sound_data.instance, vol.as_ptr(), self.master_volume, 0);
-            if result != 0 {
-                println!("Updating volume failed with error code: {}", result);
-            }
-        }
-    }
+    // pub fn play_sound(&mut self, sound_type: String){
+    //     let sound_data = self.sounds.get(&sound_type).unwrap();
+    //     unsafe {
+    //         let result = FMOD_Studio_EventInstance_Start(sound_data.instance);
+    //         if result != 0 {
+    //                 eprintln!("FMOD sound failed with error code {}", result);
+    //         }
+    //     }
+    // }
+    // pub fn stop_sound(&mut self, sound_type: String){
+    //     let sound_data = self.sounds.get(&sound_type).unwrap();
+    //     unsafe {
+    //         FMOD_Studio_EventInstance_Stop(sound_data.instance, super::fmod::FMOD_STUDIO_STOP_MODE::FMOD_STUDIO_STOP_IMMEDIATE);
+    //     }
+    // }
+
+    // pub fn set_master_volume(&mut self) {
+    //     println!("Setting master volume to {}", self.master_volume);
+    //     let sound_data = self.sounds.get("music").unwrap();
+    //     let vol = CString::new("main_volume").unwrap();
+    //     unsafe {
+    //         let result = FMOD_Studio_EventInstance_SetParameterByName(sound_data.instance, vol.as_ptr(), self.master_volume, 0);
+    //         if result != 0 {
+    //             println!("Updating volume failed with error code: {}", result);
+    //         }
+    //     }
+    // }
 }

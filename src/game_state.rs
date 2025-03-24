@@ -6,7 +6,7 @@ use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{camera::Camera, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, entity_manager::EntityManager, enums_types::{CameraState, EntityType, Faction}, gl_call, grid::Grid, input::handle_keyboard_input, lights::{DirLight, Lights}, renderer::Renderer, sound::sound_manager::SoundManager, ui::imgui::ImguiManager};
+use crate::{camera::Camera, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, entity_manager::EntityManager, enums_types::{CameraState, EntityType, Faction}, gl_call, grid::Grid, input::handle_keyboard_input, lights::{DirLight, Lights}, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, ui::imgui::ImguiManager};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -88,7 +88,9 @@ impl GameState {
 
         let game_config = GameConfig::load_from_file("config/game_config.json");
         
-        let sound_manager = SoundManager::new(&game_config);
+        let mut sound_manager = SoundManager::new(&game_config);
+
+        sound_manager.play_sound_3d("moose3D".to_string(), &vec3(0.0, 0.0, 4.0));
     
         let mut entity_config = EntityConfig::load_from_file("config/entity_config.json");
         let mut entity_manager = EntityManager::new(10_000);
@@ -165,10 +167,11 @@ impl GameState {
         }
 
         // UPDATE SYSTEMS
-        // if self.elapsed % 3.0 < 0.001 {
+        self.sound_manager.update(&self.camera);
+
+        // if self.elapsed % 3.0 < 0.01 {
         //     self.sound_manager.play_sound_3d("moose3D".to_string(), &vec3(0.0, 0.0, 4.0));
         // };
-        self.sound_manager.update(&self.camera);
         self.entity_manager.update(&self.pressed_keys, self.delta_time, self.elapsed as f32, &self.camera);
         self.light_manager.update(&self.delta_time);
         self.camera.update(&self.entity_manager);

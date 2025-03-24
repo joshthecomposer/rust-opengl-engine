@@ -116,21 +116,21 @@ impl ImguiManager {
                 ui.text("Controls Fmod Sounds");
                 ui.separator();
 
-                if ui.button("Pause") {
-                    sm.stop_sound("music".to_string());
-                }
+                // if ui.button("Pause") {
+                //     sm.stop_sound("music".to_string());
+                // }
 
-                if ui.button("Play") {
-                    sm.play_sound("music".to_string());
-                }
+                // if ui.button("Play") {
+                //     sm.play_sound("music".to_string());
+                // }
 
-                if ui.slider("Volume", 0.0, 1.0, &mut sm.master_volume) {
-                    sm.set_master_volume();
-                };
+                // if ui.slider("Volume", 0.0, 1.0, &mut sm.master_volume) {
+                //     sm.set_master_volume();
+                // };
 
-                if ui.button("Footstep") {
-                    sm.play_sound("footstep".to_string());
-                }
+                // if ui.button("Footstep") {
+                //     sm.play_sound("footstep".to_string());
+                // }
             });
 
         self.renderer.render(&mut self.imgui);

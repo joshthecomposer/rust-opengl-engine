@@ -10,6 +10,7 @@ pub const FMOD_STUDIO_INIT_NORMAL:u32 = 0;
 pub const FMOD_INIT_NORMAL: u32 = 0;
 pub const FMOD_VERSION: u32 = 0x00020214;
 pub type FMOD_STUDIO_EVENTINSTANCE = *mut libc::c_void;
+pub const FMOD_DEBUG_LEVEL_LOG: u32 = 0x00000001;
 
 #[repr(C)]
 pub enum FMOD_STUDIO_STOP_MODE {
@@ -35,6 +36,13 @@ pub struct FMOD_3D_ATTRIBUTES {
 #[cfg(any(target_os = "macos", target_os = "windows"))]
 #[link(name = "fmodstudio")]
 extern "C" {
+
+    pub fn FMOD_Debug_Initialize(
+        flags: u32,
+        mode: u32,
+        file: *const c_char,
+    ) -> FMOD_RESULT;
+
     pub fn FMOD_Studio_System_Update(system: FMOD_STUDIO_SYSTEM) -> FMOD_RESULT;
 
     pub fn FMOD_Studio_System_Create(
@@ -69,6 +77,10 @@ extern "C" {
     ) -> FMOD_RESULT;
 
     pub fn FMOD_Studio_EventInstance_Start(
+        eventInstance: FMOD_STUDIO_EVENTINSTANCE,
+    ) -> FMOD_RESULT;
+
+    pub fn FMOD_Studio_EventInstance_Release(
         eventInstance: FMOD_STUDIO_EVENTINSTANCE,
     ) -> FMOD_RESULT;
 

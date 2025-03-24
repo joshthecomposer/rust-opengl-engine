@@ -313,7 +313,7 @@ impl Renderer {
                     if animation.current_segment == os.segment {
                         if !os.triggered.get() {
                             // TODO: DOn't clone, we really need an enum here.
-                            sound_manager.play_sound(os.sound_type.clone());
+                            // sound_manager.play_sound(os.sound_type.clone());
                             os.triggered.set(true);
                         }
                     } else {
