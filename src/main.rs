@@ -20,6 +20,7 @@ mod movement;
 mod ui;
 mod sound;
 mod config;
+mod terrain;
 
 use game_state::GameState;
 
