@@ -204,6 +204,8 @@ impl EntityManager {
     }
 
     pub fn update(&mut self, pressed_keys: &HashSet<glfw::Key>, delta: f64, elapsed_time: f32, camera: &Camera, terrain: &Terrain) {
+        handle_npc_movement(self, terrain);
+
         if let Some(player_entry) = self.factions.iter().find(|e| e.value() == &Faction::Player) {
             let player_key = player_entry.key();
 
@@ -230,7 +232,6 @@ impl EntityManager {
             }
         }
 
-        handle_npc_movement(self, terrain);
 
         for animator in self.animators.iter_mut() {
             if let Some(skellington) = self.skellingtons.get_mut(animator.key()) {

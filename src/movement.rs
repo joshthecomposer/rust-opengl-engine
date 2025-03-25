@@ -50,7 +50,7 @@ pub fn handle_player_movement(pressed_keys: &HashSet<glfw::Key>, em: &mut Entity
     }
 
     transform.position += velocity;
-    // transform.position.y = terrain.get_height_at(transform.position.x, transform.position.z);
+
 }
 
 pub fn handle_npc_movement(em: &mut EntityManager, terrain: &Terrain) {
@@ -63,6 +63,7 @@ pub fn handle_npc_movement(em: &mut EntityManager, terrain: &Terrain) {
             }
         }
     }
+
     for model in em.ani_models.iter() {
         if let Some(trans) = em.transforms.get_mut(model.key()) {
             trans.position.y = terrain.get_height_at(trans.position.x, trans.position.z);
@@ -75,5 +76,5 @@ pub fn revolve_around_something(object: &mut Vec3, target: &Vec3, elapsed: f32, 
 
     object.x = target.x + radius * angle.cos();
     object.z = target.z + radius * angle.sin();
-    object.y = 1.0;
+    object.y = target.y + 1.0;
 }

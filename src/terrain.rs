@@ -18,7 +18,7 @@ pub struct Terrain {
 
 impl Terrain {
     pub fn from_height_map(path: &str) -> Self {
-        let img = image::open("resources/textures/perlin.png").expect("Failed to load terrain image");
+        let img = image::open(path).expect("Failed to load terrain image");
         let (width, height) = img.dimensions();
 
         let grayscale = img.to_luma8();
