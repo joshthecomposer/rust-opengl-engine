@@ -94,15 +94,6 @@ impl GameState {
         let mut entity_manager = EntityManager::new(10_000);
         entity_manager.populate_initial_entity_data(&mut entity_config);
 
-        // entity_manager.create_static_entity(
-        //     EntityType::Donut, 
-        //     Faction::Static,
-        //     vec3(0.0, 0.0, 0.0), 
-        //     Vec3::splat(1.0), 
-        //     Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
-        //     "resources/models/my_obj/test_arena.fbx"
-        // );
-
         let mut grid = Grid::new(game_config.grid_width, game_config.grid_height, game_config.cell_size);
         grid.generate();
 

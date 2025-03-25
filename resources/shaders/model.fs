@@ -7,10 +7,10 @@ in vec2 TexCoords;
 in vec4 FragPosLightSpace;
 
 uniform sampler2D texture_diffuse1;
-// uniform sampler2D texture_opacity1;
-uniform sampler2D shadow_map;
-
+uniform sampler2D texture_alpha1;
+uniform sampler2D texture_specular1;
 uniform bool has_opacity_texture;
+uniform sampler2D shadow_map;
 
 struct DirLight {
  	vec3 direction;
@@ -50,18 +50,18 @@ float ShadowCalculation(float dot_light_normal) {
 
 }
 
-vec3 calculate_directional_light() {
+vec4 calculate_directional_light() {
     vec3 lightColor = dir_light.diffuse;
     vec4 tex_color = texture(texture_diffuse1, TexCoords).rgba;
 
-	// float alpha = tex_color.a;
+	float alpha = tex_color.a;
 
-	// if (has_opacity_texture) {
-	// 	alpha = texture(texture_opacity1, TexCoords).r;
-	// }
-	// 
-    // if (alpha < 0.1)
-    //     discard;
+	if (has_opacity_texture) {
+		alpha = texture(texture_alpha1, TexCoords).a;
+	}
+
+	if (alpha < 0.1)
+		discard;
 
 	// Ambient
     vec3 ambient = vec3(dir_light.ambient);
@@ -76,11 +76,16 @@ vec3 calculate_directional_light() {
 
 	float shadow = ShadowCalculation(dot_light_normal);
 
-    return (shadow * (diffuse /* + specular */) + ambient) * tex_color.rgb;
+    vec3 result_rgb = (shadow * (diffuse /* + specular */) + ambient) * tex_color.rgb;
+
+	return vec4(result_rgb, tex_color.a);
 }
 
 void main() {    
-	vec3 result = calculate_directional_light();
+	vec4 result = calculate_directional_light();
 	// FragColor = vec4(normalize(Normal) * 0.5 + 0.5, 1.0);
-    FragColor = vec4(result, 1.0);
+   FragColor = vec4(result);
+
+	// float alpha = texture(texture_diffuse1, TexCoords).a;
+	// FragColor = vec4(vec3(alpha), 1.0);
 }

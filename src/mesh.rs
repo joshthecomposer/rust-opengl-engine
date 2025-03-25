@@ -140,15 +140,13 @@ impl Mesh {
                 number = specular_nr.to_string();
                 specular_nr += 1;
             } else if name == "texture_alpha" {
-
+                number = alpha_nr.to_string();
                 shader.store_uniform_location("has_opacity_texture");
                 shader.set_bool("has_opacity_texture", true);
-                number = alpha_nr.to_string();
-
                 alpha_nr += 1;
             }
 
-            let final_str = ("material.".to_string() + name.as_str()) + number.as_str();
+            let final_str = name.to_string() + number.as_str();
             shader.store_uniform_location(final_str.as_str());
             shader.set_int(final_str.as_str(), i as u32);
 
@@ -170,5 +168,8 @@ impl Mesh {
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
 
         }
+
+        shader.store_uniform_location("has_opacity_texture");
+        shader.set_bool("has_opacity_texture", false);
     }
 }

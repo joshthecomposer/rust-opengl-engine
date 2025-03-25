@@ -129,7 +129,7 @@ impl Model {
             path = ai_tex.filename.clone();
         } else if let Some(found_path) = Self::try_parse_diffuse_texture_path(ai_mat, texture_type) {
                 path = found_path.clone();
-
+                dbg!("Successfully parsed texture path");
         } else if let Some(found_path) = Self::try_parse_alpha_texture_path(ai_mat, texture_type) {
             path = found_path.clone();
         } else if let Some(diffuse_color) = Self::try_parse_diffuse_color(ai_mat) {
@@ -204,7 +204,7 @@ impl Model {
             }
         }
         None
-    }
+     }
 
     pub fn try_parse_alpha_texture_path(ai_mat: &RMaterial, tex_type: TextureType)  -> Option<String> {
         for prop in ai_mat.properties.iter() {
@@ -246,8 +246,8 @@ impl Model {
                 raw.as_ptr() as *const c_void
             ));
 
-            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32));
-            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as i32));
             gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32));
             gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32));
             gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));

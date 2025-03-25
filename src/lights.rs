@@ -92,7 +92,7 @@ impl DirLight {
         let direction = vec3(0.0, 1.0, -1.0);
         // let direction = vec3(0.0, 1.0, 0.0);
         // let view_pos = direction * 32.0;
-        let distance = 10.0;
+        let distance = 32.797;
         let view_pos = direction * distance;
         Self {
             direction,
@@ -134,11 +134,11 @@ impl Lights {
 
             dir_light: DirLight::default_white(),
 
-            near: 1.0,
-            far: 35.0,
-            bounds: 15.0,
+            near: 0.6,
+            far: 115.756,
+            bounds: 10.611,
 
-            bias_scalar: 0.005,
+            bias_scalar: 0.002,
         }
     }
 
