@@ -1,10 +1,11 @@
 use std::collections::HashSet;
 
 use glam::{vec3, Quat, Vec3};
+use russimp_sys::built_info::PKG_AUTHORS;
 
-use crate::{camera::Camera, entity_manager::EntityManager};
+use crate::{camera::Camera, entity_manager::EntityManager, enums_types::EntityType, terrain::Terrain};
 
-pub fn handle_player_movement(pressed_keys: &HashSet<glfw::Key>, em: &mut EntityManager, player_key: usize, delta: f64, camera: &Camera) {
+pub fn handle_player_movement(pressed_keys: &HashSet<glfw::Key>, em: &mut EntityManager, player_key: usize, delta: f64, camera: &Camera, terrain: &Terrain) {
     let speed = 5.0 * delta as f32;
     let mut move_dir = vec3(0.0, 0.0, 0.0);
 
@@ -49,6 +50,24 @@ pub fn handle_player_movement(pressed_keys: &HashSet<glfw::Key>, em: &mut Entity
     }
 
     transform.position += velocity;
+    // transform.position.y = terrain.get_height_at(transform.position.x, transform.position.z);
+}
+
+pub fn handle_npc_movement(em: &mut EntityManager, terrain: &Terrain) {
+    for model in em.models.iter() {
+        if let Some(ent_type) = em.entity_types.get(model.key()) {
+            if ent_type != &EntityType::Terrain {
+                if let Some(trans) = em.transforms.get_mut(model.key()) {
+                    trans.position.y = terrain.get_height_at(trans.position.x, trans.position.z);
+                }
+            }
+        }
+    }
+    for model in em.ani_models.iter() {
+        if let Some(trans) = em.transforms.get_mut(model.key()) {
+            trans.position.y = terrain.get_height_at(trans.position.x, trans.position.z);
+        }
+    }
 }
 
 pub fn revolve_around_something(object: &mut Vec3, target: &Vec3, elapsed: f32, radius: f32, speed: f32) {

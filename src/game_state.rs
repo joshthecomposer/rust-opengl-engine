@@ -6,7 +6,7 @@ use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{camera::Camera, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, entity_manager::EntityManager, enums_types::{CameraState, EntityType, Faction}, gl_call, grid::Grid, input::handle_keyboard_input, lights::{DirLight, Lights}, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, ui::imgui::ImguiManager};
+use crate::{camera::Camera, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, entity_manager::EntityManager, enums_types::{CameraState, EntityType, Faction, Transform}, gl_call, grid::Grid, input::handle_keyboard_input, lights::{DirLight, Lights}, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, terrain::Terrain, ui::imgui::ImguiManager};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -38,6 +38,8 @@ pub struct GameState {
     pub pressed_keys: HashSet<glfw::Key>,
 
     pub sound_manager: SoundManager,
+
+    pub terrain: Terrain,
 }
 
 impl GameState {
@@ -98,6 +100,23 @@ impl GameState {
         grid.generate();
 
         let imgui_manager = ImguiManager::new(&mut window);
+
+        //TEMP
+
+        let mut terrain = Terrain::from_height_map("resources/textures/perlin.png");
+        let model = terrain.into_opengl_model();
+
+        entity_manager.transforms.insert(entity_manager.next_entity_id, Transform {
+            position: Vec3::splat(0.0),
+            rotation: Quat::IDENTITY,
+            scale: Vec3::splat(1.0),
+            original_rotation: Quat::IDENTITY,
+        });
+        entity_manager.factions.insert(entity_manager.next_entity_id, Faction::World);
+        entity_manager.entity_types.insert(entity_manager.next_entity_id, EntityType::Terrain);
+        entity_manager.models.insert(entity_manager.next_entity_id, model);
+
+        entity_manager.next_entity_id += 1;
         
         // sound_manager.play_sound_3d("moose3D".to_string(), &vec3(0.0, 0.0, 4.0));
 
@@ -126,6 +145,8 @@ impl GameState {
 
             pressed_keys: HashSet::new(),
             sound_manager,
+
+            terrain,
         }
     }
 
@@ -170,7 +191,7 @@ impl GameState {
         self.camera.update(&self.entity_manager);
         self.sound_manager.update(&self.camera);
 
-        self.entity_manager.update(&self.pressed_keys, self.delta_time, self.elapsed as f32, &self.camera);
+        self.entity_manager.update(&self.pressed_keys, self.delta_time, self.elapsed as f32, &self.camera, &self.terrain);
         self.light_manager.update(&self.delta_time);
     }
 

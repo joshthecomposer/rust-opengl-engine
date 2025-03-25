@@ -63,6 +63,7 @@ pub enum EntityType {
     BigGuy,
     MooseMan,
     YRobot,
+    Terrain,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
