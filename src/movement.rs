@@ -50,7 +50,6 @@ pub fn handle_player_movement(pressed_keys: &HashSet<glfw::Key>, em: &mut Entity
     }
 
     transform.position += velocity;
-
 }
 
 pub fn handle_npc_movement(em: &mut EntityManager, terrain: &Terrain) {

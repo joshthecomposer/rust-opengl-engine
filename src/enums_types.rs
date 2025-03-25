@@ -44,6 +44,7 @@ pub enum ShaderType {
     AniModel
 }
 
+#[derive(Debug)]
 pub struct Transform {
     pub position: Vec3,
     pub rotation: Quat,
