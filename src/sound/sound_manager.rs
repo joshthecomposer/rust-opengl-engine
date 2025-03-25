@@ -136,29 +136,17 @@ impl SoundManager {
     }
 
     pub fn set_listener_attributes(&self, camera: &Camera) {
-        let forward = -camera.forward.normalize();
+        let forward = camera.forward.normalize();
         let up = camera.up.normalize();
         let attributes = FMOD_3D_ATTRIBUTES {
-            position: FMOD_VECTOR {
-                x: camera.position.x,
-                y: camera.position.y,
-                z: camera.position.z,
-            },
+            position: Self::opengl_to_fmod(camera.position),
             velocity: FMOD_VECTOR {
                 x: 0.0, 
                 y: 0.0,
                 z: 0.0,
             },
-            forward: FMOD_VECTOR {
-                x: forward.x,
-                y: forward.y,
-                z: forward.z,
-            },
-            up: FMOD_VECTOR {
-                x: up.x,
-                y: up.y,
-                z: up.z, 
-            }
+            forward: Self::opengl_to_fmod(forward),
+            up: Self::opengl_to_fmod(up),
         };
         
         unsafe {
@@ -192,13 +180,9 @@ impl SoundManager {
             }
 
             let attributes = FMOD_3D_ATTRIBUTES {
-                position: FMOD_VECTOR {
-                    x: position.x,
-                    y: position.y,
-                    z: position.z,
-                },
+                position: Self::opengl_to_fmod(*position),
                 velocity: FMOD_VECTOR { x: 0.0, y: 0.0, z: 0.0 },
-                forward: FMOD_VECTOR { x: 0.0, y: 0.0, z: -1.0 },
+                forward: FMOD_VECTOR { x: 0.0, y: 0.0, z: 1.0 },
                 up: FMOD_VECTOR { x: 0.0, y: 1.0, z: 0.0 }
             };
 
@@ -263,5 +247,9 @@ impl SoundManager {
                 }
             }
         }
+    }
+
+    pub fn opengl_to_fmod(v: Vec3) -> FMOD_VECTOR {
+        FMOD_VECTOR { x: v.x, y: v.y, z: -v.z }
     }
 }
