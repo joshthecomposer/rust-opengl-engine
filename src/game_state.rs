@@ -94,14 +94,14 @@ impl GameState {
         let mut entity_manager = EntityManager::new(10_000);
         entity_manager.populate_initial_entity_data(&mut entity_config);
 
-        entity_manager.create_static_entity(
-            EntityType::Donut, 
-            Faction::Static,
-            vec3(0.0, 0.0, 0.0), 
-            Vec3::splat(1.0), 
-            Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
-            "resources/models/my_obj/test_arena.fbx"
-        );
+        // entity_manager.create_static_entity(
+        //     EntityType::Donut, 
+        //     Faction::Static,
+        //     vec3(0.0, 0.0, 0.0), 
+        //     Vec3::splat(1.0), 
+        //     Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
+        //     "resources/models/my_obj/test_arena.fbx"
+        // );
 
         let mut grid = Grid::new(game_config.grid_width, game_config.grid_height, game_config.cell_size);
         grid.generate();
@@ -186,13 +186,7 @@ impl GameState {
     pub fn render(&mut self) {
         self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
         self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, self.fb_width, self.fb_height, &mut self.sound_manager);
-
-        if self.camera.move_state == CameraState::Locked {
-            self.window.set_cursor_mode(glfw::CursorMode::Normal);
-            self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager);
-        } else {
-            self.window.set_cursor_mode(glfw::CursorMode::Disabled);
-        }
+        self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera);
         self.window.swap_buffers();
         self.glfw.poll_events()
     }
