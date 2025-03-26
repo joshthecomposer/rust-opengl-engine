@@ -124,6 +124,9 @@ impl AniModel {
 
     pub fn draw(&self, shader: &mut Shader) {
         shader.activate();
+        if self.textures[8].is_some() {
+            shader.set_bool("has_opacity_texture", true);
+        }
         for (i, texture) in self.textures.iter().enumerate() {
             if let Some(texture) = texture {
 
@@ -150,6 +153,7 @@ impl AniModel {
                 ptr::null(), 
             ));
 
+            shader.set_bool("has_opacity_texture", false);
             gl_call!(gl::BindVertexArray(0));
 
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
@@ -164,6 +168,12 @@ impl AniModel {
             gl_call!(gl::ActiveTexture(gl::TEXTURE5));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
             gl_call!(gl::ActiveTexture(gl::TEXTURE6));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
+            gl_call!(gl::ActiveTexture(gl::TEXTURE7));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
+            gl_call!(gl::ActiveTexture(gl::TEXTURE8));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
+            gl_call!(gl::ActiveTexture(gl::TEXTURE9));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
         }
     }
@@ -686,8 +696,8 @@ fn texture_from_file(model: &mut AniModel, path: String, texture_type: TextureTy
                 raw.as_ptr() as *const c_void
             ));
 
-            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32));
-            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as i32));
             gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32));
             gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32));
             gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));

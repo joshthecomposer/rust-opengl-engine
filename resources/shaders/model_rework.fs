@@ -58,18 +58,21 @@ float ShadowCalculation(float dot_light_normal) {
 
 vec4 calculate_directional_light() {
     vec3 lightColor = dir_light.diffuse;
-	vec4 tex_color = texture(material.Diffuse, TexCoords).rgba;
+	vec3 tex_color = texture(material.Diffuse, TexCoords).rgb;
 	vec3 spec_color = texture(material.Specular, TexCoords).rgb;
 	vec3 emiss_color = texture(material.Emissive, TexCoords).rgb;
-
-	float alpha = tex_color.a;
+	
+	float alpha = 1.0;
 
 	if (has_opacity_texture) {
 		alpha = texture(material.Opacity, TexCoords).a;
+
+		// Optional: discard fully transparent pixels
+		if (alpha < 0.1)
+			discard;
 	}
 
-	if (alpha < 0.1)
-		discard;
+	// if (alpha < 0.1)/ discard;
 
 	// Ambient
     vec3 ambient = vec3(dir_light.ambient);
@@ -92,7 +95,7 @@ vec4 calculate_directional_light() {
 
     vec3 result_rgb = ((shadow * (diffuse + specular )) + ambient) * tex_color.rgb + emiss_color;
 
-	return vec4(result_rgb, tex_color.a);
+	return vec4(result_rgb, alpha);
 }
 
 void main() {    
