@@ -59,6 +59,7 @@ impl Renderer {
         model_shader.store_uniform_location("material.Diffuse");
         model_shader.store_uniform_location("material.Specular");
         model_shader.store_uniform_location("material.Emissive");
+        model_shader.store_uniform_location("material.Opacity");
         model_shader.store_uniform_location("view_position");
         model_shader.store_uniform_location("is_animated");
         model_shader.store_uniform_location("has_opacity_texture");
@@ -288,14 +289,14 @@ impl Renderer {
             shader.set_dir_light("dir_light", &light_manager.dir_light);
             shader.set_float("bias_scalar", light_manager.bias_scalar);
             shader.set_vec3("view_position", camera.position);
-        unsafe {
-            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-            shader.set_int("shadow_map", 0);
-            model.value.draw(shader);
-            gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
-            // TODO: Fix the wrapping of this quad
-        }
+            unsafe {
+                gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+                gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+                shader.set_int("shadow_map", 0);
+                model.value.draw(shader);
+                gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
+                // TODO: Fix the wrapping of this quad
+            }
         }
 
         shader.activate();
@@ -438,23 +439,20 @@ impl Renderer {
             let trans = em.transforms.get(model.key()).unwrap();
 
             let model_model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
-            for mesh in model.value().meshes.iter() {
                 unsafe {
-                    gl::BindVertexArray(mesh.vao);
+                    gl::BindVertexArray(model.value.vao);
                 }
                 depth_shader.set_mat4("model", model_model);
                 unsafe {
                     gl_call!(gl::DrawElements(
                         gl::TRIANGLES, 
-                        mesh.indices.len() as i32, 
+                        model.value.indices.len() as i32, 
                         gl::UNSIGNED_INT, 
                         std::ptr::null(),
                     ));
 
                     gl_call!(gl::BindVertexArray(0));
                 }
-            }
-
         }
         depth_shader.set_bool("is_animated", true);
 

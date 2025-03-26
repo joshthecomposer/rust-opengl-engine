@@ -6,14 +6,14 @@ use imgui::drag_drop::PayloadIsWrongType;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-use crate::{animation::animation::{import_bone_data, import_model_data, AniModel, Animator, Bone}, camera::Camera, config::{entity_config::{AnimationPropHelper, EntityConfig}, game_config::GameConfig}, enums_types::{CameraState, CellType, EntityType, Faction, Transform}, grid::Grid, model::Model, movement::{handle_npc_movement, handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot, SoundManager}, sparse_set::SparseSet, terrain::Terrain};
+use crate::{animation::animation::{import_bone_data, import_model_data, AniModel, Animation, Animator, Bone}, camera::Camera, config::{entity_config::{AnimationPropHelper, EntityConfig}, game_config::GameConfig}, enums_types::{CameraState, CellType, EntityType, Faction, Transform}, grid::Grid, model::Model, movement::{handle_npc_movement, handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot, SoundManager}, sparse_set::SparseSet, terrain::Terrain};
 
 pub struct EntityManager {
     pub next_entity_id: usize,
     pub transforms: SparseSet<Transform>,
     pub factions: SparseSet<Faction>,
     pub entity_types: SparseSet<EntityType>,
-    pub models: SparseSet<Model>,
+    pub models: SparseSet<AniModel>,
     pub ani_models: SparseSet<AniModel>,
     pub animators: SparseSet<Animator>,
     pub skellingtons: SparseSet<Bone>,
@@ -76,7 +76,7 @@ impl EntityManager {
             original_rotation: rotation,
         };
 
-        let mut model = Model::new();
+        let mut model = AniModel::new();
 
         let mut found = false;
         for m in self.models.iter_mut() {
@@ -87,7 +87,7 @@ impl EntityManager {
         }
 
         if !found {
-            model = Model::load(model_path);
+            model = import_model_data(model_path, &Animation::default());
         }
         
         self.transforms.insert(self.next_entity_id, transform);
@@ -141,7 +141,6 @@ impl EntityManager {
 
         if !found {
             model = import_model_data(model_path, &animation);
-            model.setup_opengl();
         }         
 
         self.animators.insert(self.next_entity_id, animator);

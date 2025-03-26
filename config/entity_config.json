@@ -52,43 +52,6 @@
 		},
 
 
-
-
-
-
-
-		{
-			"entity_type": "Donut",
-			"position": [-4.2, 0.0, -3.1],
-			"scale": [2.0, 2.0, 2.0],
-			"rotation": "",
-			"faction": "Static",
-			"mesh_path": "resources/models/my_obj/donut.obj", 
-			"bone_path":"",
-			"animation_properties" : []
-		},
-		{
-			"entity_type": "Tree",
-			"position": [3.2, 0.0, 2.0],
-			"scale": [1.0, 1.0, 1.0],
-			"__note__": "use Quat::from_rotation_x()",
-			"rotation": "",
-			"faction": "Static",
-			"mesh_path": "resources/models/tree/tree.obj", 
-			"bone_path":"",
-			"animation_properties" : []
-		},
-		{
-			"entity_type": "Tree",
-			"position": [-2.0, 0.0, 4.0],
-			"scale": [1.0, 1.0, 1.0],
-			"__note__": "use Quat::from_rotation_x()",
-			"rotation": "",
-			"faction": "Static",
-			"mesh_path": "resources/models/tree/tree.obj", 
-			"bone_path":"",
-			"animation_properties" : []
-		},
 		{
 			"entity_type": "Tree",
 			"position": [-4.2, 0.0, -3.1],
@@ -96,7 +59,7 @@
 			"__note__": "use Quat::from_rotation_x()",
 			"rotation": "",
 			"faction": "Static",
-			"mesh_path": "resources/models/tree/tree.obj", 
+			"mesh_path": "resources/models/static/trees/001_tree_model.txt", 
 			"bone_path":"",
 			"animation_properties" : []
 		}

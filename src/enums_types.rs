@@ -90,6 +90,7 @@ pub enum TextureType {
     Roughness,
     Metalness,
     Displacement,
+    Opacity,
 }
 
 impl Display for TextureType {
@@ -102,6 +103,7 @@ impl Display for TextureType {
             TextureType::Roughness => write!(f, "Roughness"),
             TextureType::Metalness => write!(f, "Metalness"),
             TextureType::Displacement => write!(f, "Displacement"),
+            TextureType::Opacity => write!(f, "Opacity"),
         }
     }
 }

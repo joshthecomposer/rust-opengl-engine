@@ -23,7 +23,7 @@ pub struct AniModel {
 
     pub vertices: Vec<AniVertex>,
     pub indices: Vec<u32>,
-    pub textures: [Option<Texture>; 8],
+    pub textures: [Option<Texture>; 9],
 
     pub directory: String,
     pub full_path: String,
@@ -38,7 +38,7 @@ impl AniModel {
 
             vertices: vec![],
             indices: vec![],
-            textures: [None, None, None, None, None, None, None, None],
+            textures: [None, None, None, None, None, None, None, None, None],
 
             directory: String::new(),
             full_path: String::new(),
@@ -551,7 +551,6 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {
         match parts[0] {
             "MEME" => {}
             "VERT:" => {
-
                 let position = parse_vec3(lines.next().unwrap());
                 let normal = parse_vec3(lines.next().unwrap());
                 let uv = parse_vec2(lines.next().unwrap());
@@ -566,25 +565,27 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {
 
                 let weight_parts: Vec<&str> = lines.next().unwrap().split_whitespace().collect();
 
-                for (i, pair) in weight_parts.chunks(2).enumerate() {
-                    let bone_name = pair[0];
-                    let weight: f32 = pair[1].parse().unwrap_or(0.0);
+                if !weight_parts.first().unwrap().eq(&"None") {
+                    for (i, pair) in weight_parts.chunks(2).enumerate() {
+                        let bone_name = pair[0];
+                        let weight: f32 = pair[1].parse().unwrap_or(0.0);
 
-                    let mut bone_id: i32 = -1;
+                        let mut bone_id: i32 = -1;
 
-                    for (j, info) in animation.model_animation_join.iter().enumerate() {
-                        if info.name == bone_name {
-                            bone_id = j as i32;
+                        for (j, info) in animation.model_animation_join.iter().enumerate() {
+                            if info.name == bone_name {
+                                bone_id = j as i32;
+                            }
                         }
-                    }
 
-                    vertex.bone_ids[i] = bone_id;
-                    vertex.bone_weights[i] = weight;
+                        vertex.bone_ids[i] = bone_id;
+                        vertex.bone_weights[i] = weight;
 
-                    let total_weight = vertex.bone_weights.iter().sum::<f32>();
-                    if total_weight > 0.0 {
-                        for w in vertex.bone_weights.iter_mut() {
-                            *w /= total_weight;
+                        let total_weight = vertex.bone_weights.iter().sum::<f32>();
+                        if total_weight > 0.0 {
+                            for w in vertex.bone_weights.iter_mut() {
+                                *w /= total_weight;
+                            }
                         }
                     }
                 }
@@ -612,9 +613,15 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {
                 let path = parts[1].to_string();
                 texture_from_file(&mut model, path, TextureType::Emissive);
             }
+            "TEXTURE_OPACITY:" => {
+                let path = parts[1].to_string();
+                texture_from_file(&mut model, path, TextureType::Opacity);
+            }
             _ => {}
         }
     }
+
+    model.setup_opengl();
 
     model
 }
@@ -712,6 +719,9 @@ fn texture_from_file(model: &mut AniModel, path: String, texture_type: TextureTy
                 }
                 TextureType::Displacement => {
                     model.textures[7] = Some(texture);
+                }
+                TextureType::Opacity => {
+                    model.textures[8] = Some(texture);
                 }
             }
         }
