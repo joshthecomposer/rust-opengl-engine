@@ -130,23 +130,22 @@ impl Mesh {
                 gl_call!(gl::ActiveTexture(gl::TEXTURE0 + i as u32));
             }
 
-            let mut number = "".to_string();
+            let mut number: u32 = 0;
             let name = &texture._type;
             if name == "texture_diffuse" {
-                number = diffuse_nr.to_string();
+                number = diffuse_nr;
 
                 diffuse_nr += 1;
             } else if name == "texture_specular" {
-                number = specular_nr.to_string();
+                number = specular_nr;
                 specular_nr += 1;
             } else if name == "texture_alpha" {
-                number = alpha_nr.to_string();
-                shader.store_uniform_location("has_opacity_texture");
+                number = alpha_nr;
                 shader.set_bool("has_opacity_texture", true);
                 alpha_nr += 1;
             }
 
-            let final_str = name.to_string() + number.as_str();
+            let final_str = name.to_string() + &number.to_string();
             shader.store_uniform_location(final_str.as_str());
             shader.set_int(final_str.as_str(), i as u32);
 
@@ -166,10 +165,8 @@ impl Mesh {
             ));
             gl_call!(gl::BindVertexArray(0));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
-
         }
 
-        shader.store_uniform_location("has_opacity_texture");
         shader.set_bool("has_opacity_texture", false);
     }
 }

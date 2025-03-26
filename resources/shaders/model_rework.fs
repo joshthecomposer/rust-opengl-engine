@@ -1,12 +1,25 @@
 #version 330 core
 out vec4 FragColor;
 
-in vec2 TexCoords;
-in vec3 Normal;
 in vec3 FragPos;
+in vec3 Normal;
+in vec2 TexCoords;
 in vec4 FragPosLightSpace;
 
+uniform sampler2D texture_diffuse1;
+uniform sampler2D texture_alpha1;
+uniform sampler2D texture_specular1;
+
+uniform bool has_opacity_texture;
 uniform sampler2D shadow_map;
+
+struct Material {
+	sampler2D Diffuse;
+	sampler2D Specular;
+	sampler2D Emissive;
+	sampler2D Opacity;
+};
+uniform Material material;
 
 struct DirLight {
  	vec3 direction;
@@ -17,14 +30,7 @@ struct DirLight {
 	vec3 specular;
 };
 uniform DirLight dir_light;
-
-struct Material {
-	sampler2D Diffuse;
-	sampler2D Specular;
-	sampler2D Emissive;
-};
-uniform Material material;
-
+uniform float bias_scalar;
 uniform vec3 view_position;
 
 float ShadowCalculation(float dot_light_normal) {
@@ -39,7 +45,7 @@ float ShadowCalculation(float dot_light_normal) {
 		return 1.0;
 	}
 
-	float bias = max(0.005 * (1.0 - dot_light_normal), 0.0005);
+	float bias = max(bias_scalar * (1.0 - dot_light_normal), 0.0005);
 
 	float shadow = 0.0;
 	vec2 texel_size = 1.0 / textureSize(shadow_map, 0);
@@ -54,10 +60,30 @@ float ShadowCalculation(float dot_light_normal) {
 
 }
 
-vec3 calculate_directional_light() {
+vec4 calculate_directional_light() {
     vec3 lightColor = dir_light.diffuse;
+	vec4 tex_color;
+	vec3 spec_color;
+	vec3 emiss_color;
 
-	vec3 tex_color = texture(material.Diffuse, TexCoords).rgb;
+	if (has_opacity_texture) {
+    	tex_color = texture(texture_diffuse1, TexCoords).rgba;
+		spec_color = texture(texture_specular1, TexCoords).rgb;
+		emiss_color = vec3(0.0, 0.0, 0.0);
+	} else {
+		tex_color = texture(material.Diffuse, TexCoords).rgba;
+		spec_color = texture(material.Specular, TexCoords).rgb;
+		emiss_color = texture(material.Emissive, TexCoords).rgb;
+	}
+
+	float alpha = tex_color.a;
+
+	if (has_opacity_texture) {
+		alpha = texture(texture_alpha1, TexCoords).a;
+	}
+
+	if (alpha < 0.1)
+		discard;
 
 	// Ambient
     vec3 ambient = vec3(dir_light.ambient);
@@ -69,25 +95,21 @@ vec3 calculate_directional_light() {
 	float dot_light_normal = dot(lightDir, norm);
     float diff = max(dot_light_normal, 0.0);
     vec3 diffuse = diff * lightColor;
-	
+
 	// Specular
 	vec3 viewDir = normalize(view_position - FragPos);
 	vec3 reflectDir = reflect(-lightDir, norm);
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 36.0);
-	vec3 specular = dir_light.specular * spec * texture(material.Specular, TexCoords).rgb;
-
-	// Emissive
-	vec3 emissive = texture(material.Emissive, TexCoords).rgb;
+	vec3 specular = dir_light.specular * spec * spec_color;
 
 	float shadow = ShadowCalculation(dot_light_normal);
 
-	return ((shadow * (diffuse + specular)) + ambient) * tex_color + emissive;
-   //  return (ambient + (shadow) * (diffuse + specular)) * tex_color + emissive;
+    vec3 result_rgb = ((shadow * (diffuse + specular )) + ambient) * tex_color.rgb + emiss_color;
+
+	return vec4(result_rgb, tex_color.a);
 }
 
-void main()
-{   
-	vec3 result = calculate_directional_light();
-	// vec3 normal_color = normalize(Normal) * 0.5 + 0.5;
-    FragColor = vec4(result , 1.0);
+void main() {    
+	vec4 result = calculate_directional_light();
+	FragColor = vec4(result);
 }
