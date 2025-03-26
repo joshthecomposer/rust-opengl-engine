@@ -41,7 +41,6 @@ pub enum ShaderType {
     DebugShadowMap,
     Model,
     Text,
-    AniModel
 }
 
 #[derive(Debug)]

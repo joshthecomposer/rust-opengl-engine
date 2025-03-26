@@ -9,8 +9,17 @@ in vec4 FragPosLightSpace;
 uniform sampler2D texture_diffuse1;
 uniform sampler2D texture_alpha1;
 uniform sampler2D texture_specular1;
+
 uniform bool has_opacity_texture;
 uniform sampler2D shadow_map;
+
+struct Material {
+	sampler2D Diffuse;
+	sampler2D Specular;
+	sampler2D Emissive;
+	sampler2D Opacity;
+};
+uniform Material material;
 
 struct DirLight {
  	vec3 direction;
@@ -21,8 +30,8 @@ struct DirLight {
 	vec3 specular;
 };
 uniform DirLight dir_light;
-
 uniform float bias_scalar;
+uniform vec3 view_position;
 
 float ShadowCalculation(float dot_light_normal) {
 	vec3 pos = FragPosLightSpace.xyz * 0.5 + 0.5;
@@ -75,18 +84,23 @@ vec4 calculate_directional_light() {
     float diff = max(dot_light_normal, 0.0);
     vec3 diffuse = diff * lightColor;
 
+	// Specular
+	vec3 viewDir = normalize(view_position - FragPos);
+	vec3 reflectDir = reflect(-lightDir, norm);
+	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 36.0);
+	vec3 specular = dir_light.specular * spec * texture(material.Specular, TexCoords).rgb;
+
+	// Emissive
+	vec3 emissive = texture(material.Emissive, TexCoords).rgb;
+
 	float shadow = ShadowCalculation(dot_light_normal);
 
-    vec3 result_rgb = (shadow * (diffuse /* + specular */) + ambient) * tex_color.rgb;
+    vec3 result_rgb = ((shadow * (diffuse + specular )) + ambient) * tex_color.rgb + emissive;
 
 	return vec4(result_rgb, tex_color.a);
 }
 
 void main() {    
 	vec4 result = calculate_directional_light();
-	// FragColor = vec4(normalize(Normal) * 0.5 + 0.5, 1.0);
    FragColor = vec4(result);
-
-	// float alpha = texture(texture_diffuse1, TexCoords).a;
-	// FragColor = vec4(vec3(alpha), 1.0);
 }

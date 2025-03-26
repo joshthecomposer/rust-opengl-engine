@@ -46,29 +46,21 @@ impl Renderer {
         depth_shader.store_uniform_location("is_animated");
         depth_shader.store_uniform_location("bone_transforms");
 
-        let mut model_shader = Shader::new("resources/shaders/model.vs", "resources/shaders/model.fs");
+        let text_shader = Shader::new("resources/shaders/text.vs", "resources/shaders/text.fs");
+
+        let mut model_shader = Shader::new("resources/shaders/model_rework.vs", "resources/shaders/model_rework.fs");
         model_shader.store_uniform_location("projection");
         model_shader.store_uniform_location("view");
         model_shader.store_uniform_location("model");
+        model_shader.store_uniform_location("bone_transforms");
         model_shader.store_dir_light_location("dir_light");
         model_shader.store_uniform_location("light_space_mat");
         model_shader.store_uniform_location("shadow_map");
-        model_shader.store_uniform_location("bias_scalar");
-
-        let text_shader = Shader::new("resources/shaders/text.vs", "resources/shaders/text.fs");
-
-        let mut anim_shader = Shader::new("resources/shaders/ani_model_bones.vs", "resources/shaders/ani_model.fs");
-        anim_shader.store_uniform_location("projection");
-        anim_shader.store_uniform_location("view");
-        anim_shader.store_uniform_location("model");
-        anim_shader.store_uniform_location("bone_transforms");
-        anim_shader.store_dir_light_location("dir_light");
-        anim_shader.store_uniform_location("light_space_mat");
-        anim_shader.store_uniform_location("shadow_map");
-        anim_shader.store_uniform_location("material.Diffuse");
-        anim_shader.store_uniform_location("material.Specular");
-        anim_shader.store_uniform_location("material.Emissive");
-        anim_shader.store_uniform_location("view_position");
+        model_shader.store_uniform_location("material.Diffuse");
+        model_shader.store_uniform_location("material.Specular");
+        model_shader.store_uniform_location("material.Emissive");
+        model_shader.store_uniform_location("view_position");
+        model_shader.store_uniform_location("is_animated");
 
         let mut vao = 0;
         let mut vbo = 0;
@@ -243,7 +235,6 @@ impl Renderer {
         shaders.insert(ShaderType::Depth, depth_shader);
         shaders.insert(ShaderType::DebugShadowMap, debug_depth_quad);
         shaders.insert(ShaderType::Text, text_shader);
-        shaders.insert(ShaderType::AniModel, anim_shader);
 
         Self {
             shaders,
@@ -281,6 +272,7 @@ impl Renderer {
         
         let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
         shader.activate();
+        shader.set_bool("is_animated", false);
 
         for model in em.models.iter() {
 
@@ -293,18 +285,19 @@ impl Renderer {
             shader.set_mat4("light_space_mat", camera.light_space);
             shader.set_dir_light("dir_light", &light_manager.dir_light);
             shader.set_float("bias_scalar", light_manager.bias_scalar);
+            shader.set_vec3("view_position", camera.position);
         unsafe {
-            gl_call!(gl::ActiveTexture(gl::TEXTURE5));
+            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-            shader.set_int("shadow_map", 5);
+            shader.set_int("shadow_map", 0);
             model.value.draw(shader);
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
             // TODO: Fix the wrapping of this quad
         }
         }
 
-        let ani_shader = self.shaders.get_mut(&ShaderType::AniModel).unwrap();
-        ani_shader.activate();
+        shader.activate();
+        shader.set_bool("is_animated", true);
         for ani_model in em.ani_models.iter() {
             if let Some(animator) = em.animators.get(ani_model.key()) {
 
@@ -332,20 +325,20 @@ impl Renderer {
 
                 camera.model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
 
-                ani_shader.set_mat4("model", camera.model);
-                ani_shader.set_mat4("projection", camera.projection);
-                ani_shader.set_mat4("view", camera.view);
-                ani_shader.set_mat4("light_space_mat", camera.light_space);
-                ani_shader.set_dir_light("dir_light", &light_manager.dir_light);
-                ani_shader.set_mat4_array("bone_transforms", &animation.current_pose);
-                ani_shader.set_vec3("view_pos", camera.position);
+                shader.set_mat4("model", camera.model);
+                shader.set_mat4("projection", camera.projection);
+                shader.set_mat4("view", camera.view);
+                shader.set_mat4("light_space_mat", camera.light_space);
+                shader.set_dir_light("dir_light", &light_manager.dir_light);
+                shader.set_mat4_array("bone_transforms", &animation.current_pose);
+                shader.set_vec3("view_position", camera.position);
                 unsafe {
                     gl_call!(gl::ActiveTexture(gl::TEXTURE0));
                     gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-                    ani_shader.set_int("shadow_map", 0);
+                    shader.set_int("shadow_map", 0);
                 }
 
-                ani_model.value.draw(ani_shader);
+                ani_model.value.draw(shader);
             }
         }
     }
@@ -361,9 +354,9 @@ impl Renderer {
         shader.set_mat4("light_space_mat", camera.light_space);
         shader.set_dir_light("dir_light", &light_manager.dir_light);
         unsafe {
-            gl_call!(gl::ActiveTexture(gl::TEXTURE5));
+            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-            shader.set_int("shadow_map", 5);
+            shader.set_int("shadow_map", 0);
             // TODO: Fix the wrapping of this quad
 
             grid.draw(shader);
