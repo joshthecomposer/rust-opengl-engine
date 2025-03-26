@@ -62,7 +62,19 @@ float ShadowCalculation(float dot_light_normal) {
 
 vec4 calculate_directional_light() {
     vec3 lightColor = dir_light.diffuse;
-    vec4 tex_color = texture(texture_diffuse1, TexCoords).rgba;
+	vec4 tex_color;
+	vec3 spec_color;
+	vec3 emiss_color;
+
+	if (has_opacity_texture) {
+    	tex_color = texture(texture_diffuse1, TexCoords).rgba;
+		spec_color = texture(texture_specular1, TexCoords).rgb;
+		emiss_color = vec3(0.0, 0.0, 0.0);
+	} else {
+		tex_color = texture(material.Diffuse, TexCoords).rgba;
+		spec_color = texture(material.Specular, TexCoords).rgb;
+		emiss_color = texture(material.Emissive, TexCoords).rgb;
+	}
 
 	float alpha = tex_color.a;
 
@@ -88,19 +100,16 @@ vec4 calculate_directional_light() {
 	vec3 viewDir = normalize(view_position - FragPos);
 	vec3 reflectDir = reflect(-lightDir, norm);
 	float spec = pow(max(dot(viewDir, reflectDir), 0.0), 36.0);
-	vec3 specular = dir_light.specular * spec * texture(material.Specular, TexCoords).rgb;
-
-	// Emissive
-	vec3 emissive = texture(material.Emissive, TexCoords).rgb;
+	vec3 specular = dir_light.specular * spec * spec_color;
 
 	float shadow = ShadowCalculation(dot_light_normal);
 
-    vec3 result_rgb = ((shadow * (diffuse + specular )) + ambient) * tex_color.rgb + emissive;
+    vec3 result_rgb = ((shadow * (diffuse + specular )) + ambient) * tex_color.rgb + emiss_color;
 
 	return vec4(result_rgb, tex_color.a);
 }
 
 void main() {    
 	vec4 result = calculate_directional_light();
-   FragColor = vec4(result);
+	FragColor = vec4(result);
 }

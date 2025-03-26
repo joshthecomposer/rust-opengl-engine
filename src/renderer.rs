@@ -61,6 +61,8 @@ impl Renderer {
         model_shader.store_uniform_location("material.Emissive");
         model_shader.store_uniform_location("view_position");
         model_shader.store_uniform_location("is_animated");
+        model_shader.store_uniform_location("has_opacity_texture");
+
 
         let mut vao = 0;
         let mut vbo = 0;
@@ -395,6 +397,7 @@ impl Renderer {
             gl_call!(gl::BindVertexArray(0));
 
             gl_call!(gl::DepthFunc(gl::LESS));
+            gl_call!(gl::BindTexture(gl::TEXTURE_CUBE_MAP, 0));
         }
     }
 

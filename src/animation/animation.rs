@@ -152,7 +152,6 @@ impl AniModel {
 
             gl_call!(gl::BindVertexArray(0));
 
-            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
             gl_call!(gl::ActiveTexture(gl::TEXTURE1));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
@@ -161,6 +160,10 @@ impl AniModel {
             gl_call!(gl::ActiveTexture(gl::TEXTURE3));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
             gl_call!(gl::ActiveTexture(gl::TEXTURE4));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
+            gl_call!(gl::ActiveTexture(gl::TEXTURE5));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
+            gl_call!(gl::ActiveTexture(gl::TEXTURE6));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
         }
     }
