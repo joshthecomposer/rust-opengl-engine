@@ -62,15 +62,8 @@ vec4 calculate_directional_light() {
 	vec3 spec_color = texture(material.Specular, TexCoords).rgb;
 	vec3 emiss_color = texture(material.Emissive, TexCoords).rgb;
 	
-	float alpha = 1.0;
+	float alpha = texture(material.Diffuse, TexCoords).a;
 
-	if (has_opacity_texture) {
-		alpha = texture(material.Opacity, TexCoords).a;
-
-		// Optional: discard fully transparent pixels
-		if (alpha < 0.1)
-			discard;
-	}
 
 	// if (alpha < 0.1)/ discard;
 
