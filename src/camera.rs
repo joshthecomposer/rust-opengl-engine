@@ -238,25 +238,21 @@ impl Camera {
 
         }
 
-        self.last_f_state = f_pressed; // Update last state
+        self.last_f_state = f_pressed;
 
         if self.move_state == CameraState::Free {
             if window.get_key(Key::W) == Action::Press {
                 self.position += (self.movement_speed * self.forward) * delta as f32;
-                // self.position.z += (50.0 * delta) as f32;
             }
             if window.get_key(Key::S) == Action::Press {
                 self.position -= (self.movement_speed * self.forward) * delta as f32;
             }
             if window.get_key(Key::A) == Action::Press {
-                // cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
                 self.position += ((self.up.cross(self.forward).normalize()) * self.movement_speed) * delta as f32;
             }
             if window.get_key(Key::D) == Action::Press {
                 self.position -= ((self.up.cross(self.forward).normalize()) * self.movement_speed) * delta as f32;
             }
-
-            // self.position.y = 0.5;
         }
 
         if window.get_key(Key::U) == Action::Press {

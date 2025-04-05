@@ -14,7 +14,7 @@ pub struct Entry<T> {
 }
 
 impl<T> Entry<T> {
-    /// Read-only access to the entry's key.
+    // Read-only access to the entry's key.
     pub fn key(&self) -> usize {
         self.key
     }
