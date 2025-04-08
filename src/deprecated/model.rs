@@ -5,7 +5,9 @@ use glam::{vec3, Vec3};
 use image::{GenericImageView, ImageBuffer, Rgba};
 use russimp::{material::{Material as RMaterial, PropertyTypeInfo, TextureType}, mesh::Mesh as RMesh, node::Node, scene::{PostProcess, Scene}, Vector3D};
 
-use crate::{debug::write::write_data, gl_call, mesh::{Mesh, Texture, Vertex}, shaders::Shader};
+use crate::{debug::write::write_data, gl_call, shaders::Shader};
+
+use super::mesh::{Mesh, Texture};
 
 #[derive(Clone, Debug)]
 pub struct Model {
@@ -76,7 +78,7 @@ impl Model {
         let mut mesh = Mesh::new();
         // Vertices
         for (i, ai_vertex) in ai_mesh.vertices.iter().enumerate() {
-            let mut vertex = Vertex::new();
+            let mut vertex = super::mesh::Vertex::new();
 
             vertex.position = vec3(ai_vertex.x, ai_vertex.y, ai_vertex.z);
 

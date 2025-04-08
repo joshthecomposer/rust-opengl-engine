@@ -103,7 +103,7 @@ impl GameState {
 
         //TEMP
 
-        let mut terrain = Terrain::from_height_map("resources/textures/perlin.png");
+        let mut terrain = Terrain::from_height_map("resources/textures/grid_height.png");
         let model = terrain.into_opengl_model();
 
         entity_manager.transforms.insert(entity_manager.next_entity_id, Transform {
@@ -114,7 +114,7 @@ impl GameState {
         });
         entity_manager.factions.insert(entity_manager.next_entity_id, Faction::World);
         entity_manager.entity_types.insert(entity_manager.next_entity_id, EntityType::Terrain);
-        entity_manager.models.insert(entity_manager.next_entity_id, model);
+        // entity_manager.models.insert(entity_manager.next_entity_id, model);
 
         entity_manager.next_entity_id += 1;
         

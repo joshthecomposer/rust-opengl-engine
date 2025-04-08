@@ -5,7 +5,10 @@ use glam::{vec2, Vec3};
 use glam::vec3;
 use image::{ImageBuffer, Rgba};
 
-use crate::{enums_types::CellType, mesh::{Mesh, Texture, Vertex}, model::Model, shaders::Shader};
+use crate::animation::animation::{texture_from_file, AniModel, AniVertex};
+use crate::enums_types::TextureType;
+use crate::some_data::MAX_BONE_INFLUENCE;
+use crate::{enums_types::CellType, shaders::Shader};
 
 #[derive(Debug)]
 pub struct GridCell {
@@ -24,7 +27,7 @@ pub struct Grid {
     // pub cells: HashMap<usize, GridCell>,
     pub cells: Vec<GridCell>,
     pub next_cell_id: usize,
-    pub model: Model,
+    pub model: AniModel,
     pub cell_size: f32,
     pub width: usize,
     pub height: usize,
@@ -35,7 +38,7 @@ impl Grid {
         Grid {
             cells: Vec::with_capacity(width * height) ,
             next_cell_id: 0,
-            model: Model::new(),
+            model: AniModel::new(),
             cell_size,
             width,
             height,
@@ -71,32 +74,23 @@ impl Grid {
 
     pub fn generate(&mut self) {
         Self::generate_texture();
+        Self::generate_height_map();
         self.generate_model();
     }
 
     fn generate_model(&mut self) {
         // TODO: This only works with even numbered grid sizes, fix
-        let mut mesh = self.generate_grid_mesh();
-        self.model.directory = "resources/textures".to_string();
+        let mut model = self.generate_grid_mesh();
+        model.directory = "resources/textures".to_string();
 
-        let tex_id = Model::texture_from_file(&self.model, "half_dark_half_light.png".to_string());
-
-        let tex = Texture {
-            id: tex_id,
-            _type: "texture_diffuse".to_string(),
-            path: "half_dark_half_light.png".to_string(),
-        };
-        
-        mesh.textures.push(tex.clone());
-
-        self.model.meshes.push(mesh);
-        self.model.textures_loaded.push(tex);
+        texture_from_file(&mut model, "half_dark_half_light.png".to_string(), TextureType::Diffuse);
+        self.model = model;
     }
 
-    fn generate_grid_mesh(&mut self) -> Mesh {
-        let mut vertices = Vec::<Vertex>::new();
+    fn generate_grid_mesh(&mut self) -> AniModel {
+        let mut vertices = Vec::<AniVertex>::new();
         let mut indices = Vec::<u32>::new();
-        let mut mesh = Mesh::new();
+        let mut model = AniModel::new();
         let mut dark = false;
 
         let total_width = self.width as f32 * self.cell_size;
@@ -130,10 +124,10 @@ impl Grid {
 
 
                 // Add vertices for the cell
-                vertices.push(Vertex { position: vec3(x, 0.0, z), normal: vec3(0.0, 1.0, 0.0), tex_coords: bl });
-                vertices.push(Vertex { position: vec3(x + self.cell_size, 0.0, z), normal: vec3(0.0, 1.0, 0.0), tex_coords: br });
-                vertices.push(Vertex { position: vec3(x + self.cell_size, 0.0, z + self.cell_size), normal: vec3(0.0, 1.0, 0.0), tex_coords: tr });
-                vertices.push(Vertex { position: vec3(x, 0.0, z + self.cell_size), normal: vec3(0.0, 1.0, 0.0), tex_coords: tl });
+                vertices.push(AniVertex { position: vec3(x, 0.0, z), normal: vec3(0.0, 1.0, 0.0), uv: bl, bone_ids: [-1; MAX_BONE_INFLUENCE], bone_weights: [0.0; MAX_BONE_INFLUENCE] });
+                vertices.push(AniVertex { position: vec3(x + self.cell_size, 0.0, z), normal: vec3(0.0, 1.0, 0.0), uv: br,bone_ids: [-1; MAX_BONE_INFLUENCE], bone_weights: [0.0; MAX_BONE_INFLUENCE] });
+                vertices.push(AniVertex { position: vec3(x + self.cell_size, 0.0, z + self.cell_size), normal: vec3(0.0, 1.0, 0.0), uv: tr, bone_ids: [-1; MAX_BONE_INFLUENCE], bone_weights: [0.0; MAX_BONE_INFLUENCE] });
+                vertices.push(AniVertex { position: vec3(x, 0.0, z + self.cell_size), normal: vec3(0.0, 1.0, 0.0), uv: tl, bone_ids: [-1; MAX_BONE_INFLUENCE], bone_weights: [0.0; MAX_BONE_INFLUENCE] });
 
                 // Add indices for two triangles
                 // flipped winding
@@ -172,11 +166,11 @@ impl Grid {
             } 
         }
 
-        mesh.vertices.append(&mut vertices);
-        mesh.indices.append(&mut indices);
-        mesh.setup_mesh();
+        model.vertices.append(&mut vertices);
+        model.indices.append(&mut indices);
+        model.setup_opengl();
 
-        mesh
+        model
     }
 
     pub fn generate_texture() {
@@ -212,5 +206,21 @@ impl Grid {
 
     pub fn draw(&mut self, shader: &mut Shader) {
         self.model.draw(shader);
+    }
+
+    pub fn generate_height_map() {
+        let width: u32 = 10;
+        let height: u32 = 10;
+        let flat_value: u8 = 128;
+
+        let mut imgbuf = ImageBuffer::new(width, height);
+
+        for (_x, _y, pixel) in imgbuf.enumerate_pixels_mut() {
+            *pixel = Rgba([flat_value, flat_value, flat_value, 255]);
+        }
+
+        imgbuf
+            .save("resources/textures/grid_height.png")
+            .expect("Failed to save grid height");
     }
 }

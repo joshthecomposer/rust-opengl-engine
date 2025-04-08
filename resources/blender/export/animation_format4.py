@@ -124,7 +124,7 @@ def export_mesh_with_indices(filepath):
             # Export all materials
             if mesh_data.materials:
                 for i, material in enumerate(mesh_data.materials):
-                    f.write(f"TEXTURE_DIFFUSE: {material.name}\n")
+                    f.write(f"TEXTURE_DIFFUSE: Leaves.png\n")
 
             
 
@@ -194,7 +194,7 @@ def export_mesh_with_indices(filepath):
                 uv = v[6]
                 weights = v[7]
 
-                f.write(f"VERT:\n{pos[0]:.5f} {pos[1]:.5f} {pos[2]:.5f}\n{norm[0]:.5f} {norm[1]:.5f} {norm[2]:.5f}\n{uv[0]:.5f} {(1.0 - uv[1]):.5f}\n")
+                f.write(f"VERT:\n{pos[0]:.5f} {pos[1]:.5f} {pos[2]:.5f}\n{norm[0]:.5f} {norm[1]:.5f} {norm[2]:.5f}\n{uv[0]:.5f} {(uv[1]):.5f}\n")
 
                 if weights:
                     text = " ".join(f"{bone} {weight}" for bone, weight in weights)
@@ -210,7 +210,7 @@ def export_mesh_with_indices(filepath):
             f.write("\n\n")
 
 # armature_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/animated/002_y_robot/y_robot_idle_bones.txt")
-mesh_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/static/trees/001_tree_model.txt")
+mesh_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/static/trees/001_tree_trunk_model.txt")
 
 
 # export_animation_data(armature_output)

@@ -65,7 +65,6 @@ impl Renderer {
         model_shader.store_uniform_location("has_opacity_texture");
         model_shader.store_uniform_location("alpha_test_pass");
 
-
         let mut vao = 0;
         let mut vbo = 0;
         let mut ebo = 0;
@@ -156,6 +155,7 @@ impl Renderer {
 
             gl_call!(gl::GenVertexArrays(1, &mut vao));
             gl_call!(gl::GenBuffers(1, &mut vbo));
+
 
             vaos.insert(VaoType::DebugLight, vao);
 
@@ -272,7 +272,7 @@ impl Renderer {
        // SHADOW MUST GO FIRST
        self.skybox_pass(camera, fb_width, fb_height);
        // self.debug_light_pass(camera);
-       // self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
+       self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
         unsafe {
             gl_call!(gl::Enable(gl::DEPTH_TEST));
             gl_call!(gl::DepthMask(gl::TRUE)); // Allow writing to depth buffer
@@ -382,8 +382,6 @@ impl Renderer {
     }
 
     fn grid_pass(&mut self,grid: &mut Grid, camera: &mut Camera, light_manager: &Lights, fb_width: u32, fb_height: u32) {
-        camera.reset_matrices(fb_width as f32 / fb_height as f32);
-
         let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
         shader.activate();
         shader.set_mat4("model", camera.model);
@@ -391,6 +389,10 @@ impl Renderer {
         shader.set_mat4("projection", camera.projection);
         shader.set_mat4("light_space_mat", camera.light_space);
         shader.set_dir_light("dir_light", &light_manager.dir_light);
+        shader.set_float("bias_scalar", light_manager.bias_scalar);
+        shader.set_vec3("view_position", camera.position);
+        shader.set_bool("is_animated", false);
+        shader.set_bool("alpha_test_pass", false);
         unsafe {
             gl_call!(gl::ActiveTexture(gl::TEXTURE0));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
@@ -548,11 +550,11 @@ impl Renderer {
             // Positions      // Texture Coords
             -1.0,  1.0, 0.0,  0.0, 1.0,
             -1.0, -1.0, 0.0,  0.0, 0.0,
-            1.0, -1.0, 0.0,  1.0, 0.0,
+             1.0, -1.0, 0.0,  1.0, 0.0,
 
             -1.0,  1.0, 0.0,  0.0, 1.0,
-            1.0, -1.0, 0.0,  1.0, 0.0,
-            1.0,  1.0, 0.0,  1.0, 1.0
+             1.0, -1.0, 0.0,  1.0, 0.0,
+             1.0,  1.0, 0.0,  1.0, 1.0
         ];
 
         unsafe {
@@ -589,5 +591,4 @@ impl Renderer {
             gl_call!(gl::BindVertexArray(0));
         }
     }
-
 }

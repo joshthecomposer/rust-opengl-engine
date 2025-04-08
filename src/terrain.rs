@@ -3,7 +3,7 @@ use glam::{vec2, vec3, Vec3};
 use image::GenericImageView;
 use imgui::sys::igSetWindowPosVec2;
 
-use crate::{animation::animation::{texture_from_file, AniModel, AniVertex}, enums_types::TextureType, mesh::{Mesh, Vertex}, model::Model, some_data::MAX_BONE_INFLUENCE};
+use crate::{animation::animation::{texture_from_file, AniModel, AniVertex}, enums_types::TextureType, some_data::MAX_BONE_INFLUENCE};
 
 pub struct Terrain {
     vertices: Vec<[f32; 3]>,
