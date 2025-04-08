@@ -51,15 +51,25 @@
 			]
 		},
 
-
 		{
-			"entity_type": "Tree",
+			"entity_type": "TreeFoliage",
 			"position": [-4.2, 0.0, -3.1],
 			"scale": [1.0, 1.0, 1.0],
 			"__note__": "use Quat::from_rotation_x()",
 			"rotation": "",
 			"faction": "Static",
-			"mesh_path": "resources/models/static/trees/001_tree_model.txt", 
+			"mesh_path": "resources/models/static/trees/001_tree_foliage_model.txt", 
+			"bone_path":"",
+			"animation_properties" : []
+		},
+		{
+			"entity_type": "TreeTrunk",
+			"position": [-4.2, 0.0, -3.1],
+			"scale": [1.0, 1.0, 1.0],
+			"__note__": "use Quat::from_rotation_x()",
+			"rotation": "",
+			"faction": "Static",
+			"mesh_path": "resources/models/static/trees/001_tree_trunk_model.txt", 
 			"bone_path":"",
 			"animation_properties" : []
 		}

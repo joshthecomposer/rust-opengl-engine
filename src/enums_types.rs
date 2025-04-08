@@ -58,6 +58,8 @@ pub enum EntityType {
     ArcherTower01,
     BlockGrass,
     Tree,
+    TreeFoliage,
+    TreeTrunk,
     Grass,
     DemonLady,
     BigGuy,
