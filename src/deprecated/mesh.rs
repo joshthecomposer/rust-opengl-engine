@@ -4,13 +4,13 @@ use crate::{gl_call, shaders::Shader};
 
 #[repr(C)]
 #[derive(Debug, Clone)]
-pub struct Vertex {
+pub struct DeprecatedVertex {
     pub position: Vec3,
     pub normal: Vec3,
     pub tex_coords: Vec2,
 }
 
-impl Vertex {
+impl DeprecatedVertex {
     pub fn new() -> Self {
         Self {
             position: vec3(0.0, 0.0, 0.0),
@@ -22,7 +22,7 @@ impl Vertex {
 
 #[repr(C)]
 #[derive(Debug, Clone)]
-pub struct Texture {
+pub struct DeprecatedTexture {
     pub id: u32,
     pub _type: String,
     pub path: String,
@@ -31,9 +31,9 @@ pub struct Texture {
 #[repr(C)]
 #[derive(Debug, Clone)]
 pub struct Mesh {
-    pub vertices: Vec<Vertex>,
+    pub vertices: Vec<DeprecatedVertex>,
     pub indices: Vec<u32>,
-    pub textures: Vec<Texture>,
+    pub textures: Vec<DeprecatedTexture>,
     pub vao: u32,
     pub vbo: u32,
     pub ebo: u32,
@@ -66,7 +66,7 @@ impl Mesh {
             
             gl_call!(gl::BufferData(
                 gl::ARRAY_BUFFER, 
-                (mem::size_of::<Vertex>() * self.vertices.len()) as isize,
+                (mem::size_of::<DeprecatedVertex>() * self.vertices.len()) as isize,
                 self.vertices.as_ptr().cast(),
                 gl::STATIC_DRAW,
             ));
@@ -85,7 +85,7 @@ impl Mesh {
                 3, 
                 gl::FLOAT, 
                 gl::FALSE, 
-                mem::size_of::<Vertex>() as i32,
+                mem::size_of::<DeprecatedVertex>() as i32,
                 std::ptr::null(),
             ));
 
@@ -95,8 +95,8 @@ impl Mesh {
                 3, 
                 gl::FLOAT, 
                 gl::FALSE, 
-                mem::size_of::<Vertex>() as i32,
-                offset_of!(Vertex, normal) as *const _
+                mem::size_of::<DeprecatedVertex>() as i32,
+                offset_of!(DeprecatedVertex, normal) as *const _
             ));
 
             gl_call!(gl::EnableVertexAttribArray(2));
@@ -105,8 +105,8 @@ impl Mesh {
                 2, 
                 gl::FLOAT, 
                 gl::FALSE, 
-                mem::size_of::<Vertex>() as i32, 
-                offset_of!(Vertex, tex_coords) as *const _
+                mem::size_of::<DeprecatedVertex>() as i32, 
+                offset_of!(DeprecatedVertex, tex_coords) as *const _
             ));
 
             self.vao = vao;

@@ -6,7 +6,7 @@ use glam::{vec3, vec4, Mat4, Quat, Vec3};
 use image::GenericImageView;
 use russimp::light;
 
-use crate::{animation::animation::{AniModel, Animation}, camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, TextureType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}, sound::sound_manager::SoundManager};
+use crate::{animation::animation::{Model, Animation}, camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, TextureType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}, sound::sound_manager::SoundManager};
 
 pub struct Renderer {
     pub shaders: HashMap<ShaderType, Shader>, // TODO: make this an enum

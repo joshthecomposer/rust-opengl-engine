@@ -7,17 +7,17 @@ use russimp::{material::{Material as RMaterial, PropertyTypeInfo, TextureType}, 
 
 use crate::{debug::write::write_data, gl_call, shaders::Shader};
 
-use super::mesh::{Mesh, Texture};
+use super::mesh::{Mesh, DeprecatedTexture};
 
 #[derive(Clone, Debug)]
-pub struct Model {
+pub struct DeprecatedModel {
     pub meshes: Vec<Mesh>,
     pub directory: String,
-    pub textures_loaded: Vec<Texture>,
+    pub textures_loaded: Vec<DeprecatedTexture>,
     pub full_path: String,
 }
 
-impl Model {
+impl DeprecatedModel {
     pub fn new() -> Self {
         Self {
             meshes: vec![],
@@ -27,8 +27,8 @@ impl Model {
         }
     }
 
-    pub fn load(path: &str) -> Model {
-        let mut model = Model::new();
+    pub fn load(path: &str) -> Self {
+        let mut model = Self::new();
         model.full_path = path.to_string();
         println!("=============================================================");
         println!("BEGIN LOADING OF SCENE FROM PATH: {}", path);
@@ -78,7 +78,7 @@ impl Model {
         let mut mesh = Mesh::new();
         // Vertices
         for (i, ai_vertex) in ai_mesh.vertices.iter().enumerate() {
-            let mut vertex = super::mesh::Vertex::new();
+            let mut vertex = super::mesh::DeprecatedVertex::new();
 
             vertex.position = vec3(ai_vertex.x, ai_vertex.y, ai_vertex.z);
 
@@ -120,8 +120,8 @@ impl Model {
         mesh
     }
 
-    pub fn load_material_textures(&mut self, ai_mat: &RMaterial, texture_type: TextureType, my_type: String) -> Vec<Texture> {
-        let mut textures: Vec<Texture> = vec![];
+    pub fn load_material_textures(&mut self, ai_mat: &RMaterial, texture_type: TextureType, my_type: String) -> Vec<DeprecatedTexture> {
+        let mut textures: Vec<DeprecatedTexture> = vec![];
         let path;
         let mut skip = false;
 
@@ -171,7 +171,7 @@ impl Model {
 
         if !skip {
             let tex_id = Self::texture_from_file(self, path.clone());
-            let texture = Texture {id: tex_id, _type: my_type, path: path.clone()};
+            let texture = DeprecatedTexture {id: tex_id, _type: my_type, path: path.clone()};
             textures.push(texture.clone());
             self.textures_loaded.push(texture.clone());
         }
@@ -198,7 +198,7 @@ impl Model {
 
     pub fn try_parse_diffuse_texture_path(ai_mat: &RMaterial, tex_type: TextureType) -> Option<String> {
         for prop in ai_mat.properties.iter() {
-            write_data(&prop, "prop_pout.txt");
+            write_data(prop, "prop_pout.txt");
             if prop.key == "$tex.file" && prop.semantic == tex_type {
                 if let PropertyTypeInfo::String(ref filename) = prop.data {
                     return Some(filename.clone());
@@ -220,7 +220,7 @@ impl Model {
 
     }
 
-    pub fn texture_from_file(model: &Model, path: String) -> u32 {
+    pub fn texture_from_file(model: &DeprecatedModel, path: String) -> u32 {
         let file_name = model.directory.clone() + "/" + path.as_str();
 
         dbg!(&path);

@@ -2,11 +2,11 @@ use glam::{Mat4, Quat, Vec2, Vec3, Vec4};
 use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
 use std::{collections::HashMap, ffi::c_void, mem::{self, offset_of}, path::Path, ptr, str::Lines};
 
-use crate::{enums_types::TextureType, gl_call, deprecated::mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE, sound::sound_manager::{ContinuousSound, OneShot}};
+use crate::{enums_types::TextureType, gl_call, shaders::Shader, some_data::MAX_BONE_INFLUENCE, sound::sound_manager::{ContinuousSound, OneShot}};
 
 #[derive(Debug, Clone)]
 #[repr(C)]
-pub struct AniVertex {
+pub struct Vertex {
     pub position: Vec3,
     pub normal: Vec3,
     pub uv: Vec2,
@@ -15,13 +15,21 @@ pub struct AniVertex {
     pub bone_weights: [f32; MAX_BONE_INFLUENCE],
 }
 
+#[repr(C)]
 #[derive(Debug, Clone)]
-pub struct AniModel {
+pub struct Texture {
+    pub id: u32,
+    pub _type: String,
+    pub path: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct Model {
     pub vao: u32,
     pub vbo: u32,
     pub ebo: u32,
 
-    pub vertices: Vec<AniVertex>,
+    pub vertices: Vec<Vertex>,
     pub indices: Vec<u32>,
     pub textures: [Option<Texture>; 9],
 
@@ -29,7 +37,7 @@ pub struct AniModel {
     pub full_path: String,
 }
 
-impl AniModel {
+impl Model {
     pub fn new() -> Self {
         Self {
             vao: 0,
@@ -56,7 +64,7 @@ impl AniModel {
 
             gl_call!(gl::BufferData(
                 gl::ARRAY_BUFFER, 
-                (mem::size_of::<AniVertex>() * self.vertices.len()) as isize,
+                (mem::size_of::<Vertex>() * self.vertices.len()) as isize,
                 self.vertices.as_ptr().cast(),
                 gl::STATIC_DRAW,
             ));
@@ -75,7 +83,7 @@ impl AniModel {
                 3, 
                 gl::FLOAT, 
                 gl::FALSE, 
-                mem::size_of::<AniVertex>() as i32,
+                mem::size_of::<Vertex>() as i32,
                 ptr::null(),
             ));
 
@@ -85,8 +93,8 @@ impl AniModel {
                 3, 
                 gl::FLOAT, 
                 gl::FALSE, 
-                mem::size_of::<AniVertex>() as i32,
-                offset_of!(AniVertex, normal) as *const _
+                mem::size_of::<Vertex>() as i32,
+                offset_of!(Vertex, normal) as *const _
             ));
 
             gl_call!(gl::EnableVertexAttribArray(2));
@@ -95,8 +103,8 @@ impl AniModel {
                 2, 
                 gl::FLOAT, 
                 gl::FALSE, 
-                mem::size_of::<AniVertex>() as i32, 
-                offset_of!(AniVertex, uv) as *const _
+                mem::size_of::<Vertex>() as i32, 
+                offset_of!(Vertex, uv) as *const _
             ));
 
             gl_call!(gl::EnableVertexAttribArray(3));
@@ -104,8 +112,8 @@ impl AniModel {
                 3,
                 4,
                 gl::INT,
-                mem::size_of::<AniVertex>() as i32,
-                offset_of!(AniVertex, bone_ids) as *const _
+                mem::size_of::<Vertex>() as i32,
+                offset_of!(Vertex, bone_ids) as *const _
             ));
 
             gl_call!(gl::EnableVertexAttribArray(4));
@@ -114,8 +122,8 @@ impl AniModel {
                 4,
                 gl::FLOAT,
                 gl::FALSE,
-                mem::size_of::<AniVertex>() as i32,
-                offset_of!(AniVertex, bone_weights) as *const _
+                mem::size_of::<Vertex>() as i32,
+                offset_of!(Vertex, bone_weights) as *const _
             ));
 
             gl::BindVertexArray(0);
@@ -538,14 +546,14 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animator, Animation) {
     (bone, animator, animation)
 }
 
-pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {
+pub fn import_model_data(file_path: &str, animation: &Animation) -> Model {
     let data = std::fs::read_to_string(file_path).unwrap();
     let mut lines = data.lines();
 
-    let mut model = AniModel::new();
+    let mut model = Model::new();
 
     let directory = Path::new(file_path).parent().unwrap().to_str().unwrap();
-    println!("Directory of AniModel is: {}", &directory);
+    println!("Directory of Model is: {}", &directory);
     println!("=============================================================");
 
     model.directory = directory.to_string();
@@ -565,7 +573,7 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {
                 let normal = parse_vec3(lines.next().unwrap());
                 let uv = parse_vec2(lines.next().unwrap());
 
-                let mut vertex = AniVertex {
+                let mut vertex = Vertex {
                     position,
                     normal,
                     uv,
@@ -636,7 +644,7 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {
     model
 }
 
-pub fn texture_from_file(model: &mut AniModel, path: String, texture_type: TextureType) {
+pub fn texture_from_file(model: &mut Model, path: String, texture_type: TextureType) {
     println!("texture is {}", &path);
     let file_name = model.directory.clone() + "/" + path.as_str();
 

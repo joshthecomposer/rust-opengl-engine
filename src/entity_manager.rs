@@ -2,19 +2,18 @@
 use std::collections::HashSet;
 
 use glam::{vec3, Quat, Vec3};
-use imgui::drag_drop::PayloadIsWrongType;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-use crate::{animation::animation::{import_bone_data, import_model_data, AniModel, Animation, Animator, Bone}, camera::Camera, config::entity_config::{AnimationPropHelper, EntityConfig}, enums_types::{CameraState, CellType, EntityType, Faction, Transform}, grid::Grid, movement::{handle_npc_movement, handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, terrain::Terrain};
+use crate::{animation::animation::{import_bone_data, import_model_data, Model, Animation, Animator, Bone}, camera::Camera, config::entity_config::{AnimationPropHelper, EntityConfig}, enums_types::{CameraState, CellType, EntityType, Faction, Transform}, grid::Grid, movement::{handle_npc_movement, handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, terrain::Terrain};
 
 pub struct EntityManager {
     pub next_entity_id: usize,
     pub transforms: SparseSet<Transform>,
     pub factions: SparseSet<Faction>,
     pub entity_types: SparseSet<EntityType>,
-    pub models: SparseSet<AniModel>,
-    pub ani_models: SparseSet<AniModel>,
+    pub models: SparseSet<Model>,
+    pub ani_models: SparseSet<Model>,
     pub animators: SparseSet<Animator>,
     pub skellingtons: SparseSet<Bone>,
     pub rng: ChaCha8Rng,
@@ -76,7 +75,7 @@ impl EntityManager {
             original_rotation: rotation,
         };
 
-        let mut model = AniModel::new();
+        let mut model = Model::new();
 
         let mut found = false;
         for m in self.models.iter_mut() {
@@ -110,7 +109,7 @@ impl EntityManager {
         let (skellington, mut animator, animation) = import_bone_data(animation_path);
 
         for prop in animation_props.iter() {
-            let mut anim = animator.animations.get_mut(&prop.name).unwrap();
+            let anim = animator.animations.get_mut(&prop.name).unwrap();
             for (k, v) in prop.one_shots.iter() {
                 for frame in v.iter() {
                     anim.one_shots.push(OneShot {
@@ -129,7 +128,7 @@ impl EntityManager {
             }
         }
 
-        let mut model = AniModel::new();
+        let mut model = Model::new();
         let mut found = false;
         for m in self.ani_models.iter_mut() {
             if m.value().full_path == *model_path.to_string() {

@@ -5,7 +5,7 @@ use glam::{vec2, Vec3};
 use glam::vec3;
 use image::{ImageBuffer, Rgba};
 
-use crate::animation::animation::{texture_from_file, AniModel, AniVertex};
+use crate::animation::animation::{texture_from_file, Model, Vertex};
 use crate::enums_types::TextureType;
 use crate::some_data::MAX_BONE_INFLUENCE;
 use crate::{enums_types::CellType, shaders::Shader};
@@ -27,7 +27,7 @@ pub struct Grid {
     // pub cells: HashMap<usize, GridCell>,
     pub cells: Vec<GridCell>,
     pub next_cell_id: usize,
-    pub model: AniModel,
+    pub model: Model,
     pub cell_size: f32,
     pub width: usize,
     pub height: usize,
@@ -38,7 +38,7 @@ impl Grid {
         Grid {
             cells: Vec::with_capacity(width * height) ,
             next_cell_id: 0,
-            model: AniModel::new(),
+            model: Model::new(),
             cell_size,
             width,
             height,
@@ -87,10 +87,10 @@ impl Grid {
         self.model = model;
     }
 
-    fn generate_grid_mesh(&mut self) -> AniModel {
-        let mut vertices = Vec::<AniVertex>::new();
+    fn generate_grid_mesh(&mut self) -> Model {
+        let mut vertices = Vec::<Vertex>::new();
         let mut indices = Vec::<u32>::new();
-        let mut model = AniModel::new();
+        let mut model = Model::new();
         let mut dark = false;
 
         let total_width = self.width as f32 * self.cell_size;
@@ -124,10 +124,10 @@ impl Grid {
 
 
                 // Add vertices for the cell
-                vertices.push(AniVertex { position: vec3(x, 0.0, z), normal: vec3(0.0, 1.0, 0.0), uv: bl, bone_ids: [-1; MAX_BONE_INFLUENCE], bone_weights: [0.0; MAX_BONE_INFLUENCE] });
-                vertices.push(AniVertex { position: vec3(x + self.cell_size, 0.0, z), normal: vec3(0.0, 1.0, 0.0), uv: br,bone_ids: [-1; MAX_BONE_INFLUENCE], bone_weights: [0.0; MAX_BONE_INFLUENCE] });
-                vertices.push(AniVertex { position: vec3(x + self.cell_size, 0.0, z + self.cell_size), normal: vec3(0.0, 1.0, 0.0), uv: tr, bone_ids: [-1; MAX_BONE_INFLUENCE], bone_weights: [0.0; MAX_BONE_INFLUENCE] });
-                vertices.push(AniVertex { position: vec3(x, 0.0, z + self.cell_size), normal: vec3(0.0, 1.0, 0.0), uv: tl, bone_ids: [-1; MAX_BONE_INFLUENCE], bone_weights: [0.0; MAX_BONE_INFLUENCE] });
+                vertices.push(Vertex { position: vec3(x, 0.0, z), normal: vec3(0.0, 1.0, 0.0), uv: bl, bone_ids: [-1; MAX_BONE_INFLUENCE], bone_weights: [0.0; MAX_BONE_INFLUENCE] });
+                vertices.push(Vertex { position: vec3(x + self.cell_size, 0.0, z), normal: vec3(0.0, 1.0, 0.0), uv: br,bone_ids: [-1; MAX_BONE_INFLUENCE], bone_weights: [0.0; MAX_BONE_INFLUENCE] });
+                vertices.push(Vertex { position: vec3(x + self.cell_size, 0.0, z + self.cell_size), normal: vec3(0.0, 1.0, 0.0), uv: tr, bone_ids: [-1; MAX_BONE_INFLUENCE], bone_weights: [0.0; MAX_BONE_INFLUENCE] });
+                vertices.push(Vertex { position: vec3(x, 0.0, z + self.cell_size), normal: vec3(0.0, 1.0, 0.0), uv: tl, bone_ids: [-1; MAX_BONE_INFLUENCE], bone_weights: [0.0; MAX_BONE_INFLUENCE] });
 
                 // Add indices for two triangles
                 // flipped winding

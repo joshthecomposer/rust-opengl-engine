@@ -3,7 +3,7 @@ use glam::{vec2, vec3, Vec3};
 use image::GenericImageView;
 use imgui::sys::igSetWindowPosVec2;
 
-use crate::{animation::animation::{texture_from_file, AniModel, AniVertex}, enums_types::TextureType, some_data::MAX_BONE_INFLUENCE};
+use crate::{animation::animation::{texture_from_file, Model, Vertex}, enums_types::TextureType, some_data::MAX_BONE_INFLUENCE};
 
 pub struct Terrain {
     vertices: Vec<[f32; 3]>,
@@ -98,12 +98,12 @@ impl Terrain {
         }
     }
 
-    pub fn into_opengl_model(&mut self) -> AniModel {
-        let mut model = AniModel::new();
+    pub fn into_opengl_model(&mut self) -> Model {
+        let mut model = Model::new();
 
         for (i, v) in self.vertices.iter().enumerate() {
             let n = self.normals[i];
-            model.vertices.push(AniVertex {
+            model.vertices.push(Vertex {
                 position: vec3(v[0], v[1], v[2]),
                 normal: vec3(n[0], n[1], n[2]),
                 uv: vec2(0.0, 0.0),
