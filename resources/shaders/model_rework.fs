@@ -6,10 +6,6 @@ in vec3 Normal;
 in vec2 TexCoords;
 in vec4 FragPosLightSpace;
 
-uniform sampler2D texture_diffuse1;
-uniform sampler2D texture_alpha1;
-uniform sampler2D texture_specular1;
-
 uniform bool has_opacity_texture;
 uniform sampler2D shadow_map;
 
@@ -32,6 +28,7 @@ struct DirLight {
 uniform DirLight dir_light;
 uniform float bias_scalar;
 uniform vec3 view_position;
+uniform bool alpha_test_pass;
 
 float ShadowCalculation(float dot_light_normal) {
 	vec3 pos = FragPosLightSpace.xyz * 0.5 + 0.5;
@@ -62,27 +59,13 @@ float ShadowCalculation(float dot_light_normal) {
 
 vec4 calculate_directional_light() {
     vec3 lightColor = dir_light.diffuse;
-	vec4 tex_color;
-	vec3 spec_color;
-	vec3 emiss_color;
+	vec3 tex_color = texture(material.Diffuse, TexCoords).rgb;
+	vec3 spec_color = texture(material.Specular, TexCoords).rgb;
+	vec3 emiss_color = texture(material.Emissive, TexCoords).rgb;
+	
+	float alpha = texture(material.Diffuse, TexCoords).a;
 
-	if (has_opacity_texture) {
-    	tex_color = texture(texture_diffuse1, TexCoords).rgba;
-		spec_color = texture(texture_specular1, TexCoords).rgb;
-		emiss_color = vec3(0.0, 0.0, 0.0);
-	} else {
-		tex_color = texture(material.Diffuse, TexCoords).rgba;
-		spec_color = texture(material.Specular, TexCoords).rgb;
-		emiss_color = texture(material.Emissive, TexCoords).rgb;
-	}
-
-	float alpha = tex_color.a;
-
-	if (has_opacity_texture) {
-		alpha = texture(texture_alpha1, TexCoords).a;
-	}
-
-	if (alpha < 0.1)
+	if (alpha_test_pass && alpha < 0.1)
 		discard;
 
 	// Ambient
@@ -106,7 +89,7 @@ vec4 calculate_directional_light() {
 
     vec3 result_rgb = ((shadow * (diffuse + specular )) + ambient) * tex_color.rgb + emiss_color;
 
-	return vec4(result_rgb, tex_color.a);
+	return vec4(result_rgb, alpha);
 }
 
 void main() {    

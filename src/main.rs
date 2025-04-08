@@ -9,8 +9,6 @@ mod uniforms;
 mod entity_manager;
 mod lights;
 mod math_utils;
-mod model;
-mod mesh;
 mod grid;
 mod renderer;
 mod animation;
@@ -21,6 +19,7 @@ mod ui;
 mod sound;
 mod config;
 mod terrain;
+mod deprecated;
 
 use game_state::GameState;
 

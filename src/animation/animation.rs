@@ -2,7 +2,7 @@ use glam::{Mat4, Quat, Vec2, Vec3, Vec4};
 use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
 use std::{collections::HashMap, ffi::c_void, mem::{self, offset_of}, path::Path, ptr, str::Lines};
 
-use crate::{enums_types::TextureType, gl_call, mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE, sound::sound_manager::{ContinuousSound, OneShot}};
+use crate::{enums_types::TextureType, gl_call, deprecated::mesh::Texture, shaders::Shader, some_data::MAX_BONE_INFLUENCE, sound::sound_manager::{ContinuousSound, OneShot}};
 
 #[derive(Debug, Clone)]
 #[repr(C)]
@@ -23,7 +23,7 @@ pub struct AniModel {
 
     pub vertices: Vec<AniVertex>,
     pub indices: Vec<u32>,
-    pub textures: [Option<Texture>; 8],
+    pub textures: [Option<Texture>; 9],
 
     pub directory: String,
     pub full_path: String,
@@ -38,7 +38,7 @@ impl AniModel {
 
             vertices: vec![],
             indices: vec![],
-            textures: [None, None, None, None, None, None, None, None],
+            textures: [None, None, None, None, None, None, None, None, None],
 
             directory: String::new(),
             full_path: String::new(),
@@ -124,6 +124,9 @@ impl AniModel {
 
     pub fn draw(&self, shader: &mut Shader) {
         shader.activate();
+        if self.textures[8].is_some() {
+            shader.set_bool("has_opacity_texture", true);
+        }
         for (i, texture) in self.textures.iter().enumerate() {
             if let Some(texture) = texture {
 
@@ -150,6 +153,7 @@ impl AniModel {
                 ptr::null(), 
             ));
 
+            shader.set_bool("has_opacity_texture", false);
             gl_call!(gl::BindVertexArray(0));
 
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
@@ -164,6 +168,12 @@ impl AniModel {
             gl_call!(gl::ActiveTexture(gl::TEXTURE5));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
             gl_call!(gl::ActiveTexture(gl::TEXTURE6));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
+            gl_call!(gl::ActiveTexture(gl::TEXTURE7));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
+            gl_call!(gl::ActiveTexture(gl::TEXTURE8));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
+            gl_call!(gl::ActiveTexture(gl::TEXTURE9));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
         }
     }
@@ -551,7 +561,6 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {
         match parts[0] {
             "MEME" => {}
             "VERT:" => {
-
                 let position = parse_vec3(lines.next().unwrap());
                 let normal = parse_vec3(lines.next().unwrap());
                 let uv = parse_vec2(lines.next().unwrap());
@@ -566,25 +575,27 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {
 
                 let weight_parts: Vec<&str> = lines.next().unwrap().split_whitespace().collect();
 
-                for (i, pair) in weight_parts.chunks(2).enumerate() {
-                    let bone_name = pair[0];
-                    let weight: f32 = pair[1].parse().unwrap_or(0.0);
+                if !weight_parts.first().unwrap().eq(&"None") {
+                    for (i, pair) in weight_parts.chunks(2).enumerate() {
+                        let bone_name = pair[0];
+                        let weight: f32 = pair[1].parse().unwrap_or(0.0);
 
-                    let mut bone_id: i32 = -1;
+                        let mut bone_id: i32 = -1;
 
-                    for (j, info) in animation.model_animation_join.iter().enumerate() {
-                        if info.name == bone_name {
-                            bone_id = j as i32;
+                        for (j, info) in animation.model_animation_join.iter().enumerate() {
+                            if info.name == bone_name {
+                                bone_id = j as i32;
+                            }
                         }
-                    }
 
-                    vertex.bone_ids[i] = bone_id;
-                    vertex.bone_weights[i] = weight;
+                        vertex.bone_ids[i] = bone_id;
+                        vertex.bone_weights[i] = weight;
 
-                    let total_weight = vertex.bone_weights.iter().sum::<f32>();
-                    if total_weight > 0.0 {
-                        for w in vertex.bone_weights.iter_mut() {
-                            *w /= total_weight;
+                        let total_weight = vertex.bone_weights.iter().sum::<f32>();
+                        if total_weight > 0.0 {
+                            for w in vertex.bone_weights.iter_mut() {
+                                *w /= total_weight;
+                            }
                         }
                     }
                 }
@@ -612,14 +623,20 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {
                 let path = parts[1].to_string();
                 texture_from_file(&mut model, path, TextureType::Emissive);
             }
+            "TEXTURE_OPACITY:" => {
+                let path = parts[1].to_string();
+                texture_from_file(&mut model, path, TextureType::Opacity);
+            }
             _ => {}
         }
     }
 
+    model.setup_opengl();
+
     model
 }
 
-fn texture_from_file(model: &mut AniModel, path: String, texture_type: TextureType) {
+pub fn texture_from_file(model: &mut AniModel, path: String, texture_type: TextureType) {
     println!("texture is {}", &path);
     let file_name = model.directory.clone() + "/" + path.as_str();
 
@@ -679,8 +696,8 @@ fn texture_from_file(model: &mut AniModel, path: String, texture_type: TextureTy
                 raw.as_ptr() as *const c_void
             ));
 
-            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::REPEAT as i32));
-            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::REPEAT as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as i32));
             gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::NEAREST as i32));
             gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32));
             gl_call!(gl::GenerateMipmap(gl::TEXTURE_2D));
@@ -712,6 +729,9 @@ fn texture_from_file(model: &mut AniModel, path: String, texture_type: TextureTy
                 }
                 TextureType::Displacement => {
                     model.textures[7] = Some(texture);
+                }
+                TextureType::Opacity => {
+                    model.textures[8] = Some(texture);
                 }
             }
         }
