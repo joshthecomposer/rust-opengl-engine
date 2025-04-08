@@ -28,6 +28,7 @@ struct DirLight {
 uniform DirLight dir_light;
 uniform float bias_scalar;
 uniform vec3 view_position;
+uniform bool alpha_test_pass;
 
 float ShadowCalculation(float dot_light_normal) {
 	vec3 pos = FragPosLightSpace.xyz * 0.5 + 0.5;
@@ -64,8 +65,8 @@ vec4 calculate_directional_light() {
 	
 	float alpha = texture(material.Diffuse, TexCoords).a;
 
-
-	// if (alpha < 0.1)/ discard;
+	if (alpha_test_pass && alpha < 0.1)
+		discard;
 
 	// Ambient
     vec3 ambient = vec3(dir_light.ambient);

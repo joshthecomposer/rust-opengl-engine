@@ -3,7 +3,7 @@ use glam::{vec2, vec3, Vec3};
 use image::GenericImageView;
 use imgui::sys::igSetWindowPosVec2;
 
-use crate::{mesh::{Mesh, Vertex}, model::Model};
+use crate::{animation::animation::{texture_from_file, AniModel, AniVertex}, enums_types::TextureType, mesh::{Mesh, Vertex}, model::Model, some_data::MAX_BONE_INFLUENCE};
 
 pub struct Terrain {
     vertices: Vec<[f32; 3]>,
@@ -98,23 +98,26 @@ impl Terrain {
         }
     }
 
-    pub fn into_opengl_model(&mut self) -> Model {
-        let mut mesh = Mesh::new();
+    pub fn into_opengl_model(&mut self) -> AniModel {
+        let mut model = AniModel::new();
 
         for (i, v) in self.vertices.iter().enumerate() {
             let n = self.normals[i];
-            mesh.vertices.push(Vertex {
+            model.vertices.push(AniVertex {
                 position: vec3(v[0], v[1], v[2]),
                 normal: vec3(n[0], n[1], n[2]),
-                tex_coords:vec2(0.0, 0.0),
+                uv: vec2(0.0, 0.0),
+
+                bone_ids: [-1; MAX_BONE_INFLUENCE],
+                bone_weights: [0.0; MAX_BONE_INFLUENCE],
             });
         };
 
-        mesh.indices = self.indices.clone();
+        model.directory = "resources/models/static/terrain".to_string();
+        texture_from_file(&mut model, "not_found.png".to_string(), TextureType::Diffuse);
 
-        let mut model = Model::new();
-        mesh.setup_mesh();
-        model.meshes.push(mesh);
+        model.indices = self.indices.clone();
+        model.setup_opengl();
 
         model
     }

@@ -63,6 +63,7 @@ impl Renderer {
         model_shader.store_uniform_location("view_position");
         model_shader.store_uniform_location("is_animated");
         model_shader.store_uniform_location("has_opacity_texture");
+        model_shader.store_uniform_location("alpha_test_pass");
 
 
         let mut vao = 0;
@@ -272,13 +273,16 @@ impl Renderer {
        self.skybox_pass(camera, fb_width, fb_height);
        // self.debug_light_pass(camera);
        // self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
-        
+        unsafe {
+            gl_call!(gl::Enable(gl::DEPTH_TEST));
+            gl_call!(gl::DepthMask(gl::TRUE)); // Allow writing to depth buffer
+            gl_call!(gl::Disable(gl::BLEND));
+        }
         let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
         shader.activate();
         shader.set_bool("is_animated", false);
-
+        shader.set_bool("alpha_test_pass", true);
         for model in em.models.iter() {
-
             let trans = em.transforms.get(model.key()).unwrap();
             camera.model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
 
@@ -297,6 +301,37 @@ impl Renderer {
                 gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
                 // TODO: Fix the wrapping of this quad
             }
+        }
+
+        unsafe {
+            gl_call!(gl::Enable(gl::BLEND));
+            gl_call!(gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA));
+            gl_call!(gl::DepthMask(gl::FALSE)); // Don’t write to depth
+        }
+        shader.set_bool("alpha_test_pass", false);
+        for model in em.models.iter() {
+            let trans = em.transforms.get(model.key()).unwrap();
+            camera.model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
+
+            shader.set_mat4("model", camera.model);
+            shader.set_mat4("view", camera.view);
+            shader.set_mat4("projection", camera.projection);
+            shader.set_mat4("light_space_mat", camera.light_space);
+            shader.set_dir_light("dir_light", &light_manager.dir_light);
+            shader.set_float("bias_scalar", light_manager.bias_scalar);
+            shader.set_vec3("view_position", camera.position);
+            unsafe {
+                gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+                gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+                shader.set_int("shadow_map", 0);
+                model.value.draw(shader);
+                gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
+                // TODO: Fix the wrapping of this quad
+            }
+        }
+        unsafe {
+            gl_call!(gl::Disable(gl::BLEND));
+            gl_call!(gl::DepthMask(gl::TRUE));
         }
 
         shader.activate();

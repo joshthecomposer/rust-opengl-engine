@@ -636,7 +636,7 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> AniModel {
     model
 }
 
-fn texture_from_file(model: &mut AniModel, path: String, texture_type: TextureType) {
+pub fn texture_from_file(model: &mut AniModel, path: String, texture_type: TextureType) {
     println!("texture is {}", &path);
     let file_name = model.directory.clone() + "/" + path.as_str();
 
