@@ -443,9 +443,20 @@ impl Renderer {
         let shader = self.shaders.get_mut(&ShaderType::Depth).unwrap();
         let near_plane = light_manager.near;
         let far_plane = light_manager.far;
-        let bound = light_manager.bounds;
-        let light_projection = Mat4::orthographic_rh_gl(-bound, bound, -bound, bound, near_plane, far_plane);
-        let light_view = Mat4::look_at_rh(light_manager.dir_light.view_pos, vec3(0.0, 0.0, 0.0), vec3(0.0, 1.0, 0.0));
+        let half_bound = light_manager.bounds;
+
+        let bound_l = -half_bound;
+        let bound_r = half_bound;
+        let bound_b = -half_bound;
+        let bound_t = half_bound;
+
+        // Calculate dir_light pos
+        let light_dir = light_manager.dir_light.direction.normalize();
+        let light_distance = light_manager.dir_light.distance;
+        let light_pos = camera.position + light_dir * light_distance;
+
+        let light_projection = Mat4::orthographic_rh_gl(bound_l, bound_r, bound_b, bound_t, near_plane, far_plane);
+        let light_view = Mat4::look_at_rh(light_pos, camera.position, vec3(0.0, 1.0, 0.0));
 
         camera.light_space = light_projection * light_view;
         shader.activate();
