@@ -136,7 +136,7 @@ impl Lights {
 
             near: 0.6,
             far: 115.756,
-            bounds: 10.611,
+            bounds: 30.0,
 
             bias_scalar: 0.002,
         }
