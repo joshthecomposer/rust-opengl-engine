@@ -211,6 +211,20 @@ impl EntityManager {
                 handle_player_movement(pressed_keys, self, player_key, delta, camera, terrain);
              }
 
+            { 
+                // Borrow checker is a pain...... why god
+                // Removing the animatioon and then re-inserting it gets around dual mutable borrows.
+                let animator = self.animators.get_mut(player_key).unwrap();
+
+                let mut run_anim = animator.animations.remove("Run").unwrap();
+
+                let skellington = self.skellingtons.get_mut(player_key).unwrap();
+
+                animator.update(elapsed_time, skellington, Some(&mut run_anim));
+
+                animator.animations.insert("Run".to_string(), run_anim);
+            }
+
             if let Some(donut) = self.entity_types.iter().find(|e| e.value() == &EntityType::Donut) {
                 let donut_key = donut.key();
 
@@ -231,10 +245,10 @@ impl EntityManager {
         }
 
 
-        for animator in self.animators.iter_mut() {
-            if let Some(skellington) = self.skellingtons.get_mut(animator.key()) {
-                animator.value.update(elapsed_time, skellington);
-            }         
-        }
+       // for animator in self.animators.iter_mut() {
+       //     if let Some(skellington) = self.skellingtons.get_mut(animator.key()) {
+       //         animator.value.update(elapsed_time, skellington, None);
+       //     }         
+       // }
     }
 }

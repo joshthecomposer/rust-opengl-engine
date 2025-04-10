@@ -219,7 +219,11 @@ impl GameState {
     pub fn render(&mut self) {
         self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
         self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, self.fb_width, self.fb_height, &mut self.sound_manager);
-        self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera);
+        
+        let player_entry = self.entity_manager.factions.iter().find(|e| e.value() == &Faction::Player).unwrap();
+        let animator = self.entity_manager.animators.get_mut(player_entry.key()).unwrap();
+
+        self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera, animator);
         self.window.swap_buffers();
         self.glfw.poll_events()
     }

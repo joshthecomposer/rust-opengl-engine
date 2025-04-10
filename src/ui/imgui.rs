@@ -1,6 +1,6 @@
 use glfw::{Action, MouseButton, PWindow, WindowEvent};
 
-use crate::{camera::Camera, enums_types::CameraState, gl_call, lights::Lights, renderer::Renderer, sound::sound_manager::SoundManager};
+use crate::{animation::animation::Animator, camera::Camera, enums_types::CameraState, gl_call, lights::Lights, renderer::Renderer, sound::sound_manager::SoundManager};
 
 pub struct ImguiManager {
     pub imgui: imgui::Context,
@@ -59,7 +59,7 @@ impl ImguiManager {
         }
     }
 
-    pub fn draw(&mut self, window: &mut PWindow, width: f32, height: f32, delta: f64, lm: &mut Lights, rdr: &mut Renderer, sm: &mut SoundManager, camera: &Camera) {
+    pub fn draw(&mut self, window: &mut PWindow, width: f32, height: f32, delta: f64, lm: &mut Lights, rdr: &mut Renderer, sm: &mut SoundManager, camera: &Camera, animator: &mut Animator) {
         {
             let io = self.imgui.io_mut();
             io.display_size = [width, height];
@@ -130,9 +130,24 @@ impl ImguiManager {
                     }
 
                 });
+
+            ui.window("Blend Testing")
+                .size([500.0, 200.0], imgui::Condition::FirstUseEver)
+                .position([550.0, 250.0], imgui::Condition::FirstUseEver)
+                .build(|| {
+                    ui.text("Blend between two animations");
+                    ui.separator();
+
+                    if ui.slider("Blend Factor", 0.0, 1.0, &mut animator.blend_factor) {
+                    };
+
+                });
+
         } else {
             window.set_cursor_mode(glfw::CursorMode::Disabled);
         }
+
+
         ui.window("Some Info")
             .size([400.0, 150.0], imgui::Condition::FirstUseEver)
             .position([1100.0, 50.0], imgui::Condition::FirstUseEver)
