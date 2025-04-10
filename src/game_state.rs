@@ -54,10 +54,10 @@ impl GameState {
 
         let (mut width, mut height):(i32, i32) = (2560, 1440);
 
-       let (mut window, events) = glfw
-           .create_window(width as u32, height as u32, "Hello this is window", glfw::WindowMode::Windowed)
-           .expect("Failed to create GLFW window.");
-       window.set_key_polling(true);
+        let (mut window, events) = glfw
+            .create_window(width as u32, height as u32, "Hello this is window", glfw::WindowMode::Windowed)
+            .expect("Failed to create GLFW window.");
+        window.set_key_polling(true);
         // window.set_sticky_keys(true); 
         window.set_cursor_mode(glfw::CursorMode::Disabled);
         window.set_all_polling(true);
@@ -111,7 +111,7 @@ impl GameState {
         let game_config = GameConfig::load_from_file("config/game_config.json");
 
         let mut sound_manager = SoundManager::new(&game_config);
-    
+
         let mut entity_config = EntityConfig::load_from_file("config/entity_config.json");
         let mut entity_manager = EntityManager::new(10_000);
         entity_manager.populate_initial_entity_data(&mut entity_config);
@@ -137,7 +137,7 @@ impl GameState {
         // entity_manager.models.insert(entity_manager.next_entity_id, model);
 
         entity_manager.next_entity_id += 1;
-        
+
         // sound_manager.play_sound_3d("moose3D".to_string(), &vec3(0.0, 0.0, 4.0));
 
         Self {
