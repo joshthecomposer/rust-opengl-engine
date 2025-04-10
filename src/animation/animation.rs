@@ -251,7 +251,6 @@ impl Animator {
     pub fn update(&mut self, elapsed_time: f32, skellington: &mut Bone, to_blend: Option<&mut Animation>) {
         if let Some(animation) = &mut self.animations.get_mut(&self.current_animation) {
             if let Some(to_blend) = to_blend {
-                dbg!(self.blend_factor);
                 animation.update(elapsed_time, skellington, Some(to_blend), self.blend_factor);
             } else {
                 animation.update(elapsed_time, skellington, None, self.blend_factor);
