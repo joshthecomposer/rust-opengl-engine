@@ -1,6 +1,6 @@
 use glfw::{Action, MouseButton, PWindow, WindowEvent};
 
-use crate::{camera::Camera, enums_types::CameraState, gl_call, lights::Lights, renderer::Renderer, sound::sound_manager::SoundManager};
+use crate::{animation::animation::Animator, camera::Camera, enums_types::CameraState, gl_call, lights::Lights, renderer::Renderer, sound::sound_manager::SoundManager};
 
 pub struct ImguiManager {
     pub imgui: imgui::Context,
@@ -130,9 +130,12 @@ impl ImguiManager {
                     }
 
                 });
+
         } else {
             window.set_cursor_mode(glfw::CursorMode::Disabled);
         }
+
+
         ui.window("Some Info")
             .size([400.0, 150.0], imgui::Condition::FirstUseEver)
             .position([1100.0, 50.0], imgui::Condition::FirstUseEver)

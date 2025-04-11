@@ -204,12 +204,19 @@ impl EntityManager {
     pub fn update(&mut self, pressed_keys: &HashSet<glfw::Key>, delta: f64, elapsed_time: f32, camera: &Camera, terrain: &Terrain) {
         handle_npc_movement(self, terrain);
 
+        // =============================================================
+        // Player Pass
+        // =============================================================
         if let Some(player_entry) = self.factions.iter().find(|e| e.value() == &Faction::Player) {
             let player_key = player_entry.key();
 
             if camera.move_state != CameraState::Free {
                 handle_player_movement(pressed_keys, self, player_key, delta, camera, terrain);
-             }
+            }
+
+            let animator = self.animators.get_mut(player_key).unwrap();
+            let skellington = self.skellingtons.get_mut(player_key).unwrap();
+            animator.update(elapsed_time, skellington, delta as f32);
 
             if let Some(donut) = self.entity_types.iter().find(|e| e.value() == &EntityType::Donut) {
                 let donut_key = donut.key();
@@ -230,11 +237,21 @@ impl EntityManager {
             }
         }
 
+        // =============================================================
+        // Non-player pass
+        // =============================================================
+        for faction in self.factions.iter() {
+            if faction.value() == &Faction::Player {
+                continue;
+            }
+            let entity_key = faction.key();
 
-        for animator in self.animators.iter_mut() {
-            if let Some(skellington) = self.skellingtons.get_mut(animator.key()) {
-                animator.value.update(elapsed_time, skellington);
-            }         
+            if let (Some(animator), Some(skellington)) = (
+                self.animators.get_mut(entity_key), 
+                self.skellingtons.get_mut(entity_key)
+            ) {
+                animator.update(elapsed_time, skellington, delta as f32);
+            }
         }
     }
 }

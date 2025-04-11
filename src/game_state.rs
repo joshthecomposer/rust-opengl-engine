@@ -52,12 +52,12 @@ impl GameState {
         #[cfg(target_os = "macos")]
         glfw.window_hint(glfw::WindowHint::OpenGlForwardCompat(true));
 
-        let (mut width, mut height):(i32, i32) = (2560, 1440);
+        let (mut width, mut height):(i32, i32) = (1920, 1080);
 
-       let (mut window, events) = glfw
-           .create_window(width as u32, height as u32, "Hello this is window", glfw::WindowMode::Windowed)
-           .expect("Failed to create GLFW window.");
-       window.set_key_polling(true);
+        let (mut window, events) = glfw
+            .create_window(width as u32, height as u32, "Hello this is window", glfw::WindowMode::Windowed)
+            .expect("Failed to create GLFW window.");
+        window.set_key_polling(true);
         // window.set_sticky_keys(true); 
         window.set_cursor_mode(glfw::CursorMode::Disabled);
         window.set_all_polling(true);
@@ -67,13 +67,14 @@ impl GameState {
             if let Some(monitor) = maybe_monitor {
                 if let Some(video_mode) = monitor.get_video_mode() {
                     // Extract the current resolution & refresh rate from the monitor
-                    (width, height) = (video_mode.width as i32, video_mode.height as i32);
-                    let refresh_rate    = video_mode.refresh_rate; // e.g. 60, 144, etc.
+                    // (width, height) = (video_mode.width as i32, video_mode.height as i32);
+                    // let refresh_rate    = video_mode.refresh_rate; // e.g. 60, 144, etc.
 
                     window.set_monitor(
-                        glfw::WindowMode::FullScreen(monitor),
-                        0,      // X-position on that monitor
-                        0,      // Y-position on that monitor
+                        glfw::WindowMode::Windowed,
+                        // glfw::WindowMode::FullScreen(monitor),
+                        100,      // X-position on that monitor
+                        100,      // Y-position on that monitor
                         width as u32,
                         height as u32,
                         None
@@ -111,7 +112,7 @@ impl GameState {
         let game_config = GameConfig::load_from_file("config/game_config.json");
 
         let mut sound_manager = SoundManager::new(&game_config);
-    
+
         let mut entity_config = EntityConfig::load_from_file("config/entity_config.json");
         let mut entity_manager = EntityManager::new(10_000);
         entity_manager.populate_initial_entity_data(&mut entity_config);
@@ -137,7 +138,7 @@ impl GameState {
         // entity_manager.models.insert(entity_manager.next_entity_id, model);
 
         entity_manager.next_entity_id += 1;
-        
+
         // sound_manager.play_sound_3d("moose3D".to_string(), &vec3(0.0, 0.0, 4.0));
 
         Self {
@@ -218,6 +219,7 @@ impl GameState {
     pub fn render(&mut self) {
         self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
         self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, self.fb_width, self.fb_height, &mut self.sound_manager);
+
         self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera);
         self.window.swap_buffers();
         self.glfw.poll_events()

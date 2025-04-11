@@ -231,14 +231,20 @@ impl BoneTransformTrack {
 #[derive(Debug)]
 pub struct Animator {
     pub current_animation: String,
+    pub next_animation: String,
     pub animations: HashMap<String, Animation>,
+    pub blend_factor: f32,
+    pub blend_time: f32,
 }
 
 impl Animator {
     pub fn new() -> Self {
         Self {
             current_animation: "".to_string(),
+            next_animation: "".to_string(),
             animations: HashMap::new(),
+            blend_factor: 0.0,
+            blend_time: 0.2,
         }
     }
 
@@ -246,9 +252,42 @@ impl Animator {
         self.current_animation = input.to_string();
     }
 
-    pub fn update(&mut self, elapsed_time: f32, skellington: &mut Bone) {
-        if let Some(animation) = &mut self.animations.get_mut(&self.current_animation) {
-            animation.update(elapsed_time, skellington);
+    pub fn set_next_animation(&mut self, input: &str) {
+        self.next_animation = input.to_string();
+    }
+
+    pub fn update(&mut self, elapsed_time: f32, skellington: &mut Bone, dt: f32) {
+
+        // TODO: THIS IS REALLY REALLY ERROR PRONE. it is really easy to accidentally remove something
+        // twice and have it be gone forever, causing an unwrap() on a None animation value later in 
+        // the rendering stage. We should try to find a way to mutably borrow these values somehow without
+        // removing them and also while making the borrow checker happy.
+        // Maybe even a small safer improvement would be to check if the thing exists before removing... 
+        // but not sure how much slower that will be
+
+        if self.current_animation != self.next_animation {
+            self.blend_factor += dt / self.blend_time;
+            if self.blend_factor >= 1.0 {
+                self.blend_factor = 0.0;
+                self.current_animation = self.next_animation.clone();
+            }
+        }
+
+        let curr_key = self.current_animation.clone();
+        let next_key = self.next_animation.clone();
+
+        if curr_key != next_key {
+            if let (Some(mut current), Some(mut next)) = (
+                self.animations.remove(&curr_key),
+                self.animations.remove(&next_key)
+            ) {
+                current.update(elapsed_time, skellington, Some(&mut next), self.blend_factor);
+                self.animations.insert(curr_key, current);
+                self.animations.insert(next_key, next);
+            }
+        } else if let Some(mut current) = self.animations.remove(&curr_key) {
+            current.update(elapsed_time, skellington, None, self.blend_factor);
+            self.animations.insert(curr_key, current);
         }
     }
 }
@@ -289,19 +328,85 @@ impl Animation {
         parent_transform: Mat4,
         global_inverse_transform: Mat4,
     ) {
-        let btt = self.bone_transforms.get(&skeleton.name).unwrap();
-        let dt = elapsed_time % self.duration;
+        let delta = elapsed_time % self.duration;
+        let (local_position, local_rot, local_scale) = self.get_bone_local_transform(skeleton, delta);
+        let local_transform = Mat4::from_scale_rotation_translation(local_scale, local_rot, local_position);
+        let global_transform = parent_transform * local_transform;
 
-        let (segment, fraction) = get_time_fraction(&btt.position_timestamps, dt);
+        self.current_pose[skeleton.id as usize] =
+            match 0 {
+                0 => global_inverse_transform * global_transform * skeleton.offset,
+                1 => global_transform * skeleton.offset * global_inverse_transform,
+                2 => global_transform * skeleton.offset,
+                3 => global_inverse_transform * global_transform,
+                4 => global_inverse_transform * skeleton.offset * global_transform,
+                5 => global_transform * global_inverse_transform * skeleton.offset,
+                10 => Mat4::IDENTITY,
+                _ => global_inverse_transform * global_transform * skeleton.offset,
+            };
+
+        for child in skeleton.children.iter_mut() {
+            self.calculate_pose(child, delta, global_transform, global_inverse_transform);
+        }
+    }
+
+    // The idea is that at blend factor 0.0 we are at the self/current animation. 
+    // At blend factor 1.0 we are fully at the "other" animation. 
+    // At that point the current animation should be switched to the "other"
+    pub fn calculate_pose_blended(
+        &mut self,
+        skeleton: &mut Bone,
+        elapsed_time: f32,
+        parent_transform: Mat4,
+        global_inverse_transform: Mat4,
+        other_animation: &mut Animation,
+        blend_factor: f32,
+    ) {
+        let delta1 = elapsed_time % self.duration;
+        let delta2 = elapsed_time % other_animation.duration;
+
+        let (pos1, rot1, scale1) = self.get_bone_local_transform(skeleton, delta1);
+        let (pos2, rot2, scale2) = other_animation.get_bone_local_transform(skeleton, delta2);
+
+        let final_pos = pos1.lerp(pos2, blend_factor);
+        let final_rot = rot1.slerp(rot2, blend_factor);
+        let final_scale = scale1.lerp(scale2, blend_factor);
+
+        let local_transform = Mat4::from_scale_rotation_translation(final_scale, final_rot, final_pos);
+        let global_transform = parent_transform * local_transform;
+
+        self.current_pose[skeleton.id as usize] =
+            match 0 {
+                0 => global_inverse_transform * global_transform * skeleton.offset,
+                1 => global_transform * skeleton.offset * global_inverse_transform,
+                2 => global_transform * skeleton.offset,
+                3 => global_inverse_transform * global_transform,
+                4 => global_inverse_transform * skeleton.offset * global_transform,
+                5 => global_transform * global_inverse_transform * skeleton.offset,
+                10 => Mat4::IDENTITY,
+                _ => global_inverse_transform * global_transform * skeleton.offset,
+            };
+
+        for child in skeleton.children.iter_mut() {
+            self.calculate_pose_blended(child, elapsed_time, global_transform, global_inverse_transform, other_animation, blend_factor);
+        }
+    }
+
+    fn get_bone_local_transform(&mut self, skeleton: &Bone, delta: f32) -> (Vec3, Quat, Vec3) {
+        let btt = self.bone_transforms.get(&skeleton.name).unwrap();
+
+        let (segment, fraction) = get_time_fraction(&btt.position_timestamps, delta);
 
         self.current_segment = segment;
 
-        let local_transform = if segment == 0 {
+        if segment == 0 {
             // Use the first keyframe
             let position = btt.positions[0];
             let rotation = btt.rotations[0];
             let scale = btt.scales[0];
-            Mat4::from_scale_rotation_translation(scale, rotation, position)
+
+            // Mat4::from_scale_rotation_translation(scale, rotation, position)
+            (position, rotation, scale)
         } else {
             // Get the two keyframes to interpolate between
             let prev_idx = segment - 1;
@@ -322,36 +427,30 @@ impl Animation {
 
             // Perform spherical interpolation (slerp) for rotation
             let interpolated_rotation = prev_rotation.slerp(next_rotation, fraction);
+            // Mat4::from_scale_rotation_translation(interpolated_scale, interpolated_rotation, interpolated_position)
 
-            Mat4::from_scale_rotation_translation(interpolated_scale, interpolated_rotation, interpolated_position)
-        };
-
-        let global_transform = parent_transform * local_transform;
-
-        self.current_pose[skeleton.id as usize] =
-            match 0 {
-                0 => global_inverse_transform * global_transform * skeleton.offset,
-                1 => global_transform * skeleton.offset * global_inverse_transform,
-                2 => global_transform * skeleton.offset,
-                3 => global_inverse_transform * global_transform,
-                4 => global_inverse_transform * skeleton.offset * global_transform,
-                5 => global_transform * global_inverse_transform * skeleton.offset,
-                10 => Mat4::IDENTITY,
-                _ => global_inverse_transform * global_transform * skeleton.offset,
-            };
-
-        for child in skeleton.children.iter_mut() {
-            self.calculate_pose(child, dt, global_transform, global_inverse_transform);
+            (interpolated_position, interpolated_rotation, interpolated_scale)
         }
     }
 
-    pub fn update(&mut self, elapsed_time: f32, skellington: &mut Bone) {
-        self.calculate_pose(
-            skellington, 
-            elapsed_time, 
-            Mat4::IDENTITY,
-            Mat4::IDENTITY, 
-        );
+    pub fn update(&mut self, elapsed_time: f32, skellington: &mut Bone, other_animation: Option<&mut Animation>, blend_factor: f32) {
+        if let Some(other_animation) = other_animation {
+            self.calculate_pose_blended(
+                skellington, 
+                elapsed_time, 
+                Mat4::IDENTITY,
+                Mat4::IDENTITY, 
+                other_animation,
+                blend_factor,
+            );
+        } else {
+            self.calculate_pose(
+                skellington, 
+                elapsed_time, 
+                Mat4::IDENTITY,
+                Mat4::IDENTITY, 
+            );
+        }
     }
 }
 
@@ -474,6 +573,8 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animator, Animation) {
                 animation = Animation::default();
                 current_anim_name = parts[1].to_string();
 
+                dbg!(&current_anim_name);
+
                 for b in &bones_no_children {
                     animation.current_pose.push(b.offset);
                 }
@@ -529,6 +630,7 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animator, Animation) {
 
 
     animator.set_current_animation(current_anim_name.as_str());
+    animator.set_next_animation(current_anim_name.as_str());
     animator.animations.insert(current_anim_name.clone(), animation.clone());
 
     for (_, animation) in animator.animations.iter_mut() {
