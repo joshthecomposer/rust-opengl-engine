@@ -59,7 +59,7 @@ impl ImguiManager {
         }
     }
 
-    pub fn draw(&mut self, window: &mut PWindow, width: f32, height: f32, delta: f64, lm: &mut Lights, rdr: &mut Renderer, sm: &mut SoundManager, camera: &Camera, animator: &mut Animator) {
+    pub fn draw(&mut self, window: &mut PWindow, width: f32, height: f32, delta: f64, lm: &mut Lights, rdr: &mut Renderer, sm: &mut SoundManager, camera: &Camera) {
         {
             let io = self.imgui.io_mut();
             io.display_size = [width, height];
@@ -128,18 +128,6 @@ impl ImguiManager {
                     if ui.slider("Volume", 0.0, 1.0, &mut sm.master_volume) {
                         sm.set_master_volume("music");
                     }
-
-                });
-
-            ui.window("Blend Testing")
-                .size([500.0, 200.0], imgui::Condition::FirstUseEver)
-                .position([550.0, 250.0], imgui::Condition::FirstUseEver)
-                .build(|| {
-                    ui.text("Blend between two animations");
-                    ui.separator();
-
-                    if ui.slider("Blend Factor", 0.0, 1.0, &mut animator.blend_factor) {
-                    };
 
                 });
 

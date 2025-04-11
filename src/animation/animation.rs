@@ -231,16 +231,20 @@ impl BoneTransformTrack {
 #[derive(Debug)]
 pub struct Animator {
     pub current_animation: String,
+    pub next_animation: String,
     pub animations: HashMap<String, Animation>,
     pub blend_factor: f32,
+    pub blend_time: f32,
 }
 
 impl Animator {
     pub fn new() -> Self {
         Self {
             current_animation: "".to_string(),
+            next_animation: "".to_string(),
             animations: HashMap::new(),
             blend_factor: 0.0,
+            blend_time: 0.2,
         }
     }
 
@@ -248,15 +252,44 @@ impl Animator {
         self.current_animation = input.to_string();
     }
 
-    pub fn update(&mut self, elapsed_time: f32, skellington: &mut Bone, to_blend: Option<&mut Animation>) {
-        if let Some(animation) = &mut self.animations.get_mut(&self.current_animation) {
-            if let Some(to_blend) = to_blend {
-                animation.update(elapsed_time, skellington, Some(to_blend), self.blend_factor);
-            } else {
-                animation.update(elapsed_time, skellington, None, self.blend_factor);
+    pub fn set_next_animation(&mut self, input: &str) {
+        self.next_animation = input.to_string();
+    }
+
+    pub fn update(&mut self, elapsed_time: f32, skellington: &mut Bone, dt: f32) {
+
+        // TODO: THIS IS REALLY REALLY ERROR PRONE. it is really easy to accidentally remove something
+        // twice and have it be gone forever, causing an unwrap() on a None animation value later in 
+        // the rendering stage. We should try to find a way to mutably borrow these values somehow without
+        // removing them and also while making the borrow checker happy.
+        // Maybe even a small safer improvement would be to check if the thing exists before removing... 
+        // but not sure how much slower that will be
+
+        if self.current_animation != self.next_animation {
+            self.blend_factor += dt / self.blend_time;
+            if self.blend_factor >= 1.0 {
+                self.blend_factor = 0.0;
+                self.current_animation = self.next_animation.clone();
             }
         }
-    } 
+
+        let curr_key = self.current_animation.clone();
+        let next_key = self.next_animation.clone();
+
+        if curr_key != next_key {
+            if let (Some(mut current), Some(mut next)) = (
+                self.animations.remove(&curr_key),
+                self.animations.remove(&next_key)
+            ) {
+                current.update(elapsed_time, skellington, Some(&mut next), self.blend_factor);
+                self.animations.insert(curr_key, current);
+                self.animations.insert(next_key, next);
+            }
+        } else if let Some(mut current) = self.animations.remove(&curr_key) {
+            current.update(elapsed_time, skellington, None, self.blend_factor);
+            self.animations.insert(curr_key, current);
+        }
+    }
 }
 
 
@@ -540,6 +573,8 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animator, Animation) {
                 animation = Animation::default();
                 current_anim_name = parts[1].to_string();
 
+                dbg!(&current_anim_name);
+
                 for b in &bones_no_children {
                     animation.current_pose.push(b.offset);
                 }
@@ -595,6 +630,7 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animator, Animation) {
 
 
     animator.set_current_animation(current_anim_name.as_str());
+    animator.set_next_animation(current_anim_name.as_str());
     animator.animations.insert(current_anim_name.clone(), animation.clone());
 
     for (_, animation) in animator.animations.iter_mut() {

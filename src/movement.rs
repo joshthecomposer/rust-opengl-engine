@@ -43,7 +43,7 @@ pub fn handle_player_movement(pressed_keys: &HashSet<glfw::Key>, em: &mut Entity
     let transform = em.transforms.get_mut(player_key).unwrap();
     let animator = em.animators.get_mut(player_key).unwrap();
 
-    animator.current_animation = new_state.to_string();
+    animator.next_animation = new_state.to_string();
 
     if let Some(rot) = new_rotation {
         transform.rotation = rot;

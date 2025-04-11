@@ -109,3 +109,96 @@
             gl_call!(gl::BindVertexArray(0));
         }
 
+
+
+
+		{
+			"entity_type": "MooseMan",
+			"position": [0.0, 0.0, 4.0],
+			"scale": [0.013, 0.013, 0.013],
+			"__note__": "use Quat::from_rotation_x()",
+			"rotation": "-FRAC_PI_2",
+			"faction": "Enemy",
+			"mesh_path": "resources/models/animated/001_moose/moose_model_FINAL.txt", 
+			"bone_path": "resources/models/animated/001_moose/moose_bones_FINAL.txt",
+			"animation_properties" : [
+				{
+					"name": "Idle",
+					"one_shots": { },
+					"continuous_sounds": [
+						"moose3D"
+					]
+				}
+			]
+		},
+
+
+
+		{
+			"entity_type": "TreeFoliage",
+			"position": [-4.2, 0.0, -3.1],
+			"scale": [1.0, 1.0, 1.0],
+			"__note__": "use Quat::from_rotation_x()",
+			"rotation": "",
+			"faction": "Static",
+			"mesh_path": "resources/models/static/trees/001_tree_foliage_model.txt", 
+			"bone_path":"",
+			"animation_properties" : []
+		},
+		{
+			"entity_type": "TreeTrunk",
+			"position": [-4.2, 0.0, -3.1],
+			"scale": [1.0, 1.0, 1.0],
+			"__note__": "use Quat::from_rotation_x()",
+			"rotation": "",
+			"faction": "Static",
+			"mesh_path": "resources/models/static/trees/001_tree_trunk_model.txt", 
+			"bone_path":"",
+			"animation_properties" : []
+		},
+		{
+			"entity_type": "TreeFoliage",
+			"position": [3.0, 0.0, 2.8],
+			"scale": [1.0, 1.0, 1.0],
+			"__note__": "use Quat::from_rotation_x()",
+			"rotation": "",
+			"faction": "Static",
+			"mesh_path": "resources/models/static/trees/001_tree_foliage_model.txt", 
+			"bone_path":"",
+			"animation_properties" : []
+		},
+		{
+			"entity_type": "TreeTrunk",
+			"position": [3.0, 0.0, 2.8],
+			"scale": [1.0, 1.0, 1.0],
+			"__note__": "use Quat::from_rotation_x()",
+			"rotation": "",
+			"faction": "Static",
+			"mesh_path": "resources/models/static/trees/001_tree_trunk_model.txt", 
+			"bone_path":"",
+			"animation_properties" : []
+		},
+
+
+		{
+			"entity_type": "TreeFoliage",
+			"position": [5.0, 0.0, -2.1],
+			"scale": [1.0, 1.0, 1.0],
+			"__note__": "use Quat::from_rotation_x()",
+			"rotation": "",
+			"faction": "Static",
+			"mesh_path": "resources/models/static/trees/001_tree_foliage_model.txt", 
+			"bone_path":"",
+			"animation_properties" : []
+		},
+		{
+			"entity_type": "TreeTrunk",
+			"position": [5.0, 0.0, -2.1],
+			"scale": [1.0, 1.0, 1.0],
+			"__note__": "use Quat::from_rotation_x()",
+			"rotation": "",
+			"faction": "Static",
+			"mesh_path": "resources/models/static/trees/001_tree_trunk_model.txt", 
+			"bone_path":"",
+			"animation_properties" : []
+		}
