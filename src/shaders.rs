@@ -12,8 +12,8 @@ pub struct Shader {
 }
 
 impl Shader {
-    pub fn new(vs: &str, fs: &str) -> Self {
-        let id = init_shader_program(vs, fs);
+    pub fn new(vs: &str, fs: &str, gs: Option<&str>) -> Self {
+        let id = init_shader_program(vs, fs, gs);
         Self {
             id,
             uniform_locations: HashMap::new(),
@@ -40,7 +40,7 @@ impl Shader {
 
     pub fn store_point_light_location(&mut self, name: &str) {
         self.store_uniform_location(format!("{}.position", name).as_str());
-        self.store_uniform_location(format!("{}.ambient", name).as_str());
+self.store_uniform_location(format!("{}.ambient", name).as_str());
         self.store_uniform_location(format!("{}.diffuse", name).as_str());
         self.store_uniform_location(format!("{}.specular", name).as_str());
         self.store_uniform_location(format!("{}.constant", name).as_str());
@@ -147,38 +147,99 @@ impl Shader {
 
 }
 
-pub fn init_shader_program(vs: &str, fs: &str) -> u32 {
+pub fn init_shader_program(file_path: &str) -> u32 {
     println!("Loading vs: {}", vs);
     println!("Loading fs: {}", fs);
-    let vs_source = read_to_string(vs).unwrap();
-    let fs_source = read_to_string(fs).unwrap();
+
+    let (vs_source, gs_source, fs_source) = extract_shader_sources(file_path);
 
     let vs_cstr = CString::new(vs_source).expect("Failed to convert vs source to C string");
-    let fs_cstr = CString::new(fs_source).expect("Failed to convert vs source to C string");
+    let fs_cstr = CString::new(fs_source).expect("Failed to convert fs source to C string");
     
     unsafe {
-
-        let vertex_shader = gl::CreateShader(gl::VERTEX_SHADER);
-        let fragment_shader = gl::CreateShader(gl::FRAGMENT_SHADER);
-
-        gl::ShaderSource(vertex_shader, 1, &vs_cstr.as_ptr(), ptr::null());
-        gl::ShaderSource(fragment_shader, 1, &fs_cstr.as_ptr(), ptr::null());
-
-        compile_shader(vertex_shader);
-        compile_shader(fragment_shader);
-
         let shader = gl::CreateProgram();
-
+        
+        // Vertex Shader
+        let vertex_shader = gl::CreateShader(gl::VERTEX_SHADER);
+        gl::ShaderSource(vertex_shader, 1, &vs_cstr.as_ptr(), ptr::null());
+        compile_shader(vertex_shader);
         gl::AttachShader(shader, vertex_shader);
+
+        // Fragment Shader
+        let fragment_shader = gl::CreateShader(gl::FRAGMENT_SHADER);
+        gl::ShaderSource(fragment_shader, 1, &fs_cstr.as_ptr(), ptr::null());
+        compile_shader(fragment_shader);
         gl::AttachShader(shader, fragment_shader);
+        
+        // optional geometry shader
+        let geometry_shader = if let Some(gs_str) = gs {
+            let gs_source = read_to_string(gs_str).unwrap();
+            let gs_cstr = CString::new(gs_source).expect("Failed to convert gs source to C string");
+            let geometry_shader = gl::CreateShader(gl::GEOMETRY_SHADER);
+            gl::ShaderSource(geometry_shader, 1, &gs_cstr.as_ptr(), ptr::null());
+            compile_shader(geometry_shader);
+            Some(geometry_shader)
+        } else {
+            None
+        };
+
 
         gl::LinkProgram(shader);
 
         gl::DeleteShader(vertex_shader);
         gl::DeleteShader(fragment_shader);
 
+        if let Some(geometry_shader) = geometry_shader {
+            gl::DeleteShader(geometry_shader);
+        }
         shader
     }
+}
+
+fn extract_shader_sources(file_path: &str) -> (String, Option<String>, String) {
+    let data = read_to_string(file_path).unwrap();
+    let mut lines = data.lines();
+
+    let mut current_shader = None;
+    let mut shader_sources = HashMap::new();
+
+    while let Some(line) = lines.next() {
+        match line.trim() {
+            "// VERTEX_SHADER" => {
+                println!("Located vertex shader, extracting now...");
+                current_shader = Some("VERTEX_SHADER".to_string());
+                shader_sources.insert("VERTEX_SHADER".to_string(), String::new());
+            }
+                "// FRAGMENT_SHADER" => {
+                println!("Located fragment shader, extracting now...");
+                current_shader = Some("FRAGMENT_SHADER".to_string());
+                shader_sources.insert("FRAGMENT_SHADER".to_string(), String::new());
+            }
+            "// GEOMETRY_SHADER" => {
+                println!("Located geometry shader shader, extracting now...");
+                current_shader = Some("FRAGMENT_SHADER".to_string());
+                shader_sources.insert("FRAGMENT_SHADER".to_string(), String::new());
+            }
+            _ => {
+                if let Some(ref shader_type) = current_shader {
+                    shader_sources
+                        .entry(shader_type.clone())
+                        .and_modify( |src| {
+                            src.push_str(line);
+                            src.push('\n');
+                        });
+                }
+            }
+        }
+    }
+
+    dbg!(shader_sources.get("VERTEX_SHADER"));
+
+    (
+        shader_sources.remove("VERTEX_SHADER").unwrap(), 
+        shader_sources.remove("GEOMETRY_SHADER"),
+        shader_sources.remove("FRAGMENT_SHADER").unwrap()
+    )
 }
 
 fn compile_shader(input: u32) {

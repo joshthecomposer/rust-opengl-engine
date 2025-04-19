@@ -28,27 +28,27 @@ impl Renderer {
         let mut vaos = HashMap::new();
         let mut fbos = HashMap::new();
 
-        let mut skybox_shader = Shader::new("resources/shaders/skybox.vs", "resources/shaders/skybox.fs");
+        let mut skybox_shader = Shader::new("resources/shaders/skybox.vs", "resources/shaders/skybox.fs", None);
 
         skybox_shader.store_uniform_location("view");
         skybox_shader.store_uniform_location("projection");
         skybox_shader.store_uniform_location("skybox");
         
-        let mut debug_light_shader = Shader::new("resources/shaders/point_light.vs", "resources/shaders/point_light.fs");
+        let mut debug_light_shader = Shader::new("resources/shaders/point_light.vs", "resources/shaders/point_light.fs", None);
         debug_light_shader.store_uniform_location("model");
         debug_light_shader.store_uniform_location("view");
         debug_light_shader.store_uniform_location("projection");
         debug_light_shader.store_uniform_location("LightColor");
 
-        let mut depth_shader = Shader::new("resources/shaders/depth_shader.vs","resources/shaders/depth_shader.fs");
+        let mut depth_shader = Shader::new("resources/shaders/depth_shader.vs","resources/shaders/depth_shader.fs", None);
         depth_shader.store_uniform_location("light_space_mat");
         depth_shader.store_uniform_location("model");
         depth_shader.store_uniform_location("is_animated");
         depth_shader.store_uniform_location("bone_transforms");
 
-        let text_shader = Shader::new("resources/shaders/text.vs", "resources/shaders/text.fs");
+        let text_shader = Shader::new("resources/shaders/text.vs", "resources/shaders/text.fs", None);
 
-        let mut model_shader = Shader::new("resources/shaders/model_rework.vs", "resources/shaders/model_rework.fs");
+        let mut model_shader = Shader::new("resources/shaders/model_rework.vs", "resources/shaders/model_rework.fs", None);
         model_shader.store_uniform_location("projection");
         model_shader.store_uniform_location("view");
         model_shader.store_uniform_location("model");
@@ -227,7 +227,7 @@ impl Renderer {
             gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER, 0));
         }
 
-        let mut debug_depth_quad = Shader::new("resources/shaders/debug_depth_quad.vs","resources/shaders/debug_depth_quad.fs");
+        let mut debug_depth_quad = Shader::new("resources/shaders/debug_depth_quad.vs","resources/shaders/debug_depth_quad.fs", None);
 
         debug_depth_quad.activate();
         debug_depth_quad.store_uniform_location("depth_map");
