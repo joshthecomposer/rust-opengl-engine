@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(dead_code, clippy::while_let_on_iterator, clippy::collapsible_if)]
 use std::{collections::HashMap, ffi::CString, fs::read_to_string, ptr};
 
 use gl::types::{GLint, GLuint};
@@ -14,15 +14,41 @@ pub struct Shader {
 impl Shader {
     pub fn new(file_path: &str) -> Self {
         let id = init_shader_program(file_path);
-        Self {
+
+        let mut shader = Self {
             id,
             uniform_locations: HashMap::new(),
-        }
+        }; 
+
+        shader.parse_and_store_uniforms(file_path);
+
+        shader
     }
 
     pub fn activate(&self) {
         unsafe { gl_call!(gl::UseProgram(self.id)) }
     }
+
+    fn parse_and_store_uniforms(&mut self, file_path: &str) {
+        let data = read_to_string(file_path).unwrap();
+        let mut lines = data.lines();
+
+        while let Some(line) = lines.next() {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+
+            if parts.is_empty() {
+                continue;
+            }
+
+            if parts[0] == "uniform" {
+                if parts[1] != "Material" && parts[1] != "DirLight" {
+                    let cleaned_part = parts[2].split('[').collect::<Vec<&str>>()[0].replace(';', "");
+                    println!("Setting up uniform location: {}", cleaned_part);
+                    self.store_uniform_location(cleaned_part.as_str());
+                }
+            }
+        }
+    }   
 
     pub fn store_uniform_location(&mut self, name: &str) {
         let c_name = CString::new(name).unwrap();
@@ -172,7 +198,7 @@ pub fn init_shader_program(file_path: &str) -> u32 {
         let geometry_shader = if let Some(gs_source) = gs_source {
             let gs_cstr = CString::new(gs_source).expect("Failed to convert gs source to C string");
             let geometry_shader = gl::CreateShader(gl::GEOMETRY_SHADER);
-            gl::ShaderSource(geometry_shader, 1, &gs_cstr.as_ptr(), ptr::null());
+            gl_call!(gl::ShaderSource(geometry_shader, 1, &gs_cstr.as_ptr(), ptr::null()));
             compile_shader(geometry_shader);
             Some(geometry_shader)
         } else {
@@ -180,7 +206,7 @@ pub fn init_shader_program(file_path: &str) -> u32 {
         };
 
 
-        gl::LinkProgram(shader);
+        gl_call!(gl::LinkProgram(shader));
 
         gl::DeleteShader(vertex_shader);
         gl::DeleteShader(fragment_shader);
@@ -238,15 +264,15 @@ fn extract_shader_sources(file_path: &str) -> (String, Option<String>, String) {
 
 fn compile_shader(input: u32) {
     unsafe {
-        gl::CompileShader(input);
+        gl_call!(gl::CompileShader(input));
 
         let mut success:i32 = 0;
         let mut info_log = vec![0u8; 512];
 
-        gl::GetShaderiv(input, gl::COMPILE_STATUS, &mut success);
+        gl_call!(gl::GetShaderiv(input, gl::COMPILE_STATUS, &mut success));
 
         if success == 0 {
-            gl::GetShaderInfoLog(input, 512, core::ptr::null_mut(), info_log.as_mut_ptr() as *mut i8);
+            gl_call!(gl::GetShaderInfoLog(input, 512, core::ptr::null_mut(), info_log.as_mut_ptr() as *mut i8));
             println!("Problem compiling shader: {:?}", String::from_utf8_lossy(&info_log));
         }
     }
