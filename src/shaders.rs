@@ -12,8 +12,8 @@ pub struct Shader {
 }
 
 impl Shader {
-    pub fn new(vs: &str, fs: &str, gs: Option<&str>) -> Self {
-        let id = init_shader_program(vs, fs, gs);
+    pub fn new(file_path: &str) -> Self {
+        let id = init_shader_program(file_path);
         Self {
             id,
             uniform_locations: HashMap::new(),
@@ -148,9 +148,6 @@ self.store_uniform_location(format!("{}.ambient", name).as_str());
 }
 
 pub fn init_shader_program(file_path: &str) -> u32 {
-    println!("Loading vs: {}", vs);
-    println!("Loading fs: {}", fs);
-
     let (vs_source, gs_source, fs_source) = extract_shader_sources(file_path);
 
     let vs_cstr = CString::new(vs_source).expect("Failed to convert vs source to C string");
@@ -172,8 +169,7 @@ pub fn init_shader_program(file_path: &str) -> u32 {
         gl::AttachShader(shader, fragment_shader);
         
         // optional geometry shader
-        let geometry_shader = if let Some(gs_str) = gs {
-            let gs_source = read_to_string(gs_str).unwrap();
+        let geometry_shader = if let Some(gs_source) = gs_source {
             let gs_cstr = CString::new(gs_source).expect("Failed to convert gs source to C string");
             let geometry_shader = gl::CreateShader(gl::GEOMETRY_SHADER);
             gl::ShaderSource(geometry_shader, 1, &gs_cstr.as_ptr(), ptr::null());
@@ -232,8 +228,6 @@ fn extract_shader_sources(file_path: &str) -> (String, Option<String>, String) {
             }
         }
     }
-
-    dbg!(shader_sources.get("VERTEX_SHADER"));
 
     (
         shader_sources.remove("VERTEX_SHADER").unwrap(), 

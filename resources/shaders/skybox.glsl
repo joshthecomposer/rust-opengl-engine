@@ -1,3 +1,4 @@
+// VERTEX_SHADER
 #version 330 core
 layout (location = 0) in vec3 aPos;
 
@@ -14,3 +15,16 @@ void main()
     // We want to flip the z axis due to the different coordinate systems (left hand vs right hand)
     texCoords = vec3(aPos.x, aPos.y, -aPos.z);
 }    
+
+// FRAGMENT_SHADER
+#version 330 core
+out vec4 FragColor;
+
+in vec3 texCoords;
+
+uniform samplerCube skybox;
+
+void main()
+{    
+    FragColor = texture(skybox, texCoords);
+}
