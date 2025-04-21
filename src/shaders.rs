@@ -41,10 +41,21 @@ impl Shader {
             }
 
             if parts[0] == "uniform" {
-                if parts[1] != "Material" && parts[1] != "DirLight" {
-                    let cleaned_part = parts[2].split('[').collect::<Vec<&str>>()[0].replace(';', "");
-                    println!("Setting up uniform location: {}", cleaned_part);
-                    self.store_uniform_location(cleaned_part.as_str());
+                let cleaned_part = parts[2].split('[').collect::<Vec<&str>>()[0].replace(';', "");
+
+                match parts[1] {
+                    "Material" => {
+                        println!("Setting up uniform Material location: {}", cleaned_part);
+                        self.store_material_location(cleaned_part.as_str());
+                    }
+                    "DirLight" => {
+                        println!("Setting up uniform Material location: {}", cleaned_part);
+                        self.store_dir_light_location(cleaned_part.as_str());
+                    }
+                    _ => {
+                        println!("Setting up uniform location: {}", cleaned_part);
+                        self.store_uniform_location(cleaned_part.as_str());
+                    }
                 }
             }
         }
@@ -66,12 +77,19 @@ impl Shader {
 
     pub fn store_point_light_location(&mut self, name: &str) {
         self.store_uniform_location(format!("{}.position", name).as_str());
-self.store_uniform_location(format!("{}.ambient", name).as_str());
+        self.store_uniform_location(format!("{}.ambient", name).as_str());
         self.store_uniform_location(format!("{}.diffuse", name).as_str());
         self.store_uniform_location(format!("{}.specular", name).as_str());
         self.store_uniform_location(format!("{}.constant", name).as_str());
         self.store_uniform_location(format!("{}.linear", name).as_str());
         self.store_uniform_location(format!("{}.quadratic", name).as_str());
+    }
+
+    pub fn store_material_location(&mut self, name: &str) {
+        self.store_uniform_location(format!("{}.Diffuse", name).as_str());
+        self.store_uniform_location(format!("{}.Specular", name).as_str());
+        self.store_uniform_location(format!("{}.Emissive", name).as_str());
+        self.store_uniform_location(format!("{}.Opacity", name).as_str());
     }
 
     pub fn get_uniform_location(&self, name: &str) -> GLint {

@@ -29,19 +29,10 @@ impl Renderer {
         let mut fbos = HashMap::new();
 
         let skybox_shader = Shader::new("resources/shaders/skybox.glsl");
-        
         let debug_light_shader = Shader::new("resources/shaders/point_light.glsl");
-
         let depth_shader = Shader::new("resources/shaders/depth_shader.glsl");
-
         let text_shader = Shader::new("resources/shaders/text.glsl");
-
-        let mut model_shader = Shader::new("resources/shaders/model_rework.glsl");
-        model_shader.store_dir_light_location("dir_light");
-        model_shader.store_uniform_location("material.Diffuse");
-        model_shader.store_uniform_location("material.Specular");
-        model_shader.store_uniform_location("material.Emissive");
-        model_shader.store_uniform_location("material.Opacity");
+        let model_shader = Shader::new("resources/shaders/model_rework.glsl");
 
         let mut vao = 0;
         let mut vbo = 0;
