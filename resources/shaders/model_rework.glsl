@@ -94,6 +94,7 @@ struct DirLight {
 	vec3 specular;
 };
 uniform DirLight dir_light;
+
 uniform float bias_scalar;
 uniform vec3 view_position;
 uniform bool alpha_test_pass;

@@ -28,42 +28,11 @@ impl Renderer {
         let mut vaos = HashMap::new();
         let mut fbos = HashMap::new();
 
-        let mut skybox_shader = Shader::new("resources/shaders/skybox.glsl");
-
-        skybox_shader.store_uniform_location("view");
-        skybox_shader.store_uniform_location("projection");
-        skybox_shader.store_uniform_location("skybox");
-        
-        let mut debug_light_shader = Shader::new("resources/shaders/point_light.glsl");
-        debug_light_shader.store_uniform_location("model");
-        debug_light_shader.store_uniform_location("view");
-        debug_light_shader.store_uniform_location("projection");
-        debug_light_shader.store_uniform_location("LightColor");
-
-        let mut depth_shader = Shader::new("resources/shaders/depth_shader.glsl");
-        depth_shader.store_uniform_location("light_space_mat");
-        depth_shader.store_uniform_location("model");
-        depth_shader.store_uniform_location("is_animated");
-        depth_shader.store_uniform_location("bone_transforms");
-
+        let skybox_shader = Shader::new("resources/shaders/skybox.glsl");
+        let debug_light_shader = Shader::new("resources/shaders/point_light.glsl");
+        let depth_shader = Shader::new("resources/shaders/depth_shader.glsl");
         let text_shader = Shader::new("resources/shaders/text.glsl");
-
-        let mut model_shader = Shader::new("resources/shaders/model_rework.glsl");
-        model_shader.store_uniform_location("projection");
-        model_shader.store_uniform_location("view");
-        model_shader.store_uniform_location("model");
-        model_shader.store_uniform_location("bone_transforms");
-        model_shader.store_dir_light_location("dir_light");
-        model_shader.store_uniform_location("light_space_mat");
-        model_shader.store_uniform_location("shadow_map");
-        model_shader.store_uniform_location("material.Diffuse");
-        model_shader.store_uniform_location("material.Specular");
-        model_shader.store_uniform_location("material.Emissive");
-        model_shader.store_uniform_location("material.Opacity");
-        model_shader.store_uniform_location("view_position");
-        model_shader.store_uniform_location("is_animated");
-        model_shader.store_uniform_location("has_opacity_texture");
-        model_shader.store_uniform_location("alpha_test_pass");
+        let model_shader = Shader::new("resources/shaders/model_rework.glsl");
 
         let mut vao = 0;
         let mut vbo = 0;
