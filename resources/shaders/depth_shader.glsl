@@ -1,3 +1,4 @@
+// VERTEX_SHADER
 #version 330 core
 layout (location = 0) in vec3 a_pos;
 layout (location = 3) in ivec4 bone_ids;
@@ -32,4 +33,12 @@ void main()
 	} else {
 		gl_Position = light_space_mat * model * vec4(a_pos, 1.0);
 	}
+}
+
+// FRAGMENT_SHADER
+#version 330 core
+
+void main()
+{             
+    // gl_FragDepth = gl_FragCoord.z;
 }

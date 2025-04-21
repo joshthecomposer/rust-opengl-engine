@@ -1,4 +1,4 @@
-
+// VERTEX_SHADER
 #version 330 core
 layout (location = 0) in vec3 aPos; // the position variable has attribute position 0
 
@@ -17,4 +17,15 @@ void main()
 
     gl_Position = projection * viewPosition; 
 	light_color = LightColor;
+}
+
+// FRAGMENT_SHADER
+#version 330 core
+
+in vec3 light_color;
+out vec4 FragColor;
+
+void main()
+{
+    FragColor = vec4(light_color, 1.0);
 }
