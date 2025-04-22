@@ -43,6 +43,17 @@ pub enum ShaderType {
     Text,
 }
 
+/// A struct to carry some rotation state for blending between rotations smoothly
+/// different than the Transform which just holds the current true simulation state
+/// which might be blended between cur_rot and next_rot
+#[derive(Debug)]
+pub struct Rotator {
+    pub cur_rot: Quat,
+    pub next_rot: Quat,
+    pub blend_factor: f32,
+    pub blend_time: f32,
+}
+
 #[derive(Debug)]
 pub struct Transform {
     pub position: Vec3,

@@ -1,11 +1,11 @@
-#![allow(dead_code)]
+#![allow(dead_code, clippy::too_many_arguments)]
 use std::collections::HashSet;
 
 use glam::{vec3, Quat, Vec3};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-use crate::{animation::animation::{import_bone_data, import_model_data, Model, Animation, Animator, Bone}, camera::Camera, config::entity_config::{AnimationPropHelper, EntityConfig}, enums_types::{CameraState, CellType, EntityType, Faction, Transform}, grid::Grid, movement::{handle_npc_movement, handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, terrain::Terrain};
+use crate::{animation::animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model}, camera::Camera, config::entity_config::{AnimationPropHelper, EntityConfig}, enums_types::{CameraState, CellType, EntityType, Faction, Rotator, Transform}, grid::Grid, movement::{handle_npc_movement, handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, terrain::Terrain};
 
 pub struct EntityManager {
     pub next_entity_id: usize,
@@ -16,6 +16,8 @@ pub struct EntityManager {
     pub ani_models: SparseSet<Model>,
     pub animators: SparseSet<Animator>,
     pub skellingtons: SparseSet<Bone>,
+    pub rotators: SparseSet<Rotator>,
+
     pub rng: ChaCha8Rng,
 }
 
@@ -30,6 +32,8 @@ impl EntityManager {
             ani_models: SparseSet::with_capacity(max_entities),
             animators: SparseSet::with_capacity(max_entities),
             skellingtons: SparseSet::with_capacity(max_entities),
+            rotators: SparseSet::with_capacity(max_entities),
+
             rng: ChaCha8Rng::seed_from_u64(1)
         }
     }
@@ -67,6 +71,9 @@ impl EntityManager {
     }
 
     pub fn create_static_entity(&mut self,entity_type: EntityType, faction: Faction, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str) {
+        self.factions.insert(self.next_entity_id, faction);
+        self.entity_types.insert(self.next_entity_id, entity_type);
+
         let transform = Transform {
             position,
             rotation,
@@ -74,9 +81,9 @@ impl EntityManager {
 
             original_rotation: rotation,
         };
+        self.transforms.insert(self.next_entity_id, transform);
 
         let mut model = Model::new();
-
         let mut found = false;
         for m in self.models.iter_mut() {
             if m.value().full_path == *model_path.to_string() {
@@ -88,16 +95,13 @@ impl EntityManager {
         if !found {
             model = import_model_data(model_path, &Animation::default());
         }
-        
-        self.transforms.insert(self.next_entity_id, transform);
-        self.factions.insert(self.next_entity_id, faction);
-        self.entity_types.insert(self.next_entity_id, entity_type);
         self.models.insert(self.next_entity_id, model);
 
+        
         self.next_entity_id += 1;
     }
 
-    pub fn create_animated_entity(&mut self, faction: Faction, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str, animation_path: &str, animation_props: &Vec<AnimationPropHelper>) {
+    pub fn create_animated_entity(&mut self, faction: Faction, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str, animation_path: &str, animation_props: &[AnimationPropHelper]) {
         let transform = Transform {
             position,
             rotation,
@@ -141,6 +145,14 @@ impl EntityManager {
         if !found {
             model = import_model_data(model_path, &animation);
         }         
+
+        let rotator = Rotator {
+            cur_rot: rotation,
+            next_rot: rotation,
+            blend_factor: 0.0, 
+            blend_time: 0.11,
+        };
+        self.rotators.insert(self.next_entity_id, rotator);
 
         self.animators.insert(self.next_entity_id, animator);
 
