@@ -185,6 +185,41 @@ impl Model {
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
         }
     }
+
+    pub fn create_bounding_box(&self) -> Self {
+        let hitbox = Self::new();
+
+        let mut big_x = 0.0;
+        let mut small_x = 0.0;
+
+        let mut big_y = 0.0;
+        let mut small_y = 0.0;
+
+        let mut big_z = 0.0;
+        let mut small_z = 0.0;
+        
+        for v in self.vertices.iter() {
+            if v.position.x > big_x {
+                big_x = v.position.x;
+            } else if v.position.x < small_x {
+                small_x = v.position.x;
+            }
+
+            if v.position.y > big_y {
+                big_y = v.position.y;
+            } else if v.position.y < small_y {
+                small_y = v.position.y;
+            }
+
+            if v.position.z > big_z {
+                big_z = v.position.z;
+            } else if v.position.z < small_z {
+                small_z = v.position.z;
+            }
+        }
+
+        hitbox
+    }
 }
 
 #[derive(Debug, Clone)]

@@ -127,4 +127,3 @@ pub enum CameraState {
     Third,
     Locked,
 }
-

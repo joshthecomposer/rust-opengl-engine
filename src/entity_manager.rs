@@ -17,6 +17,7 @@ pub struct EntityManager {
     pub animators: SparseSet<Animator>,
     pub skellingtons: SparseSet<Bone>,
     pub rotators: SparseSet<Rotator>,
+    pub hitboxes: SparseSet<Model>,
 
     pub rng: ChaCha8Rng,
 }
@@ -33,6 +34,7 @@ impl EntityManager {
             animators: SparseSet::with_capacity(max_entities),
             skellingtons: SparseSet::with_capacity(max_entities),
             rotators: SparseSet::with_capacity(max_entities),
+            hitboxes: SparseSet::with_capacity(max_entities),
 
             rng: ChaCha8Rng::seed_from_u64(1)
         }
