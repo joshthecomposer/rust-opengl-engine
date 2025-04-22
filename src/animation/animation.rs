@@ -235,6 +235,7 @@ pub struct Animator {
     pub animations: HashMap<String, Animation>,
     pub blend_factor: f32,
     pub blend_time: f32,
+
 }
 
 impl Animator {
@@ -425,7 +426,7 @@ impl Animation {
             let interpolated_position = prev_position.lerp(next_position, fraction);
             let interpolated_scale = prev_scale.lerp(next_scale, fraction);
 
-            // Perform spherical interpolation (slerp) for rotation
+            // Perform spherical interpolation (slerp) for rotation (bone rotation)
             let interpolated_rotation = prev_rotation.slerp(next_rotation, fraction);
             // Mat4::from_scale_rotation_translation(interpolated_scale, interpolated_rotation, interpolated_position)
 

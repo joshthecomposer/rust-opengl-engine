@@ -33,7 +33,7 @@ pub fn handle_player_movement(pressed_keys: &HashSet<glfw::Key>, em: &mut Entity
         velocity = move_dir * speed;
 
         let rot =Quat::from_rotation_y(f32::atan2(-move_dir.x, -move_dir.z));
-        new_rotation = Some(rot * em.transforms.get(player_key).unwrap().original_rotation);
+        new_rotation = Some(rot * em.transforms.get(player_key).unwrap().original_rotation.normalize());
         "Run"
     } else {
         new_rotation = None;
@@ -41,12 +41,24 @@ pub fn handle_player_movement(pressed_keys: &HashSet<glfw::Key>, em: &mut Entity
     };
 
     let transform = em.transforms.get_mut(player_key).unwrap();
+    let rotator = em.rotators.get_mut(player_key).unwrap();
+    if rotator.next_rot != rotator.cur_rot {
+        rotator.blend_factor += delta as f32 / rotator.blend_time;
+        if rotator.blend_factor >= 1.0 {
+            rotator.blend_factor = 0.0;
+            rotator.cur_rot = rotator.next_rot;
+        }
+    }
     let animator = em.animators.get_mut(player_key).unwrap();
 
     animator.next_animation = new_state.to_string();
 
     if let Some(rot) = new_rotation {
-        transform.rotation = rot;
+        if rotator.blend_factor == 0.0 && rot != rotator.cur_rot {
+            rotator.next_rot = rot;
+        }
+
+        transform.rotation = rotator.cur_rot.slerp(rotator.next_rot, rotator.blend_factor);
     }
 
     transform.position += velocity;
