@@ -17,6 +17,7 @@ pub struct EntityManager {
     pub animators: SparseSet<Animator>,
     pub skellingtons: SparseSet<Bone>,
     pub rotators: SparseSet<Rotator>,
+    pub hitboxes: SparseSet<Model>,
 
     pub rng: ChaCha8Rng,
 }
@@ -33,6 +34,7 @@ impl EntityManager {
             animators: SparseSet::with_capacity(max_entities),
             skellingtons: SparseSet::with_capacity(max_entities),
             rotators: SparseSet::with_capacity(max_entities),
+            hitboxes: SparseSet::with_capacity(max_entities),
 
             rng: ChaCha8Rng::seed_from_u64(1)
         }
@@ -146,6 +148,11 @@ impl EntityManager {
             model = import_model_data(model_path, &animation);
         }         
 
+        let mut hitbox = model.create_bounding_box();
+        // TODO: we need to not call this all over the place, 
+        // we should just call it when creating a model at the end of the method
+        hitbox.setup_opengl();
+
         let rotator = Rotator {
             cur_rot: rotation,
             next_rot: rotation,
@@ -160,6 +167,7 @@ impl EntityManager {
         self.transforms.insert(self.next_entity_id, transform);
         self.factions.insert(self.next_entity_id, faction);
         self.ani_models.insert(self.next_entity_id, model);
+        self.hitboxes.insert(self.next_entity_id, hitbox);
 
         self.next_entity_id += 1;
     }

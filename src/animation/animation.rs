@@ -1,3 +1,4 @@
+#![allow(clippy::useless_vec)]
 use glam::{Mat4, Quat, Vec2, Vec3, Vec4};
 use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
 use std::{collections::HashMap, ffi::c_void, mem::{self, offset_of}, path::Path, ptr, str::Lines};
@@ -13,6 +14,19 @@ pub struct Vertex {
 
     pub bone_ids: [i32; MAX_BONE_INFLUENCE],
     pub bone_weights: [f32; MAX_BONE_INFLUENCE],
+}
+
+impl Vertex {
+    pub fn new(position: Vec3) -> Self {
+        Self {
+            position,
+            normal: Vec3::new(0.0, 0.0, 0.0),
+            uv: Vec2::new(0.0, 0.0),
+
+            bone_ids: [-1; MAX_BONE_INFLUENCE],
+            bone_weights: [0.0; MAX_BONE_INFLUENCE],
+        }
+    }
 }
 
 #[repr(C)]
@@ -184,6 +198,70 @@ impl Model {
             gl_call!(gl::ActiveTexture(gl::TEXTURE9));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
         }
+    }
+
+    pub fn create_bounding_box(&self) -> Self {
+        let mut hitbox = Self::new();
+
+        let mut max_x = 0.0;
+        let mut min_x = 0.0;
+
+        let mut max_y = 0.0;
+        let mut min_y = 0.0;
+
+        let mut max_z = 0.0;
+        let mut min_z = 0.0;
+        
+        for v in self.vertices.iter() {
+            if v.position.x > max_x {
+                max_x = v.position.x;
+            } else if v.position.x < min_x {
+                min_x = v.position.x;
+            }
+
+            if v.position.y > max_y {
+                max_y = v.position.y;
+            } else if v.position.y < min_y {
+                min_y = v.position.y;
+            }
+
+            if v.position.z > max_z {
+                max_z = v.position.z;
+            } else if v.position.z < min_z {
+                min_z = v.position.z;
+            }
+        }
+
+        let vertices = vec![
+            Vertex::new(Vec3::new(max_x, min_y, min_z)), // 0 
+            Vertex::new(Vec3::new(max_x, max_y, min_z)), // 1
+            Vertex::new(Vec3::new(max_x, max_y, max_z)), // 2
+            Vertex::new(Vec3::new(max_x, min_y, max_z)), // 3
+            Vertex::new(Vec3::new(min_x, max_y, max_z)), // 4
+            Vertex::new(Vec3::new(min_x, min_y, max_z)), // 5
+            Vertex::new(Vec3::new(min_x, max_y, min_z)), // 6
+            Vertex::new(Vec3::new(min_x, min_y, min_z)), // 7
+        ];
+
+        let indices = vec![
+            // Right
+            0, 1, 2,    3, 0, 2,
+            // Front
+            3, 2, 4,    5, 3, 4,
+            // Left
+            5, 4, 7,    7, 4, 6,
+            // Back
+            7, 6, 0,    0, 7, 1,
+            // Top
+            2, 1, 6,    4, 2, 6,
+            // Bottom
+            0, 3, 5,    7, 3, 5,
+        ];
+
+        hitbox.vertices = vertices;
+        hitbox.indices = indices;
+
+        hitbox
     }
 }
 
