@@ -20,6 +20,7 @@ mod sound;
 mod config;
 mod terrain;
 mod deprecated;
+mod collision_system;
 
 use game_state::GameState;
 
