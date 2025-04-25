@@ -233,11 +233,11 @@ impl Model {
             }
         }
 
-        // max_x *= 0.3;
-        // min_x *= 0.3;
-        // 
-        // // Todo: y and z are flipped somehow
-        // max_y *= 0.90;
+        max_x *= 0.3;
+        min_x *= 0.3;
+        
+        // Todo: y and z are flipped somehow
+        max_y *= 0.90;
 
         let vertices = vec![
             Vertex::new(Vec3::new(max_x, min_y, min_z)), // 0 
