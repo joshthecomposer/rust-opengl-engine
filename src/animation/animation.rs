@@ -200,7 +200,7 @@ impl Model {
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
         }
     }
-
+  
     pub fn create_bounding_box(&self) -> (Self, Size3) {
         let mut hitbox = Self::new();
 
