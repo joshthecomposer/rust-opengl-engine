@@ -1,6 +1,7 @@
 #![allow(clippy::useless_vec)]
 use glam::{Mat4, Quat, Vec2, Vec3, Vec4};
 use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
+use core::f32;
 use std::{collections::HashMap, ffi::c_void, mem::{self, offset_of}, path::Path, ptr, str::Lines};
 
 use crate::{enums_types::{Size3, TextureType}, gl_call, shaders::Shader, some_data::MAX_BONE_INFLUENCE, sound::sound_manager::{ContinuousSound, OneShot}};
@@ -203,14 +204,14 @@ impl Model {
     pub fn create_bounding_box(&self) -> (Self, Size3) {
         let mut hitbox = Self::new();
 
-        let mut max_x = 0.0;
-        let mut min_x = 0.0;
+        let mut max_x = f32::NEG_INFINITY;
+        let mut min_x = f32::INFINITY;
 
-        let mut max_y = 0.0;
-        let mut min_y = 0.0;
+        let mut max_y = f32::NEG_INFINITY;
+        let mut min_y = f32::INFINITY;
 
-        let mut max_z = 0.0;
-        let mut min_z = 0.0;
+        let mut max_z = f32::NEG_INFINITY;
+        let mut min_z = f32::INFINITY;
         
         for v in self.vertices.iter() {
             if v.position.x > max_x {
@@ -232,11 +233,11 @@ impl Model {
             }
         }
 
-        max_x *= 0.3;
-        min_x *= 0.3;
-        
-        // Todo: y and z are flipped somehow
-        max_y *= 0.90;
+        // max_x *= 0.3;
+        // min_x *= 0.3;
+        // 
+        // // Todo: y and z are flipped somehow
+        // max_y *= 0.90;
 
         let vertices = vec![
             Vertex::new(Vec3::new(max_x, min_y, min_z)), // 0 
@@ -271,8 +272,8 @@ impl Model {
             hitbox, 
             Size3 {
                 w: max_x - min_x,
-                h: max_y - min_y,
-                d: max_z - min_z,
+                h: max_z - min_z,
+                d: max_y - min_y,
             }
         )
     }
