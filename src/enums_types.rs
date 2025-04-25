@@ -41,6 +41,7 @@ pub enum ShaderType {
     DebugShadowMap,
     Model,
     Text,
+    Gizmo,
 }
 
 /// A struct to carry some rotation state for blending between rotations smoothly
@@ -126,4 +127,11 @@ pub enum CameraState {
     Free,
     Third,
     Locked,
+}
+
+#[derive(Clone, Debug)]
+pub struct Size3 {
+    pub w: f32,
+    pub h: f32,
+    pub d: f32,
 }
