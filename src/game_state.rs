@@ -46,7 +46,7 @@ impl GameState {
     pub fn new() -> Self {
         let mut glfw = glfw::init(glfw::fail_on_errors).expect("Failed to init glfw");
 
-        glfw.window_hint(glfw::WindowHint::ContextVersion(3, 3)); // OpenGL 3.3
+        glfw.window_hint(glfw::WindowHint::ContextVersion(4, 6)); // OpenGL 3.3
         glfw.window_hint(glfw::WindowHint::OpenGlProfile(glfw::OpenGlProfileHint::Core));
         glfw.window_hint(glfw::WindowHint::Resizable(true));
         #[cfg(target_os = "macos")]
@@ -140,6 +140,16 @@ impl GameState {
         entity_manager.next_entity_id += 1;
 
         // sound_manager.play_sound_3d("moose3D".to_string(), &vec3(0.0, 0.0, 4.0));
+
+        entity_manager.create_standalone_hitbox(
+            -0.5, 
+            0.5, 
+            0.0, 
+            2.0, 
+            -0.5, 
+            0.5, 
+            Vec3::new(10.0, 0.0, 10.0),
+        );
 
         Self {
             delta_time: 0.0,

@@ -5,7 +5,7 @@ use glam::{vec3, Quat, Vec3};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-use crate::{animation::animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model}, camera::Camera, config::entity_config::{AnimationPropHelper, EntityConfig}, enums_types::{CameraState, CellType, EntityType, Faction, Rotator, Transform}, grid::Grid, movement::{handle_npc_movement, handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, terrain::Terrain};
+use crate::{animation::animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model, Vertex}, camera::Camera, collision_system, config::entity_config::{AnimationPropHelper, EntityConfig}, enums_types::{CameraState, CellType, EntityType, Faction, Rotator, Size3, Transform}, grid::Grid, movement::{handle_npc_movement, handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, terrain::Terrain};
 
 pub struct EntityManager {
     pub next_entity_id: usize,
@@ -18,6 +18,7 @@ pub struct EntityManager {
     pub skellingtons: SparseSet<Bone>,
     pub rotators: SparseSet<Rotator>,
     pub hitboxes: SparseSet<Model>,
+    pub sizes: SparseSet<Size3>,
 
     pub rng: ChaCha8Rng,
 }
@@ -35,6 +36,7 @@ impl EntityManager {
             skellingtons: SparseSet::with_capacity(max_entities),
             rotators: SparseSet::with_capacity(max_entities),
             hitboxes: SparseSet::with_capacity(max_entities),
+            sizes: SparseSet::with_capacity(max_entities),
 
             rng: ChaCha8Rng::seed_from_u64(1)
         }
@@ -148,6 +150,11 @@ impl EntityManager {
             model = import_model_data(model_path, &animation);
         }         
 
+        let (mut hitbox, size) = model.create_bounding_box();
+        // TODO: we need to not call this all over the place, 
+        // we should just call it when creating a model at the end of the method
+        hitbox.setup_opengl();
+
         let rotator = Rotator {
             cur_rot: rotation,
             next_rot: rotation,
@@ -162,9 +169,75 @@ impl EntityManager {
         self.transforms.insert(self.next_entity_id, transform);
         self.factions.insert(self.next_entity_id, faction);
         self.ani_models.insert(self.next_entity_id, model);
+        self.hitboxes.insert(self.next_entity_id, hitbox);
+        self.sizes.insert(self.next_entity_id, size);
 
         self.next_entity_id += 1;
     }
+
+    pub fn create_standalone_hitbox(
+        &mut self,
+        min_x: f32,
+        max_x: f32,
+        min_y: f32,
+        max_y: f32,
+        min_z: f32,
+        max_z: f32,
+        position: Vec3,
+    ) {
+
+        let mut hitbox = Model::new();
+
+        let vertices = vec![
+            Vertex::new(Vec3::new(max_x, min_y, min_z)), // 0 
+            Vertex::new(Vec3::new(max_x, max_y, min_z)), // 1
+            Vertex::new(Vec3::new(max_x, max_y, max_z)), // 2
+            Vertex::new(Vec3::new(max_x, min_y, max_z)), // 3
+            Vertex::new(Vec3::new(min_x, max_y, max_z)), // 4
+            Vertex::new(Vec3::new(min_x, min_y, max_z)), // 5
+            Vertex::new(Vec3::new(min_x, max_y, min_z)), // 6
+            Vertex::new(Vec3::new(min_x, min_y, min_z)), // 7
+        ];
+
+        let indices = vec![
+            // Right
+            0, 1, 2,    3, 0, 2,
+            // Front
+            3, 2, 4,    5, 3, 4,
+            // Left
+            5, 4, 7,    7, 4, 6,
+            // Back
+            7, 6, 0,    0, 7, 1,
+            // Top
+            2, 1, 6,    4, 2, 6,
+            // Bottom
+            0, 3, 5,    7, 3, 5,
+        ];
+
+        hitbox.vertices = vertices;
+        hitbox.indices = indices;
+        hitbox.setup_opengl();
+            
+        let size = Size3 {
+            w: max_x - min_x,
+            h: max_y - min_y,
+            d: max_z - min_z,
+        };
+
+        let trans = Transform {
+            position,
+            scale: Vec3::new(1.0, 1.0, 1.0),
+            rotation: Quat::IDENTITY,
+
+            original_rotation: Quat::IDENTITY,
+        };
+
+        self.hitboxes.insert(self.next_entity_id, hitbox);
+        self.sizes.insert(self.next_entity_id, size);
+        self.transforms.insert(self.next_entity_id, trans);
+        self.factions.insert(self.next_entity_id, Faction::Enemy);
+    }
+
 
     // TODO: This should be in grid
     pub fn populate_floor_tiles(&mut self, grid: &Grid, model_path: &str) {
@@ -217,6 +290,7 @@ impl EntityManager {
 
     pub fn update(&mut self, pressed_keys: &HashSet<glfw::Key>, delta: f64, elapsed_time: f32, camera: &Camera, terrain: &Terrain) {
         handle_npc_movement(self, terrain);
+        collision_system::update(self);
 
         // =============================================================
         // Player Pass

@@ -33,6 +33,7 @@ impl Renderer {
         let depth_shader = Shader::new("resources/shaders/depth_shader.glsl");
         let text_shader = Shader::new("resources/shaders/text.glsl");
         let model_shader = Shader::new("resources/shaders/model_rework.glsl");
+        let gizmo_shader = Shader::new("resources/shaders/gizmo.glsl");
 
         let mut vao = 0;
         let mut vbo = 0;
@@ -208,6 +209,7 @@ impl Renderer {
         shaders.insert(ShaderType::Depth, depth_shader);
         shaders.insert(ShaderType::DebugShadowMap, debug_depth_quad);
         shaders.insert(ShaderType::Text, text_shader);
+        shaders.insert(ShaderType::Gizmo, gizmo_shader);
 
         Self {
             shaders,
@@ -225,23 +227,24 @@ impl Renderer {
        self.shadow_pass(em,  camera, light_manager, fb_width, fb_height);
        unsafe {
            gl_call!(gl::ClearColor(0.0, 0.0, 0.0, 1.0));
-           gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT));
-       }
-       if self.shadow_debug {
-           unsafe {
-               let depth_debug_quad = self.shaders.get(&ShaderType::DebugShadowMap).unwrap();
-               depth_debug_quad.activate();
-               gl_call!(gl::ActiveTexture(gl::TEXTURE0));
-               gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
-           }
-           self.render_quad();
-           return;
-       }
+            gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT));
+        }
+        if self.shadow_debug {
+            unsafe {
+                let depth_debug_quad = self.shaders.get(&ShaderType::DebugShadowMap).unwrap();
+                depth_debug_quad.activate();
+                gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+                gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
+            }
+            self.render_quad();
+            return;
+        }
 
-       // SHADOW MUST GO FIRST
-       self.skybox_pass(camera, fb_width, fb_height);
-       // self.debug_light_pass(camera);
-       self.grid_pass(grid, camera, light_manager, fb_width, fb_height);
+        // SHADOW MUST GO FIRST
+        self.skybox_pass(camera, fb_width, fb_height);
+        // self.debug_light_pass(camera);
+        self.grid_pass(grid, camera, light_manager);
+        self.hitbox_pass(camera, em);
         unsafe {
             gl_call!(gl::Enable(gl::DEPTH_TEST));
             gl_call!(gl::DepthMask(gl::TRUE)); // Allow writing to depth buffer
@@ -310,7 +313,7 @@ impl Renderer {
 
                 let trans = em.transforms.get(ani_model.key()).unwrap();
                 let animation = animator.animations.get(&animator.current_animation).unwrap();
-                
+
                 for os in animation.one_shots.iter() {
                     if animation.current_segment == os.segment {
                         if !os.triggered.get() {
@@ -332,6 +335,7 @@ impl Renderer {
 
                 camera.model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
 
+                // TODO: I think we only need to set this once outside of the loop.
                 shader.set_mat4("model", camera.model);
                 shader.set_mat4("projection", camera.projection);
                 shader.set_mat4("view", camera.view);
@@ -350,7 +354,30 @@ impl Renderer {
         }
     }
 
-    fn grid_pass(&mut self,grid: &mut Grid, camera: &mut Camera, light_manager: &Lights, fb_width: u32, fb_height: u32) {
+    fn hitbox_pass(&mut self, camera: &mut Camera, em: &EntityManager) {
+        unsafe {
+            gl_call!(gl::PolygonMode( gl::FRONT_AND_BACK, gl::LINE ));
+        }
+
+        let shader = self.shaders.get_mut(&ShaderType::Gizmo).unwrap();
+        shader.activate();
+
+        for hb in em.hitboxes.iter() {
+            let trans = em.transforms.get(hb.key()).unwrap();
+            camera.model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
+
+            shader.set_mat4("model", camera.model);
+            shader.set_mat4("projection", camera.projection);
+            shader.set_mat4("view", camera.view);
+            hb.value.draw(shader);
+        }
+
+        unsafe {
+            gl_call!(gl::PolygonMode( gl::FRONT_AND_BACK, gl::FILL ));
+        }
+    }
+
+    fn grid_pass(&mut self,grid: &mut Grid, camera: &mut Camera, light_manager: &Lights) {
         let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
         shader.activate();
         shader.set_mat4("model", camera.model);
@@ -374,7 +401,7 @@ impl Renderer {
 
     fn skybox_pass(&mut self, camera: &mut Camera, fb_width: u32, fb_height: u32) {
         camera.reset_matrices(fb_width as f32 / fb_height as f32);
-        
+
         unsafe {
             let status = gl::CheckFramebufferStatus(gl::FRAMEBUFFER);
             if status != gl::FRAMEBUFFER_COMPLETE {
@@ -456,20 +483,20 @@ impl Renderer {
             let trans = em.transforms.get(model.key()).unwrap();
 
             let model_model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
-                unsafe {
-                    gl::BindVertexArray(model.value.vao);
-                }
-                depth_shader.set_mat4("model", model_model);
-                unsafe {
-                    gl_call!(gl::DrawElements(
-                        gl::TRIANGLES, 
-                        model.value.indices.len() as i32, 
-                        gl::UNSIGNED_INT, 
-                        std::ptr::null(),
-                    ));
+            unsafe {
+                gl::BindVertexArray(model.value.vao);
+            }
+            depth_shader.set_mat4("model", model_model);
+            unsafe {
+                gl_call!(gl::DrawElements(
+                    gl::TRIANGLES, 
+                    model.value.indices.len() as i32, 
+                    gl::UNSIGNED_INT, 
+                    std::ptr::null(),
+                ));
 
-                    gl_call!(gl::BindVertexArray(0));
-                }
+                gl_call!(gl::BindVertexArray(0));
+            }
         }
         depth_shader.set_bool("is_animated", true);
 
@@ -500,7 +527,7 @@ impl Renderer {
         }
 
     }
-    
+
     fn debug_light_pass(&mut self, camera: &mut Camera) {
         let debug_light_shader = self.shaders.get(&ShaderType::DebugLight).unwrap();
         debug_light_shader.activate();
@@ -530,11 +557,11 @@ impl Renderer {
             // Positions      // Texture Coords
             -1.0,  1.0, 0.0,  0.0, 1.0,
             -1.0, -1.0, 0.0,  0.0, 0.0,
-             1.0, -1.0, 0.0,  1.0, 0.0,
+            1.0, -1.0, 0.0,  1.0, 0.0,
 
             -1.0,  1.0, 0.0,  0.0, 1.0,
-             1.0, -1.0, 0.0,  1.0, 0.0,
-             1.0,  1.0, 0.0,  1.0, 1.0
+            1.0, -1.0, 0.0,  1.0, 0.0,
+            1.0,  1.0, 0.0,  1.0, 1.0
         ];
 
         unsafe {
