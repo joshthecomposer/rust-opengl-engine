@@ -1,6 +1,7 @@
 #![allow(dead_code)]
 use std::collections::HashSet;
 
+use gl::AttachShader;
 use glam::{vec3, Quat, Vec3};
 use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent};
 use image::GrayImage;
@@ -140,7 +141,6 @@ impl GameState {
         entity_manager.next_entity_id += 1;
 
         // sound_manager.play_sound_3d("moose3D".to_string(), &vec3(0.0, 0.0, 4.0));
-
 
         Self {
             delta_time: 0.0,
