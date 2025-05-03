@@ -5,11 +5,7 @@ use glam::{vec3, Quat, Vec3};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-<<<<<<< HEAD
-use crate::{animation::animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model}, camera::Camera, collision_system, config::entity_config::{AnimationPropHelper, EntityConfig}, enums_types::{CameraState, CellType, EntityType, Faction, Rotator, Size3, Transform}, grid::Grid, movement::{handle_npc_movement, handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, terrain::Terrain};
-=======
 use crate::{animation::animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model, Vertex}, camera::Camera, collision_system, config::entity_config::{AnimationPropHelper, EntityConfig}, debug::gizmos::{Cuboid, Cylinder}, enums_types::{CameraState, CellType, EntityType, Faction, Parent, Rotator, Size3, Transform}, grid::Grid, movement::{handle_npc_movement, handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, terrain::Terrain};
->>>>>>> aabb-collision-refine
 
 pub struct EntityManager {
     pub next_entity_id: usize,
@@ -21,11 +17,6 @@ pub struct EntityManager {
     pub animators: SparseSet<Animator>,
     pub skellingtons: SparseSet<Bone>,
     pub rotators: SparseSet<Rotator>,
-<<<<<<< HEAD
-    pub hitboxes: SparseSet<Model>,
-    pub sizes: SparseSet<Size3>,
-=======
->>>>>>> aabb-collision-refine
 
     // Simulation gizmos
     pub cuboids: SparseSet<Cuboid>,
@@ -47,11 +38,6 @@ impl EntityManager {
             animators: SparseSet::with_capacity(max_entities),
             skellingtons: SparseSet::with_capacity(max_entities),
             rotators: SparseSet::with_capacity(max_entities),
-<<<<<<< HEAD
-            hitboxes: SparseSet::with_capacity(max_entities),
-            sizes: SparseSet::with_capacity(max_entities),
-=======
->>>>>>> aabb-collision-refine
 
             cuboids: SparseSet::with_capacity(max_entities),
             cylinders: SparseSet::with_capacity(max_entities),
@@ -169,11 +155,6 @@ impl EntityManager {
             model = import_model_data(model_path, &animation);
         }         
 
-        let (mut hitbox, size) = model.create_bounding_box();
-        // TODO: we need to not call this all over the place, 
-        // we should just call it when creating a model at the end of the method
-        hitbox.setup_opengl();
-
         let rotator = Rotator {
             cur_rot: rotation,
             next_rot: rotation,
@@ -188,8 +169,6 @@ impl EntityManager {
         self.transforms.insert(self.next_entity_id, transform);
         self.factions.insert(self.next_entity_id, faction);
         self.ani_models.insert(self.next_entity_id, model);
-        self.hitboxes.insert(self.next_entity_id, hitbox);
-        self.sizes.insert(self.next_entity_id, size);
 
         self.next_entity_id += 1;
 

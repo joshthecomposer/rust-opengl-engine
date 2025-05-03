@@ -137,10 +137,7 @@ pub struct Size3 {
     pub h: f32,
     pub d: f32,
 }
-<<<<<<< HEAD
-=======
 
 pub struct Parent {
     pub parent_id: usize,
 }
->>>>>>> aabb-collision-refine

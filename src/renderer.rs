@@ -244,11 +244,7 @@ impl Renderer {
         self.skybox_pass(camera, fb_width, fb_height);
         // self.debug_light_pass(camera);
         self.grid_pass(grid, camera, light_manager);
-<<<<<<< HEAD
-        self.hitbox_pass(camera, em);
-=======
         self.gizmo_pass(camera, em);
->>>>>>> aabb-collision-refine
         unsafe {
             gl_call!(gl::Enable(gl::DEPTH_TEST));
             gl_call!(gl::DepthMask(gl::TRUE)); // Allow writing to depth buffer
@@ -368,11 +364,7 @@ impl Renderer {
         }
     }
 
-<<<<<<< HEAD
-    fn hitbox_pass(&mut self, camera: &mut Camera, em: &EntityManager) {
-=======
     fn gizmo_pass(&mut self, camera: &mut Camera, em: &EntityManager) {
->>>>>>> aabb-collision-refine
         unsafe {
             gl_call!(gl::PolygonMode( gl::FRONT_AND_BACK, gl::LINE ));
         }
@@ -380,16 +372,6 @@ impl Renderer {
         let shader = self.shaders.get_mut(&ShaderType::Gizmo).unwrap();
         shader.activate();
 
-<<<<<<< HEAD
-        for hb in em.hitboxes.iter() {
-            let trans = em.transforms.get(hb.key()).unwrap();
-            camera.model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
-
-            shader.set_mat4("model", camera.model);
-            shader.set_mat4("projection", camera.projection);
-            shader.set_mat4("view", camera.view);
-            hb.value.draw(shader);
-=======
         for hb in em.factions.iter() {
             if hb.value() == &Faction::Gizmo {
                 let model = em.models.get(hb.key()).unwrap();
@@ -401,7 +383,6 @@ impl Renderer {
                 shader.set_mat4("view", camera.view);
                 model.draw(shader);
             }
->>>>>>> aabb-collision-refine
         }
 
         unsafe {
