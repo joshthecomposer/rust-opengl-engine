@@ -155,8 +155,28 @@ impl Cylinder {
 
         // side indices (split the quads into two triangles)
         for i in 0..segments {
-            // let next = (
+            let next = (i + 1) % segments;
+            let base = side_start_index;
+
+            let bottom_i = base + i * 2;
+            let top_i = base + i * 2 + 1;
+            let bottom_next = base + next * 2;
+            let top_next = base + next * 2 + 1;
+
+            // triangle 1
+            indices.push(bottom_i);
+            indices.push(bottom_next);
+            indices.push(top_i);
+
+            // triangle 2
+            indices.push(top_i);
+            indices.push(bottom_next);
+            indices.push(top_next);
         }
+
+        model.vertices = vertices;
+        model.indices = indices;
+        model.setup_opengl();
 
         model
     }

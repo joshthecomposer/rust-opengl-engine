@@ -6,7 +6,7 @@ use glam::{vec3, vec4, Mat4, Quat, Vec3};
 use image::GenericImageView;
 use russimp::light;
 
-use crate::{animation::animation::{Model, Animation}, camera::Camera, entity_manager::EntityManager, enums_types::{FboType, ShaderType, TextureType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}, sound::sound_manager::SoundManager};
+use crate::{animation::animation::{Animation, Model}, camera::Camera, entity_manager::EntityManager, enums_types::{EntityType, Faction, FboType, ShaderType, TextureType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}, sound::sound_manager::SoundManager};
 
 pub struct Renderer {
     pub shaders: HashMap<ShaderType, Shader>, // TODO: make this an enum
@@ -244,7 +244,7 @@ impl Renderer {
         self.skybox_pass(camera, fb_width, fb_height);
         // self.debug_light_pass(camera);
         self.grid_pass(grid, camera, light_manager);
-        self.hitbox_pass(camera, em);
+        self.gizmo_pass(camera, em);
         unsafe {
             gl_call!(gl::Enable(gl::DEPTH_TEST));
             gl_call!(gl::DepthMask(gl::TRUE)); // Allow writing to depth buffer
@@ -255,6 +255,11 @@ impl Renderer {
         shader.set_bool("is_animated", false);
         shader.set_bool("alpha_test_pass", true);
         for model in em.models.iter() {
+            let check = em.factions.get(model.key()).unwrap();
+            // TODO:: Get rid of this.
+            if check == &Faction::Gizmo {
+                continue;
+            }
             let trans = em.transforms.get(model.key()).unwrap();
             camera.model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
 
@@ -282,6 +287,11 @@ impl Renderer {
         }
         shader.set_bool("alpha_test_pass", false);
         for model in em.models.iter() {
+            let check = em.factions.get(model.key()).unwrap();
+            // TODO:: Get rid of this.
+            if check == &Faction::Gizmo {
+                continue;
+            }
             let trans = em.transforms.get(model.key()).unwrap();
             camera.model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
 
@@ -335,7 +345,6 @@ impl Renderer {
 
                 camera.model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
 
-                // TODO: I think we only need to set this once outside of the loop.
                 shader.set_mat4("model", camera.model);
                 shader.set_mat4("projection", camera.projection);
                 shader.set_mat4("view", camera.view);
@@ -354,7 +363,7 @@ impl Renderer {
         }
     }
 
-    fn hitbox_pass(&mut self, camera: &mut Camera, em: &EntityManager) {
+    fn gizmo_pass(&mut self, camera: &mut Camera, em: &EntityManager) {
         unsafe {
             gl_call!(gl::PolygonMode( gl::FRONT_AND_BACK, gl::LINE ));
         }
@@ -362,14 +371,17 @@ impl Renderer {
         let shader = self.shaders.get_mut(&ShaderType::Gizmo).unwrap();
         shader.activate();
 
-        for hb in em.hitboxes.iter() {
-            let trans = em.transforms.get(hb.key()).unwrap();
-            camera.model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
+        for hb in em.factions.iter() {
+            if hb.value() == &Faction::Gizmo {
+                let model = em.models.get(hb.key()).unwrap();
+                let trans = em.transforms.get(hb.key()).unwrap();
+                camera.model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
 
-            shader.set_mat4("model", camera.model);
-            shader.set_mat4("projection", camera.projection);
-            shader.set_mat4("view", camera.view);
-            hb.value.draw(shader);
+                shader.set_mat4("model", camera.model);
+                shader.set_mat4("projection", camera.projection);
+                shader.set_mat4("view", camera.view);
+                model.draw(shader);
+            }
         }
 
         unsafe {
@@ -480,6 +492,11 @@ impl Renderer {
 
         depth_shader.set_bool("is_animated", false);
         for model in em.models.iter() {
+            let check = em.factions.get(model.key()).unwrap();
+            // TODO:: Get rid of this.
+            if check == &Faction::Gizmo {
+                continue;
+            }
             let trans = em.transforms.get(model.key()).unwrap();
 
             let model_model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
