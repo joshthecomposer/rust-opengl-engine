@@ -18,10 +18,17 @@ pub struct Vertex {
 }
 
 impl Vertex {
+<<<<<<< HEAD
     pub fn new(position: Vec3) -> Self {
         Self {
             position,
             normal: Vec3::new(0.0, 0.0, 0.0),
+=======
+    pub fn new(position: Vec3, normal: Vec3) -> Self {
+        Self {
+            position,
+            normal,
+>>>>>>> aabb-collision-refine
             uv: Vec2::new(0.0, 0.0),
 
             bone_ids: [-1; MAX_BONE_INFLUENCE],
@@ -201,6 +208,7 @@ impl Model {
         }
     }
   
+<<<<<<< HEAD
     pub fn create_bounding_box(&self) -> (Self, Size3) {
         let mut hitbox = Self::new();
 
@@ -277,6 +285,8 @@ impl Model {
             }
         )
     }
+=======
+>>>>>>> aabb-collision-refine
 }
 
 #[derive(Debug, Clone)]

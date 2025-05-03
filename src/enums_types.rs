@@ -55,7 +55,7 @@ pub struct Rotator {
     pub blend_time: f32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Transform {
     pub position: Vec3,
     pub rotation: Quat,
@@ -78,6 +78,7 @@ pub enum EntityType {
     MooseMan,
     YRobot,
     Terrain,
+    Cylinder,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -86,6 +87,7 @@ pub enum Faction {
     Static,
     World,
     Player,
+    Gizmo,
 }
 
 #[derive(Clone, Debug)]
@@ -135,3 +137,10 @@ pub struct Size3 {
     pub h: f32,
     pub d: f32,
 }
+<<<<<<< HEAD
+=======
+
+pub struct Parent {
+    pub parent_id: usize,
+}
+>>>>>>> aabb-collision-refine

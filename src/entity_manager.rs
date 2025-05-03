@@ -5,7 +5,11 @@ use glam::{vec3, Quat, Vec3};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
+<<<<<<< HEAD
 use crate::{animation::animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model}, camera::Camera, collision_system, config::entity_config::{AnimationPropHelper, EntityConfig}, enums_types::{CameraState, CellType, EntityType, Faction, Rotator, Size3, Transform}, grid::Grid, movement::{handle_npc_movement, handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, terrain::Terrain};
+=======
+use crate::{animation::animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model, Vertex}, camera::Camera, collision_system, config::entity_config::{AnimationPropHelper, EntityConfig}, debug::gizmos::{Cuboid, Cylinder}, enums_types::{CameraState, CellType, EntityType, Faction, Parent, Rotator, Size3, Transform}, grid::Grid, movement::{handle_npc_movement, handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, terrain::Terrain};
+>>>>>>> aabb-collision-refine
 
 pub struct EntityManager {
     pub next_entity_id: usize,
@@ -17,9 +21,17 @@ pub struct EntityManager {
     pub animators: SparseSet<Animator>,
     pub skellingtons: SparseSet<Bone>,
     pub rotators: SparseSet<Rotator>,
+<<<<<<< HEAD
     pub hitboxes: SparseSet<Model>,
     pub sizes: SparseSet<Size3>,
+=======
+>>>>>>> aabb-collision-refine
 
+    // Simulation gizmos
+    pub cuboids: SparseSet<Cuboid>,
+    pub cylinders: SparseSet<Cylinder>,
+
+    pub parents: SparseSet<Parent>,
     pub rng: ChaCha8Rng,
 }
 
@@ -35,9 +47,16 @@ impl EntityManager {
             animators: SparseSet::with_capacity(max_entities),
             skellingtons: SparseSet::with_capacity(max_entities),
             rotators: SparseSet::with_capacity(max_entities),
+<<<<<<< HEAD
             hitboxes: SparseSet::with_capacity(max_entities),
             sizes: SparseSet::with_capacity(max_entities),
+=======
+>>>>>>> aabb-collision-refine
 
+            cuboids: SparseSet::with_capacity(max_entities),
+            cylinders: SparseSet::with_capacity(max_entities),
+
+            parents: SparseSet::with_capacity(max_entities),
             rng: ChaCha8Rng::seed_from_u64(1)
         }
     }
@@ -60,7 +79,7 @@ impl EntityManager {
                         &entity.animation_properties,
                     );
                 },
-                Faction::World | Faction::Static => {
+                Faction::World | Faction::Static | Faction::Gizmo => {
                     self.create_static_entity(
                         entity.entity_type.clone(),
                         entity.faction.clone(),
@@ -173,7 +192,32 @@ impl EntityManager {
         self.sizes.insert(self.next_entity_id, size);
 
         self.next_entity_id += 1;
+
+        // create cylinder
+        let cyl = Cylinder {
+            r: 0.22,
+            h: 1.6,
+        };
+        let cyl_mod = cyl.create_model(12);
+        self.cylinders.insert(self.next_entity_id, cyl);
+        
+        self.models.insert(self.next_entity_id, cyl_mod);
+        self.factions.insert(self.next_entity_id, Faction::Gizmo);
+        self.entity_types.insert(self.next_entity_id, EntityType::Cylinder);
+        self.transforms.insert(self.next_entity_id, Transform {
+            position,
+            rotation: Quat::IDENTITY,
+            scale: Vec3::splat(1.0),
+            original_rotation: Quat::IDENTITY,
+        });
+
+        self.parents.insert(self.next_entity_id, Parent{
+            parent_id: self.next_entity_id - 1,
+        });
+
+        self.next_entity_id += 1;
     }
+
 
     // TODO: This should be in grid
     pub fn populate_floor_tiles(&mut self, grid: &Grid, model_path: &str) {
@@ -276,6 +320,37 @@ impl EntityManager {
             ) {
                 animator.update(elapsed_time, skellington, delta as f32);
             }
+        }
+
+        // =============================================================
+        // Gizmo Pass
+        // =============================================================
+        let mut transforms_to_update:Vec<(usize, usize)> = vec![];
+        for faction in self.factions.iter() {
+            if faction.value() == &Faction::Gizmo {
+                let entity_key = faction.key();
+
+                if let Some(parent) = self.parents.get(entity_key) {
+                    transforms_to_update.push((entity_key, parent.parent_id))
+                }
+            }
+        }
+
+        for (child_id, parent_id) in transforms_to_update {
+            let parent_transform = self.transforms.get(parent_id).unwrap().clone();
+            let child_transform = self.transforms.get(child_id).unwrap().clone();
+            
+            // Some magic to make sure the cylinder is rotated properly despite the parent being originally offset in some way
+            let adjusted_rotation = parent_transform.rotation
+            * parent_transform.original_rotation.inverse()
+            * child_transform.original_rotation.inverse();
+
+            self.transforms.insert(child_id, Transform {
+                position: parent_transform.position,
+                rotation: adjusted_rotation,
+                scale: child_transform.scale,
+                original_rotation: child_transform.original_rotation,
+            });
         }
     }
 }
