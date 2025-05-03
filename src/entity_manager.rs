@@ -5,7 +5,7 @@ use glam::{vec3, Quat, Vec3};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-use crate::{animation::animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model, Vertex}, camera::Camera, collision_system, config::entity_config::{AnimationPropHelper, EntityConfig}, enums_types::{CameraState, CellType, EntityType, Faction, Rotator, Size3, Transform}, grid::Grid, movement::{handle_npc_movement, handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, terrain::Terrain};
+use crate::{animation::animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model, Vertex}, camera::Camera, collision_system, config::entity_config::{AnimationPropHelper, EntityConfig}, debug::gizmos::{Cuboid, Cylinder}, enums_types::{CameraState, CellType, EntityType, Faction, Rotator, Size3, Transform}, grid::Grid, movement::{handle_npc_movement, handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, terrain::Terrain};
 
 pub struct EntityManager {
     pub next_entity_id: usize,
@@ -17,8 +17,11 @@ pub struct EntityManager {
     pub animators: SparseSet<Animator>,
     pub skellingtons: SparseSet<Bone>,
     pub rotators: SparseSet<Rotator>,
-    pub hitboxes: SparseSet<Model>,
     pub sizes: SparseSet<Size3>,
+
+    // Simulation gizmos
+    pub cuboids: SparseSet<Cuboid>,
+    pub cylinders: SparseSet<Cylinder>,
 
     pub rng: ChaCha8Rng,
 }
@@ -35,8 +38,10 @@ impl EntityManager {
             animators: SparseSet::with_capacity(max_entities),
             skellingtons: SparseSet::with_capacity(max_entities),
             rotators: SparseSet::with_capacity(max_entities),
-            hitboxes: SparseSet::with_capacity(max_entities),
             sizes: SparseSet::with_capacity(max_entities),
+
+            cuboids: SparseSet::with_capacity(max_entities),
+            cylinders: SparseSet::with_capacity(max_entities),
 
             rng: ChaCha8Rng::seed_from_u64(1)
         }
