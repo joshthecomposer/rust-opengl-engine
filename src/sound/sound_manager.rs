@@ -15,7 +15,7 @@ pub struct SoundData {
 
 #[derive(Clone, Debug)]
 pub struct SoundTrigger {
-    pub sound_type: String, //TODO: JW - This sound_type should probably be an enum of SoundType?? Maybe?
+    pub sound_type: String, // TODO: JW - This sound_type should probably be an enum of SoundType?? Maybe?
     pub frame: usize,
 }
 

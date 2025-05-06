@@ -1,0 +1,89 @@
+===========================================
+./src\animation\animation.rs:277
+===========================================
+// TODO: THIS IS REALLY REALLY ERROR PRONE. it is really easy to accidentally remove something
+// twice and have it be gone forever, causing an unwrap() on a None animation value later in
+// the rendering stage. Note: when using insert() with the SparseSet, it overrides the previous
+// value. Maybe this can be used in some way to fix this and get around the borrow checker.
+// This along with a separate query loop and update loop might help.
+
+===========================================
+./src\animation\animation.rs:778
+===========================================
+// TODO: Parse BSDF color instead or something.
+
+===========================================
+./src\bin\parse_todos.rs:32
+===========================================
+if line.contains("TODO") {
+
+===========================================
+./src\deprecated\model.rs:139
+===========================================
+// TODO: This overwrites multiple times potentially, we should check if the texture has already been saved.
+
+===========================================
+./src\entity_manager.rs:201
+===========================================
+// TODO: This should be in grid
+
+===========================================
+./src\grid.rs:82
+===========================================
+// TODO: This only works with even numbered grid sizes, fix
+
+===========================================
+./src\grid.rs:201
+===========================================
+// TODO: If you are out of bounds do something else, like a -1 or something to signify.
+
+===========================================
+./src\renderer.rs:12
+===========================================
+pub shaders: HashMap<ShaderType, Shader>, // TODO: make this an enum
+
+===========================================
+./src\renderer.rs:259
+===========================================
+// TODO:: Get rid of this.
+
+===========================================
+./src\renderer.rs:279
+===========================================
+// TODO: Fix the wrapping of this quad
+
+===========================================
+./src\renderer.rs:291
+===========================================
+// TODO:: Get rid of this.
+
+===========================================
+./src\renderer.rs:311
+===========================================
+// TODO: Fix the wrapping of this quad
+
+===========================================
+./src\renderer.rs:330
+===========================================
+// TODO: DOn't clone, we really need an enum here.
+
+===========================================
+./src\renderer.rs:408
+===========================================
+// TODO: Fix the wrapping of this quad
+
+===========================================
+./src\renderer.rs:496
+===========================================
+// TODO:: Get rid of this.
+
+===========================================
+./src\sound\sound_manager.rs:18
+===========================================
+pub sound_type: String, // TODO: JW - This sound_type should probably be an enum of SoundType?? Maybe?
+
+===========================================
+./src\terrain.rs:28
+===========================================
+// TODO: replace 10.0 with some max height value
+

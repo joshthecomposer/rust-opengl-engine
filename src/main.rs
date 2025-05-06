@@ -22,13 +22,17 @@ mod terrain;
 mod deprecated;
 mod collision_system;
 
+use std::{fs::{self, OpenOptions}, path::Path};
+
 use game_state::GameState;
+use std::io::Write;
 
 fn main() {
-   let mut state = GameState::new();
-   while !state.window.should_close() {
-       state.process_events();
-       state.update();
-       state.render();
-   }
+    let mut state = GameState::new();
+    while !state.window.should_close() {
+        state.process_events();
+        state.update();
+        state.render();
+    }
+
 }

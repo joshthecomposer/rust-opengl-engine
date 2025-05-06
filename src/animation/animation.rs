@@ -276,10 +276,9 @@ impl Animator {
 
         // TODO: THIS IS REALLY REALLY ERROR PRONE. it is really easy to accidentally remove something
         // twice and have it be gone forever, causing an unwrap() on a None animation value later in 
-        // the rendering stage. We should try to find a way to mutably borrow these values somehow without
-        // removing them and also while making the borrow checker happy.
-        // Maybe even a small safer improvement would be to check if the thing exists before removing... 
-        // but not sure how much slower that will be
+        // the rendering stage. Note: when using insert() with the SparseSet, it overrides the previous
+        // value. Maybe this can be used in some way to fix this and get around the borrow checker.
+        // This along with a separate query loop and update loop might help.
 
         if self.current_animation != self.next_animation {
             self.blend_factor += dt / self.blend_time;
@@ -776,7 +775,7 @@ pub fn texture_from_file(model: &mut Model, path: String, texture_type: TextureT
             Ok(data) => Some(data),
             Err(_) => {
                 if texture_type == TextureType::Diffuse {
-                    //TODO: Parse BSDF color instead
+                    // TODO: Parse BSDF color instead or something.
                     let mut imgbuf = ImageBuffer::new(1,1);
                     let color_u8 = [
                         198,
