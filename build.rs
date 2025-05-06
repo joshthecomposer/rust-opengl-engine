@@ -1,4 +1,4 @@
-use std::{env, path::Path, process::Command};
+use std::{env, fs::{self, OpenOptions}, path::Path, process::Command};
 
 fn main() {
     // Link against the GLFW static library
@@ -47,4 +47,6 @@ fn main() {
             panic!("Script failed with status: {:?}", status);
         }
     }
+
 }
+

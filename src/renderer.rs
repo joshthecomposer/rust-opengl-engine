@@ -345,7 +345,6 @@ impl Renderer {
 
                 camera.model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
 
-                // TODO: I think we only need to set this once outside of the loop.
                 shader.set_mat4("model", camera.model);
                 shader.set_mat4("projection", camera.projection);
                 shader.set_mat4("view", camera.view);

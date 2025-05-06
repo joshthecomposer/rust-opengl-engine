@@ -14,25 +14,25 @@ pub struct Entry<T> {
 }
 
 impl<T> Entry<T> {
-    // Read-only access to the entry's key.
+    // readonly access to the entry's key
     pub fn key(&self) -> usize {
         self.key
     }
 
-    /// Returns the value. Mainly for symmetry with key() since the value is public anyway.
+    // returns the value, mainly for symmetry with key() since the value is public
     pub fn value(&self) -> &T {
         &self.value
     }
 
-    /// Returns the value, mutable. Mainly for symmetry with key() since the value is public
-    /// anyway.
+    // returns the value mutably, again mainly for symmetry with key() since the value is public
+    // anyway.
     pub fn value_mut(&mut self) -> &mut T {
         &mut self.value
     }
 }
 
 impl<T> SparseSet<T> {
-    /// Creates a SparseSet with the given capacity.
+    // create a new sparseset with a given capacity
     pub fn with_capacity(size: usize) -> Self {
 
         let mut sparse = Vec::with_capacity(size);
@@ -52,7 +52,7 @@ impl<T> SparseSet<T> {
         self.sparse.len()
     }
 
-    /// Clears the SparseSet in O(1) for simple T and O(n) if T implements Drop.
+    // Clears the SparseSet in O(1) for simple T and O(n) if T implements drop
     pub fn clear(&mut self) {
         self.dense.clear();
     }
@@ -68,7 +68,7 @@ impl<T> SparseSet<T> {
         None
     }
 
-    /// Returns a reference to the value corresponding to the given key in O(1).
+    // returns a reference to the value corresponding to the given key in O(1).
     pub fn get(&self, key: usize) -> Option<&T> {
         if let Some(dense_idx) = self.dense_idx(key) {
             Some(&self.dense[dense_idx].value)
@@ -77,7 +77,7 @@ impl<T> SparseSet<T> {
         }
     }
 
-    /// Returns a mutable reference to the value corresponding to the given key in O(1).
+    // get a mutable reference to the value corresponding to the given key in O(1).
     pub fn get_mut(&mut self, key: usize) -> Option<&mut T> {
         if let Some(dense_idx) = self.dense_idx(key) {
             Some(&mut self.dense[dense_idx].value)
@@ -86,17 +86,15 @@ impl<T> SparseSet<T> {
         }
     }
 
-    /// Test if the given key is contained in the set in O(1).
+    // check if the given key is contained in the set in O(1).
     pub fn contains(&self, key: usize) -> bool {
         self.dense_idx(key).is_some()
     }
 
-    /// Insert in the set a value for the given key in O(1).
-    ///
-    /// * returns true if the key was set.
-    /// * returns false if the key was already set.
-    ///
-    /// If the key was already set, the previous value is overridden.
+    // insert in the set a value for the given key in O(1).
+    // returns true if the key was set
+    // returns false if the key was already set
+    // also: if the key was already set, the previous value is overridden.
     pub fn insert(&mut self, key: usize, value: T) -> bool {
         assert!(
             key < self.capacity(),
@@ -117,8 +115,8 @@ impl<T> SparseSet<T> {
         true
     }
 
-    /// Removes the given key in O(1).
-    /// Returns the removed value or None if key not found.
+    // removes the given key in O(1).
+    // returns the removed value or None if key not found.
     pub fn remove(&mut self, key: usize) -> Option<T> {
         if self.contains(key) {
             let dense_idx = self.sparse[key];
@@ -137,7 +135,7 @@ impl<T> SparseSet<T> {
     }
 }
 
-/// Deref to a slice.
+// deref to a slice.
 impl<T> Deref for SparseSet<T> {
     type Target = [Entry<T>];
 
@@ -146,14 +144,13 @@ impl<T> Deref for SparseSet<T> {
     }
 }
 
-/// Deref to a mutable slice.
+// deref to a mutable slice.
 impl<T> DerefMut for SparseSet<T> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.dense[..]
     }
 }
 
-/// Move into an interator, consuming the SparseSet.
 impl<T> IntoIterator for SparseSet<T> {
     type Item = Entry<T>;
     type IntoIter = std::vec::IntoIter<Self::Item>;
@@ -163,7 +160,6 @@ impl<T> IntoIterator for SparseSet<T> {
     }
 }
 
-/// An interator over the elements of the SparseSet.
 impl<'a, T> IntoIterator for &'a SparseSet<T> {
     type Item = &'a Entry<T>;
     type IntoIter = slice::Iter<'a, Entry<T>>;
@@ -173,7 +169,6 @@ impl<'a, T> IntoIterator for &'a SparseSet<T> {
     }
 }
 
-/// An interator over mutable elements of the SparseSet.
 impl<'a, T> IntoIterator for &'a mut SparseSet<T> {
     type Item = &'a mut Entry<T>;
     type IntoIter = slice::IterMut<'a, Entry<T>>;
