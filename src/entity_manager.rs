@@ -167,15 +167,22 @@ impl EntityManager {
 
         self.skellingtons.insert(self.next_entity_id, skellington.clone());
         self.transforms.insert(self.next_entity_id, transform);
-        self.factions.insert(self.next_entity_id, faction);
+        self.factions.insert(self.next_entity_id, faction.clone());
         self.ani_models.insert(self.next_entity_id, model);
 
         self.next_entity_id += 1;
 
-        // create cylinder
-        let cyl = Cylinder {
-            r: 0.22,
-            h: 1.6,
+        // TODO: Do not hard code cylinder sizes, put them in the config
+        let cyl = if faction == Faction::Player {
+            Cylinder {
+                r: 0.22,
+                h: 1.6,
+            }
+        } else {
+            Cylinder {
+                r: 0.5,
+                h: 2.0,
+            }
         };
         let cyl_mod = cyl.create_model(12);
         self.cylinders.insert(self.next_entity_id, cyl);
