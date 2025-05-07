@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use glam::{vec3, Quat, Vec3};
 use russimp_sys::built_info::PKG_AUTHORS;
 
-use crate::{camera::Camera, entity_manager::EntityManager, enums_types::EntityType, terrain::Terrain};
+use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{EntityType, Faction}, terrain::Terrain};
 
 pub fn handle_player_movement(pressed_keys: &HashSet<glfw::Key>, em: &mut EntityManager, player_key: usize, delta: f64, camera: &Camera, terrain: &Terrain) {
     let speed = 5.0 * delta as f32;
@@ -65,6 +65,7 @@ pub fn handle_player_movement(pressed_keys: &HashSet<glfw::Key>, em: &mut Entity
 }
 
 pub fn handle_npc_movement(em: &mut EntityManager, terrain: &Terrain) {
+    // TODO: This terrain adjustment should be in the collision system file.
     for model in em.models.iter() {
         if let Some(ent_type) = em.entity_types.get(model.key()) {
             if ent_type != &EntityType::Terrain {
@@ -78,6 +79,13 @@ pub fn handle_npc_movement(em: &mut EntityManager, terrain: &Terrain) {
     for model in em.ani_models.iter() {
         if let Some(trans) = em.transforms.get_mut(model.key()) {
             trans.position.y = terrain.get_height_at(trans.position.x, trans.position.z);
+        }
+
+        if let (Some(animator), Some(entity_type), Some(faction)) = (em.animators.get_mut(model.key()), em.entity_types.get_mut(model.key()), em.factions.get_mut(model.key())) {
+            if *entity_type == EntityType::YRobot && *faction == Faction::Enemy {
+                // animator.set_current_animation("Idle");
+                animator.set_next_animation("Idle");
+            }
         }
     }
 }

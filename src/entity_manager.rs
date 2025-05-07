@@ -63,6 +63,7 @@ impl EntityManager {
                         &entity.mesh_path, 
                         &entity.bone_path,
                         &entity.animation_properties,
+                        entity.entity_type.clone(),
                     );
                 },
                 Faction::World | Faction::Static | Faction::Gizmo => {
@@ -110,7 +111,7 @@ impl EntityManager {
         self.next_entity_id += 1;
     }
 
-    pub fn create_animated_entity(&mut self, faction: Faction, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str, animation_path: &str, animation_props: &[AnimationPropHelper]) {
+    pub fn create_animated_entity(&mut self, faction: Faction, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str, animation_path: &str, animation_props: &[AnimationPropHelper], entity_type: EntityType) {
         let transform = Transform {
             position,
             rotation,
@@ -169,21 +170,26 @@ impl EntityManager {
         self.transforms.insert(self.next_entity_id, transform);
         self.factions.insert(self.next_entity_id, faction.clone());
         self.ani_models.insert(self.next_entity_id, model);
+        self.entity_types.insert(self.next_entity_id, entity_type.clone());
 
         self.next_entity_id += 1;
 
         // TODO: Do not hard code cylinder sizes, put them in the config
-        let cyl = if faction == Faction::Player {
-            Cylinder {
-                r: 0.22,
-                h: 1.6,
-            }
-        } else {
-            Cylinder {
-                r: 0.5,
-                h: 2.0,
-            }
+        let cyl = match entity_type {
+            EntityType::MooseMan => {
+                Cylinder {
+                    r: 0.5,
+                    h: 2.0,
+                }
+            },
+            _ => {
+                Cylinder {
+                    r: 0.22,
+                    h: 1.6,
+                }
+            },
         };
+
         let cyl_mod = cyl.create_model(12);
         self.cylinders.insert(self.next_entity_id, cyl);
         

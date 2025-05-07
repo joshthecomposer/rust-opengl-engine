@@ -23,12 +23,12 @@ if line.contains("TODO") {
 // TODO: This overwrites multiple times potentially, we should check if the texture has already been saved.
 
 ===========================================
-./src\entity_manager.rs:175
+./src\entity_manager.rs:177
 ===========================================
 // TODO: Do not hard code cylinder sizes, put them in the config
 
 ===========================================
-./src\entity_manager.rs:208
+./src\entity_manager.rs:214
 ===========================================
 // TODO: This should be in grid
 
@@ -41,6 +41,11 @@ if line.contains("TODO") {
 ./src\grid.rs:201
 ===========================================
 // TODO: If you are out of bounds do something else, like a -1 or something to signify.
+
+===========================================
+./src\movement.rs:68
+===========================================
+// TODO: This terrain adjustment should be in the collision system file.
 
 ===========================================
 ./src\renderer.rs:12
