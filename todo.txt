@@ -23,12 +23,12 @@ if line.contains("TODO") {
 // TODO: This overwrites multiple times potentially, we should check if the texture has already been saved.
 
 ===========================================
-./src\entity_manager.rs:177
+./src\entity_manager.rs:189
 ===========================================
 // TODO: Do not hard code cylinder sizes, put them in the config
 
 ===========================================
-./src\entity_manager.rs:214
+./src\entity_manager.rs:227
 ===========================================
 // TODO: This should be in grid
 

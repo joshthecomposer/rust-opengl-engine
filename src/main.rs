@@ -21,6 +21,7 @@ mod config;
 mod terrain;
 mod deprecated;
 mod collision_system;
+mod state_machines;
 
 use std::{fs::{self, OpenOptions}, path::Path};
 

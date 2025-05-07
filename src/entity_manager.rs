@@ -5,7 +5,7 @@ use glam::{vec3, Quat, Vec3};
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-use crate::{animation::animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model, Vertex}, camera::Camera, collision_system, config::entity_config::{AnimationPropHelper, EntityConfig}, debug::gizmos::{Cuboid, Cylinder}, enums_types::{CameraState, CellType, EntityType, Faction, Parent, Rotator, Size3, Transform}, grid::Grid, movement::{handle_npc_movement, handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, terrain::Terrain};
+use crate::{animation::animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model, Vertex}, camera::Camera, collision_system, config::entity_config::{AnimationPropHelper, EntityConfig}, debug::gizmos::{Cuboid, Cylinder}, enums_types::{CameraState, CellType, EntityType, Faction, Parent, Rotator, SimState, Size3, Transform}, grid::Grid, movement::{handle_npc_movement, handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, state_machines::entity_sim_state_machine, terrain::Terrain};
 
 pub struct EntityManager {
     pub next_entity_id: usize,
@@ -17,6 +17,7 @@ pub struct EntityManager {
     pub animators: SparseSet<Animator>,
     pub skellingtons: SparseSet<Bone>,
     pub rotators: SparseSet<Rotator>,
+    pub sim_states: SparseSet<SimState>,
 
     // Simulation gizmos
     pub cuboids: SparseSet<Cuboid>,
@@ -38,6 +39,7 @@ impl EntityManager {
             animators: SparseSet::with_capacity(max_entities),
             skellingtons: SparseSet::with_capacity(max_entities),
             rotators: SparseSet::with_capacity(max_entities),
+            sim_states: SparseSet::with_capacity(max_entities),
 
             cuboids: SparseSet::with_capacity(max_entities),
             cylinders: SparseSet::with_capacity(max_entities),
@@ -172,6 +174,16 @@ impl EntityManager {
         self.ani_models.insert(self.next_entity_id, model);
         self.entity_types.insert(self.next_entity_id, entity_type.clone());
 
+        let starting_state = match entity_type {
+            EntityType::MooseMan => {
+                SimState::Dancing
+            },
+            _ => {
+                SimState::Waiting
+            },
+        };
+        self.sim_states.insert(self.next_entity_id, starting_state);
+
         self.next_entity_id += 1;
 
         // TODO: Do not hard code cylinder sizes, put them in the config
@@ -189,6 +201,7 @@ impl EntityManager {
                 }
             },
         };
+
 
         let cyl_mod = cyl.create_model(12);
         self.cylinders.insert(self.next_entity_id, cyl);
@@ -262,6 +275,7 @@ impl EntityManager {
 
     pub fn update(&mut self, pressed_keys: &HashSet<glfw::Key>, delta: f64, elapsed_time: f32, camera: &Camera, terrain: &Terrain) {
         handle_npc_movement(self, terrain);
+        entity_sim_state_machine(self);
         collision_system::update(self);
 
         // =============================================================
