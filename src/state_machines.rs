@@ -12,6 +12,7 @@ pub fn entity_sim_state_machine(em: &mut EntityManager) {
 
             let next_state = match state {
                 SimState::Dancing => {
+                    *destination = entity_pos;
                     SimState::Dancing
                 },
                 SimState::Waiting => {
