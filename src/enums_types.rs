@@ -141,3 +141,9 @@ pub struct Size3 {
 pub struct Parent {
     pub parent_id: usize,
 }
+
+pub enum SimState {
+    Aggro,
+    Waiting,
+    Dancing,
+}
