@@ -33,7 +33,7 @@
 
 		{
 			"entity_type": "YRobot",
-			"position": [-10.0, 0.0, -3.0],
+			"position": [-10.0, 0.0, -3.12],
 			"scale": [0.01, 0.01, 0.01],
 			"__note__": "use Quat::from_rotation_x()",
 			"rotation": "-FRAC_PI_2",
@@ -58,7 +58,7 @@
 
 		{
 			"entity_type": "YRobot",
-			"position": [-10.0, 0.0, -3.0],
+			"position": [-10.15, 0.0, -3.0],
 			"scale": [0.01, 0.01, 0.01],
 			"__note__": "use Quat::from_rotation_x()",
 			"rotation": "-FRAC_PI_2",
@@ -82,7 +82,7 @@
 		},
 		{
 			"entity_type": "YRobot",
-			"position": [-10.0, 0.0, -3.0],
+			"position": [-10.30, 0.0, -2.9],
 			"scale": [0.01, 0.01, 0.01],
 			"__note__": "use Quat::from_rotation_x()",
 			"rotation": "-FRAC_PI_2",

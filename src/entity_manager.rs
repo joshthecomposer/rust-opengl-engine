@@ -290,7 +290,7 @@ impl EntityManager {
 
             let animator = self.animators.get_mut(player_key).unwrap();
             let skellington = self.skellingtons.get_mut(player_key).unwrap();
-            animator.update(elapsed_time, skellington, delta as f32);
+            animator.update(skellington, delta as f32);
 
             if let Some(donut) = self.entity_types.iter().find(|e| e.value() == &EntityType::Donut) {
                 let donut_key = donut.key();
@@ -324,7 +324,7 @@ impl EntityManager {
                 self.animators.get_mut(entity_key), 
                 self.skellingtons.get_mut(entity_key)
             ) {
-                animator.update(elapsed_time, skellington, delta as f32);
+                animator.update(skellington, delta as f32);
             }
         }
 

@@ -4,7 +4,7 @@ use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
 use core::f32;
 use std::{collections::HashMap, ffi::c_void, mem::{self, offset_of}, path::Path, ptr, str::Lines};
 
-use crate::{enums_types::{Size3, TextureType}, gl_call, shaders::Shader, some_data::MAX_BONE_INFLUENCE, sound::sound_manager::{ContinuousSound, OneShot}};
+use crate::{enums_types::TextureType, gl_call, shaders::Shader, some_data::MAX_BONE_INFLUENCE, sound::sound_manager::{ContinuousSound, OneShot}};
 
 #[derive(Debug, Clone)]
 #[repr(C)]
@@ -250,7 +250,6 @@ pub struct Animator {
     pub animations: HashMap<String, Animation>,
     pub blend_factor: f32,
     pub blend_time: f32,
-
 }
 
 impl Animator {
@@ -272,14 +271,13 @@ impl Animator {
         self.next_animation = input.to_string();
     }
 
-    pub fn update(&mut self, elapsed_time: f32, skellington: &mut Bone, dt: f32) {
+    pub fn update(&mut self, skellington: &mut Bone, dt: f32) {
 
-        // TODO: THIS IS REALLY REALLY ERROR PRONE. it is really easy to accidentally remove something
+        // TODO: THIS IS POTENTIALLY ERROR PRONE. it is really easy to accidentally remove something
         // twice and have it be gone forever, causing an unwrap() on a None animation value later in 
         // the rendering stage. Note: when using insert() with the SparseSet, it overrides the previous
         // value. Maybe this can be used in some way to fix this and get around the borrow checker.
         // This along with a separate query loop and update loop might help.
-
         if self.current_animation != self.next_animation {
             self.blend_factor += dt / self.blend_time;
             if self.blend_factor >= 1.0 {
@@ -296,12 +294,12 @@ impl Animator {
                 self.animations.remove(&curr_key),
                 self.animations.remove(&next_key)
             ) {
-                current.update(elapsed_time, skellington, Some(&mut next), self.blend_factor);
+                current.update(skellington, Some(&mut next), self.blend_factor, dt,);
                 self.animations.insert(curr_key, current);
                 self.animations.insert(next_key, next);
             }
         } else if let Some(mut current) = self.animations.remove(&curr_key) {
-            current.update(elapsed_time, skellington, None, self.blend_factor);
+            current.update(skellington, None, self.blend_factor, dt);
             self.animations.insert(curr_key, current);
         }
     }
@@ -319,6 +317,8 @@ pub struct Animation {
     pub current_segment: u32,
     pub one_shots: Vec<OneShot>,
     pub continuous_sounds: Vec<ContinuousSound>,
+
+    pub current_time: f32,
 }
 
 impl Animation {
@@ -330,20 +330,22 @@ impl Animation {
             model_animation_join: vec![],
             bone_transforms: HashMap::new(),
             current_pose: vec![],
+
             current_segment: 0,
             one_shots: vec![],
             continuous_sounds: vec![],
+
+            current_time: 0.0,
         }
     }
 
     pub fn calculate_pose(
         &mut self,
         skeleton: &mut Bone,
-        elapsed_time: f32,
         parent_transform: Mat4,
         global_inverse_transform: Mat4,
     ) {
-        let delta = elapsed_time % self.duration;
+        let delta = self.current_time % self.duration;
         let (local_position, local_rot, local_scale) = self.get_bone_local_transform(skeleton, delta);
         let local_transform = Mat4::from_scale_rotation_translation(local_scale, local_rot, local_position);
         let global_transform = parent_transform * local_transform;
@@ -361,7 +363,7 @@ impl Animation {
             };
 
         for child in skeleton.children.iter_mut() {
-            self.calculate_pose(child, delta, global_transform, global_inverse_transform);
+            self.calculate_pose(child, global_transform, global_inverse_transform);
         }
     }
 
@@ -371,14 +373,13 @@ impl Animation {
     pub fn calculate_pose_blended(
         &mut self,
         skeleton: &mut Bone,
-        elapsed_time: f32,
         parent_transform: Mat4,
         global_inverse_transform: Mat4,
         other_animation: &mut Animation,
         blend_factor: f32,
     ) {
-        let delta1 = elapsed_time % self.duration;
-        let delta2 = elapsed_time % other_animation.duration;
+        let delta1 = self.current_time % self.duration;
+        let delta2 = other_animation.current_time % other_animation.duration;
 
         let (pos1, rot1, scale1) = self.get_bone_local_transform(skeleton, delta1);
         let (pos2, rot2, scale2) = other_animation.get_bone_local_transform(skeleton, delta2);
@@ -403,7 +404,7 @@ impl Animation {
             };
 
         for child in skeleton.children.iter_mut() {
-            self.calculate_pose_blended(child, elapsed_time, global_transform, global_inverse_transform, other_animation, blend_factor);
+            self.calculate_pose_blended(child, global_transform, global_inverse_transform, other_animation, blend_factor);
         }
     }
 
@@ -448,20 +449,28 @@ impl Animation {
         }
     }
 
-    pub fn update(&mut self, elapsed_time: f32, skellington: &mut Bone, other_animation: Option<&mut Animation>, blend_factor: f32) {
+    pub fn update(&mut self, skellington: &mut Bone, other_animation: Option<&mut Animation>, blend_factor: f32, dt: f32) {
+        self.current_time += dt;
+        if self.current_time > self.duration {
+            self.current_time = 0.0;
+        }
+
         if let Some(other_animation) = other_animation {
             self.calculate_pose_blended(
                 skellington, 
-                elapsed_time, 
                 Mat4::IDENTITY,
                 Mat4::IDENTITY, 
                 other_animation,
                 blend_factor,
             );
+
+            other_animation.current_time += dt;
+            if other_animation.current_time > other_animation.duration {
+                other_animation.current_time = 0.0;
+            }
         } else {
             self.calculate_pose(
                 skellington, 
-                elapsed_time, 
                 Mat4::IDENTITY,
                 Mat4::IDENTITY, 
             );
