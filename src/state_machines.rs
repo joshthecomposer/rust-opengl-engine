@@ -8,6 +8,7 @@ pub fn entity_sim_state_machine(em: &mut EntityManager) {
             let player_pos = em.transforms.get(player_key).unwrap().position;
             let entity_pos = em.transforms.get(fac.key()).unwrap().position;
             let animator = em.animators.get_mut(fac.key()).unwrap();
+            let destination = em.destinations.get_mut(fac.key()).unwrap();
 
             let next_state = match state {
                 SimState::Dancing => {
@@ -15,6 +16,7 @@ pub fn entity_sim_state_machine(em: &mut EntityManager) {
                 },
                 SimState::Waiting => {
                     if entity_pos.distance(player_pos) <= 12.0 {
+                        *destination = player_pos;
                         animator.set_next_animation("Run");
                         SimState::Aggro
                     } else {
@@ -24,9 +26,11 @@ pub fn entity_sim_state_machine(em: &mut EntityManager) {
                 },
                 SimState::Aggro => {
                     if entity_pos.distance(player_pos) > 12.0 {
+                        *destination = entity_pos;
                         animator.set_next_animation("Idle");
                         SimState::Waiting
                     } else {
+                        *destination = player_pos;
                         animator.set_next_animation("Run");
                         SimState::Aggro
                     }

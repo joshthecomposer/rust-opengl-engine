@@ -105,7 +105,127 @@
 			]
 		},
 
+		{
+			"entity_type": "YRobot",
+			"position": [-10.40, 0.0, -2.9],
+			"scale": [0.01, 0.01, 0.01],
+			"__note__": "use Quat::from_rotation_x()",
+			"rotation": "-FRAC_PI_2",
+			"faction": "Enemy",
+			"mesh_path": "resources/models/animated/002_y_robot/y_robot_model_FINAL.txt", 
+			"bone_path":"resources/models/animated/002_y_robot/y_robot_bones_FINAL.txt",
+			"animation_properties" : [
+				{
+					"name": "Run",
+					"one_shots": {
+						"footstep": [7, 18]
+					},
+					"continuous_sounds": []
+				},
+				{
+					"name": "Idle",
+					"one_shots": { },
+					"continuous_sounds": []
+				}
+			]
+		},
+		{
+			"entity_type": "YRobot",
+			"position": [-10.40, 0.0, -2.9],
+			"scale": [0.01, 0.01, 0.01],
+			"__note__": "use Quat::from_rotation_x()",
+			"rotation": "-FRAC_PI_2",
+			"faction": "Enemy",
+			"mesh_path": "resources/models/animated/002_y_robot/y_robot_model_FINAL.txt", 
+			"bone_path":"resources/models/animated/002_y_robot/y_robot_bones_FINAL.txt",
+			"animation_properties" : [
+				{
+					"name": "Run",
+					"one_shots": {
+						"footstep": [7, 18]
+					},
+					"continuous_sounds": []
+				},
+				{
+					"name": "Idle",
+					"one_shots": { },
+					"continuous_sounds": []
+				}
+			]
+		},
+		{
+			"entity_type": "YRobot",
+			"position": [-10.40, 0.0, -2.9],
+			"scale": [0.01, 0.01, 0.01],
+			"__note__": "use Quat::from_rotation_x()",
+			"rotation": "-FRAC_PI_2",
+			"faction": "Enemy",
+			"mesh_path": "resources/models/animated/002_y_robot/y_robot_model_FINAL.txt", 
+			"bone_path":"resources/models/animated/002_y_robot/y_robot_bones_FINAL.txt",
+			"animation_properties" : [
+				{
+					"name": "Run",
+					"one_shots": {
+						"footstep": [7, 18]
+					},
+					"continuous_sounds": []
+				},
+				{
+					"name": "Idle",
+					"one_shots": { },
+					"continuous_sounds": []
+				}
+			]
+		},
+		{
+			"entity_type": "YRobot",
+			"position": [-10.40, 0.0, -2.9],
+			"scale": [0.01, 0.01, 0.01],
+			"__note__": "use Quat::from_rotation_x()",
+			"rotation": "-FRAC_PI_2",
+			"faction": "Enemy",
+			"mesh_path": "resources/models/animated/002_y_robot/y_robot_model_FINAL.txt", 
+			"bone_path":"resources/models/animated/002_y_robot/y_robot_bones_FINAL.txt",
+			"animation_properties" : [
+				{
+					"name": "Run",
+					"one_shots": {
+						"footstep": [7, 18]
+					},
+					"continuous_sounds": []
+				},
+				{
+					"name": "Idle",
+					"one_shots": { },
+					"continuous_sounds": []
+				}
+			]
+		},
 
+		{
+			"entity_type": "YRobot",
+			"position": [-10.40, 0.0, -2.9],
+			"scale": [0.01, 0.01, 0.01],
+			"__note__": "use Quat::from_rotation_x()",
+			"rotation": "-FRAC_PI_2",
+			"faction": "Enemy",
+			"mesh_path": "resources/models/animated/002_y_robot/y_robot_model_FINAL.txt", 
+			"bone_path":"resources/models/animated/002_y_robot/y_robot_bones_FINAL.txt",
+			"animation_properties" : [
+				{
+					"name": "Run",
+					"one_shots": {
+						"footstep": [7, 18]
+					},
+					"continuous_sounds": []
+				},
+				{
+					"name": "Idle",
+					"one_shots": { },
+					"continuous_sounds": []
+				}
+			]
+		},
 
 
 

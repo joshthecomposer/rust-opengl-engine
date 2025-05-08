@@ -23,12 +23,12 @@ if line.contains("TODO") {
 // TODO: This overwrites multiple times potentially, we should check if the texture has already been saved.
 
 ===========================================
-./src\entity_manager.rs:189
+./src\entity_manager.rs:198
 ===========================================
 // TODO: Do not hard code cylinder sizes, put them in the config
 
 ===========================================
-./src\entity_manager.rs:227
+./src\entity_manager.rs:236
 ===========================================
 // TODO: This should be in grid
 
@@ -48,42 +48,42 @@ if line.contains("TODO") {
 // TODO: This terrain adjustment should be in the collision system file.
 
 ===========================================
-./src\renderer.rs:12
+./src\movement.rs:90
 ===========================================
-pub shaders: HashMap<ShaderType, Shader>, // TODO: make this an enum
+// TODO: This is handling the player terrain logic, we should move this into the player and leave this in the faction check block
 
 ===========================================
-./src\renderer.rs:259
+./src\renderer.rs:258
 ===========================================
 // TODO:: Get rid of this.
 
 ===========================================
-./src\renderer.rs:279
+./src\renderer.rs:278
 ===========================================
 // TODO: Fix the wrapping of this quad
 
 ===========================================
-./src\renderer.rs:291
+./src\renderer.rs:290
 ===========================================
 // TODO:: Get rid of this.
 
 ===========================================
-./src\renderer.rs:311
+./src\renderer.rs:310
 ===========================================
 // TODO: Fix the wrapping of this quad
 
 ===========================================
-./src\renderer.rs:330
+./src\renderer.rs:329
 ===========================================
 // TODO: DOn't clone, we really need an enum here.
 
 ===========================================
-./src\renderer.rs:408
+./src\renderer.rs:407
 ===========================================
 // TODO: Fix the wrapping of this quad
 
 ===========================================
-./src\renderer.rs:496
+./src\renderer.rs:495
 ===========================================
 // TODO:: Get rid of this.
 

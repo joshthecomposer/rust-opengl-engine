@@ -64,7 +64,7 @@ pub fn handle_player_movement(pressed_keys: &HashSet<glfw::Key>, em: &mut Entity
     transform.position += velocity;
 }
 
-pub fn handle_npc_movement(em: &mut EntityManager, terrain: &Terrain) {
+pub fn handle_npc_movement(em: &mut EntityManager, terrain: &Terrain, dt: f32) {
     // TODO: This terrain adjustment should be in the collision system file.
     for model in em.models.iter() {
         if let Some(ent_type) = em.entity_types.get(model.key()) {
@@ -77,15 +77,53 @@ pub fn handle_npc_movement(em: &mut EntityManager, terrain: &Terrain) {
     }
 
     for model in em.ani_models.iter() {
-        if let Some(trans) = em.transforms.get_mut(model.key()) {
+        if let (
+            Some(trans),
+            Some(faction),
+            Some(rotator),
+        ) = (
+            em.transforms.get_mut(model.key()),
+            em.factions.get_mut(model.key()),
+            em.rotators.get_mut(model.key()),
+        ) {
+            // Adjust for terrain height
+            // TODO: This is handling the player terrain logic, we should move this into the player and leave this in the faction check block
             trans.position.y = terrain.get_height_at(trans.position.x, trans.position.z);
-        }
+            
+            if *faction != Faction::Player {
+                let speed = 3.2 * dt as f32;
+                let destination = em.destinations.get(model.key()).unwrap();
+                let direction = *destination - trans.position;
+                let distance = direction.length();
 
-        if let (Some(animator), Some(entity_type), Some(faction)) = (em.animators.get_mut(model.key()), em.entity_types.get_mut(model.key()), em.factions.get_mut(model.key())) {
-            if *entity_type == EntityType::YRobot && *faction == Faction::Enemy {
-                // animator.set_current_animation("Idle");
-                animator.set_next_animation("Idle");
+                if distance > 0.001 {
+                    // translation
+                    let calc_movement = direction.normalize() * speed.min(distance);
+
+                    trans.position += calc_movement;
+
+                    // Rotation
+                    let movement_dir = direction.normalize();
+                    // let up = Vec3::Y;
+
+                    let target_rot = Quat::from_rotation_arc(-Vec3::Z, movement_dir) * trans.original_rotation;
+
+                    if rotator.blend_factor == 0.0 && target_rot != rotator.cur_rot {
+                        rotator.next_rot = target_rot;
+                    }
+
+                    if rotator.next_rot != rotator.cur_rot {
+                        rotator.blend_factor += dt / rotator.blend_time;
+                        if rotator.blend_factor >= 1.0 {
+                            rotator.blend_factor = 0.0;
+                            rotator.cur_rot = rotator.next_rot;
+                        }
+                    }
+
+                    trans.rotation = rotator.cur_rot.slerp(rotator.next_rot, rotator.blend_factor);
+                }
             }
+
         }
     }
 }

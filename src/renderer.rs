@@ -2,14 +2,13 @@
 use std::{collections::HashMap, ffi::c_void, mem, ptr::null_mut};
 
 use gl::CULL_FACE;
-use glam::{vec3, vec4, Mat4, Quat, Vec3};
+use glam::{vec3, vec4, Mat4};
 use image::GenericImageView;
-use russimp::light;
 
-use crate::{animation::animation::{Animation, Model}, camera::Camera, entity_manager::EntityManager, enums_types::{EntityType, Faction, FboType, ShaderType, TextureType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}, sound::sound_manager::SoundManager};
+use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{Faction, FboType, ShaderType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}, sound::sound_manager::SoundManager};
 
 pub struct Renderer {
-    pub shaders: HashMap<ShaderType, Shader>, // TODO: make this an enum
+    pub shaders: HashMap<ShaderType, Shader>,
     pub vaos: HashMap<VaoType, u32>,
     pub fbos: HashMap<FboType, u32>,
     pub depth_map: u32,
