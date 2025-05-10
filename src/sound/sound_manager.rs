@@ -150,7 +150,7 @@ impl SoundManager {
         };
         
         unsafe {
-            let result = FMOD_Studio_System_SetListenerAttributes(self.fmod_system, 0, &attributes);
+            let result = FMOD_Studio_System_SetListenerAttributes(self.fmod_system, 0, &attributes, std::ptr::null());
             if result != 0 {
                 eprintln!("Failed to set listener attributes: {}", result);
             }
