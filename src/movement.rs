@@ -105,8 +105,13 @@ pub fn handle_npc_movement(em: &mut EntityManager, terrain: &Terrain, dt: f32) {
                     // Rotation
                     let movement_dir = direction.normalize();
                     // let up = Vec3::Y;
+                    
 
-                    let target_rot = Quat::from_rotation_arc(-Vec3::Z, movement_dir) * trans.original_rotation;
+                    // TODO: This clamps rotation to around Y, which should be not the case forever.
+                    let angle = f32::atan2(-movement_dir.x, -movement_dir.z);
+                    let target_rot = Quat::from_rotation_y(angle) * trans.original_rotation;
+
+                    // let target_rot = Quat::from_rotation_arc(-Vec3::Z, movement_dir) * trans.original_rotation;
 
                     if rotator.blend_factor == 0.0 && target_rot != rotator.cur_rot {
                         rotator.next_rot = target_rot;

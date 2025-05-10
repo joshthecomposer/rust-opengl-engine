@@ -53,6 +53,11 @@ if line.contains("TODO") {
 // TODO: This is handling the player terrain logic, we should move this into the player and leave this in the faction check block
 
 ===========================================
+./src\movement.rs:110
+===========================================
+// TODO: This clamps rotation to around Y, which should be not the case forever.
+
+===========================================
 ./src\renderer.rs:258
 ===========================================
 // TODO:: Get rid of this.

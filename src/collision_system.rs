@@ -62,7 +62,6 @@ fn handle_entity_collisions(em: &mut EntityManager) {
 
     for (child_id, offset) in resolutions {
         let parent_id = em.parents.get(child_id).unwrap().parent_id;
-
         if let Some(t) = em.transforms.get_mut(parent_id) {
             t.position.x += offset.x;
             t.position.z += offset.y;

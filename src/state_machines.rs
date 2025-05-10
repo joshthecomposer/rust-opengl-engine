@@ -10,33 +10,32 @@ pub fn entity_sim_state_machine(em: &mut EntityManager) {
             let animator = em.animators.get_mut(fac.key()).unwrap();
             let destination = em.destinations.get_mut(fac.key()).unwrap();
 
-            let next_state = match state {
+            let next_state = (|| match state {
                 SimState::Dancing => {
                     *destination = entity_pos;
                     SimState::Dancing
                 },
                 SimState::Waiting => {
+                    animator.set_next_animation("Idle");
+                    *destination = entity_pos;
+
                     if entity_pos.distance(player_pos) <= 12.0 {
-                        *destination = player_pos;
-                        animator.set_next_animation("Run");
-                        SimState::Aggro
-                    } else {
-                        animator.set_next_animation("Idle");
-                        SimState::Waiting
+                        return SimState::Aggro
                     }
+
+                    SimState::Waiting
                 },
                 SimState::Aggro => {
+                    animator.set_next_animation("Run");
+                    *destination = player_pos;
+
                     if entity_pos.distance(player_pos) > 12.0 {
-                        *destination = entity_pos;
-                        animator.set_next_animation("Idle");
-                        SimState::Waiting
-                    } else {
-                        *destination = player_pos;
-                        animator.set_next_animation("Run");
-                        SimState::Aggro
-                    }
+                        return SimState::Waiting
+                    } 
+
+                    SimState::Aggro
                 },
-            };
+            })();
 
             *state = next_state;
         }
