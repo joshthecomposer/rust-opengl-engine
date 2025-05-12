@@ -1,4 +1,5 @@
 use glam::Vec3;
+use serde::Deserialize;
 
 use crate::animation::animation::{Model, Vertex};
 
@@ -83,6 +84,7 @@ impl Cuboid {
     }
 }
 
+#[derive(Deserialize, Debug, Clone)]
 pub struct Cylinder {
     pub r: f32,
     pub h: f32,

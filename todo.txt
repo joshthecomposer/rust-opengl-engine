@@ -18,12 +18,7 @@
 // TODO: This overwrites multiple times potentially, we should check if the texture has already been saved.
 
 ===========================================
-./src\entity_manager.rs:198
-===========================================
-// TODO: Do not hard code cylinder sizes, put them in the config
-
-===========================================
-./src\entity_manager.rs:236
+./src\entity_manager.rs:222
 ===========================================
 // TODO: This should be in grid
 

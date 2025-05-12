@@ -71,6 +71,7 @@ impl EntityManager {
                         &entity.bone_path,
                         &entity.animation_properties,
                         entity.entity_type.clone(),
+                        entity.hit_cyl.clone(),
                     );
                 },
                 Faction::World | Faction::Static | Faction::Gizmo => {
@@ -118,7 +119,7 @@ impl EntityManager {
         self.next_entity_id += 1;
     }
 
-    pub fn create_animated_entity(&mut self, faction: Faction, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str, animation_path: &str, animation_props: &[AnimationPropHelper], entity_type: EntityType) {
+    pub fn create_animated_entity(&mut self, faction: Faction, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str, animation_path: &str, animation_props: &[AnimationPropHelper], entity_type: EntityType, cylinder: Cylinder) {
         let transform = Transform {
             position,
             rotation,
@@ -195,22 +196,7 @@ impl EntityManager {
 
         self.next_entity_id += 1;
 
-        // TODO: Do not hard code cylinder sizes, put them in the config
-        let cyl = match entity_type {
-            EntityType::MooseMan => {
-                Cylinder {
-                    r: 0.5,
-                    h: 2.0,
-                }
-            },
-            _ => {
-                Cylinder {
-                    r: 0.22,
-                    h: 1.6,
-                }
-            },
-        };
-
+        let cyl = cylinder;
 
         let cyl_mod = cyl.create_model(12);
         self.cylinders.insert(self.next_entity_id, cyl);
