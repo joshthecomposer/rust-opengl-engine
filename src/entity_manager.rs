@@ -1,4 +1,4 @@
-#![allow(dead_code, clippy::too_many_arguments)]
+#![allow(clippy::too_many_arguments)]
 use std::collections::HashSet;
 
 use glam::{vec3, Quat, Vec3};

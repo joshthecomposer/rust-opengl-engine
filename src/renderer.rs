@@ -255,7 +255,7 @@ impl Renderer {
         shader.set_bool("alpha_test_pass", true);
         for model in em.models.iter() {
             let check = em.factions.get(model.key()).unwrap();
-            // TODO:: Get rid of this.
+            // TODO:: Get rid of this. instead we should do passes for each entity faction.
             if check == &Faction::Gizmo {
                 continue;
             }

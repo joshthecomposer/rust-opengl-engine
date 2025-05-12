@@ -50,7 +50,7 @@
 ===========================================
 ./src\renderer.rs:258
 ===========================================
-// TODO:: Get rid of this.
+// TODO:: Get rid of this. instead we should do passes for each entity faction.
 
 ===========================================
 ./src\renderer.rs:278
