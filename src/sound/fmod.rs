@@ -115,10 +115,6 @@ extern "C" {
         system: FMOD_STUDIO_SYSTEM,
         listener: c_int,
         attributes: *const FMOD_3D_ATTRIBUTES,
-        // TODO: I don't know why this works on windows and why it fixed mac segfaults...
-        // because I this field actually doesn't exist in the API. There has to be some
-        // Alignment issue and mac might be more strict or something. Either way this needs 
-        // to be fully evaluated and we must make sure it doesn't cause random bugs/crashes.
-        attenuation_position: *const FMOD_VECTOR,
+        attenuationposition: *const FMOD_VECTOR,
     ) -> FMOD_RESULT;
 }
