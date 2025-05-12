@@ -19,7 +19,7 @@ mod ui;
 mod sound;
 mod config;
 mod terrain;
-mod deprecated;
+// mod deprecated;
 mod collision_system;
 mod state_machines;
 

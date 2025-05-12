@@ -18,7 +18,7 @@ fn parse_todos(dir: &Path, dest: &mut File) {
         let entry = entry.unwrap();
         let path = entry.path();
 
-        if path.file_name().is_some_and(|name| name == "check_todos.rs") {
+        if path.file_name().is_some_and(|name| name == "parse_todos.rs") {
             continue;
         }
 

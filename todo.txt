@@ -13,11 +13,6 @@
 // TODO: Parse BSDF color instead or something.
 
 ===========================================
-./src\bin\parse_todos.rs:32
-===========================================
-if line.contains("TODO") {
-
-===========================================
 ./src\deprecated\model.rs:139
 ===========================================
 // TODO: This overwrites multiple times potentially, we should check if the texture has already been saved.
