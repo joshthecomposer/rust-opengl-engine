@@ -22,7 +22,6 @@ impl Renderer {
         // =============================================================
         // Setup Shaders
         // =============================================================
-
         let mut shaders = HashMap::new();
         let mut vaos = HashMap::new();
         let mut fbos = HashMap::new();
@@ -38,6 +37,7 @@ impl Renderer {
         let mut vbo = 0;
         let mut ebo = 0;
         let mut cubemap_texture = 0;
+
         // =============================================================
         // Skybox memes
         // =============================================================
