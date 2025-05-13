@@ -233,12 +233,16 @@ impl Renderer {
     ) {
         self.shadow_pass(em, camera, light_manager, fb_width, fb_height);
 
-        // OOP-esque things pass
+        // =============================================================
+        // Render OOP-esque things
+        // =============================================================
         // shadow pass must come first or you're gonna have a bad time
         self.skybox_pass(camera, fb_width, fb_height);
         self.grid_pass(grid, camera, light_manager);
         
-        // ECS Pass
+        // =============================================================
+        // Render ECS things
+        // =============================================================
         // Gizmo pass
         let gizmo_ids = em.get_ids_for_faction(Faction::Gizmo);
         self.gizmo_pass(camera, em, gizmo_ids);
@@ -256,16 +260,6 @@ impl Renderer {
 
         self.ani_model_pass(camera, em, light_manager, sound_manager, y_robot_ids);
         self.ani_model_pass(camera, em, light_manager, sound_manager, moose_ids);
-
-        unsafe {
-            gl_call!(gl::Enable(gl::DEPTH_TEST));
-            gl_call!(gl::DepthMask(gl::TRUE)); // Allow writing to depth buffer
-            gl_call!(gl::Disable(gl::BLEND));
-        }
-        let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
-        shader.activate();
-        shader.set_bool("is_animated", false);
-        shader.set_bool("alpha_test_pass", true);
     }
 
 
