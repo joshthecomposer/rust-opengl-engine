@@ -13,24 +13,9 @@
 // TODO: Parse BSDF color instead or something.
 
 ===========================================
-./src\bin\parse_todos.rs:32
-===========================================
-if line.contains("TODO") {
-
-===========================================
 ./src\deprecated\model.rs:139
 ===========================================
 // TODO: This overwrites multiple times potentially, we should check if the texture has already been saved.
-
-===========================================
-./src\entity_manager.rs:198
-===========================================
-// TODO: Do not hard code cylinder sizes, put them in the config
-
-===========================================
-./src\entity_manager.rs:236
-===========================================
-// TODO: This should be in grid
 
 ===========================================
 ./src\grid.rs:82
@@ -43,52 +28,32 @@ if line.contains("TODO") {
 // TODO: If you are out of bounds do something else, like a -1 or something to signify.
 
 ===========================================
-./src\movement.rs:68
+./src\movement_system.rs:83
 ===========================================
-// TODO: This terrain adjustment should be in the collision system file.
+// TODO: This should likely be different and calculated in the collision system
 
 ===========================================
-./src\movement.rs:90
-===========================================
-// TODO: This is handling the player terrain logic, we should move this into the player and leave this in the faction check block
-
-===========================================
-./src\movement.rs:110
+./src\movement_system.rs:116
 ===========================================
 // TODO: This clamps rotation to around Y, which should be not the case forever.
 
 ===========================================
-./src\renderer.rs:258
+./src\movement_system.rs:142
 ===========================================
-// TODO:: Get rid of this.
+// TODO: This terrain adjustment should be in the collision system file.
 
 ===========================================
-./src\renderer.rs:278
-===========================================
-// TODO: Fix the wrapping of this quad
-
-===========================================
-./src\renderer.rs:290
-===========================================
-// TODO:: Get rid of this.
-
-===========================================
-./src\renderer.rs:310
-===========================================
-// TODO: Fix the wrapping of this quad
-
-===========================================
-./src\renderer.rs:329
+./src\renderer.rs:304
 ===========================================
 // TODO: DOn't clone, we really need an enum here.
 
 ===========================================
-./src\renderer.rs:407
+./src\renderer.rs:424
 ===========================================
 // TODO: Fix the wrapping of this quad
 
 ===========================================
-./src\renderer.rs:495
+./src\renderer.rs:527
 ===========================================
 // TODO:: Get rid of this.
 

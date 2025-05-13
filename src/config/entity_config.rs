@@ -1,8 +1,8 @@
-use std::{collections::{HashMap, HashSet}, fs::read_to_string};
+use std::{collections::HashMap, fs::read_to_string};
 
 use serde::Deserialize;
 
-use crate::enums_types::{EntityType, Faction};
+use crate::{debug::gizmos::Cylinder, enums_types::{EntityType, Faction}};
 
 #[derive(Deserialize, Debug)]
 pub struct EntityConfig {
@@ -39,5 +39,6 @@ pub struct EntityInstanceHelper {
     pub faction: Faction,
     pub mesh_path: String,
     pub bone_path: String,
+    pub hit_cyl: Cylinder,
     pub animation_properties: Vec<AnimationPropHelper>,
 }

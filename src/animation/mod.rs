@@ -5,3 +5,4 @@
 // pub mod animation;
 // pub mod animator;
 pub mod animation;
+pub mod animation_system;

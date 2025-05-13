@@ -223,4 +223,5 @@ impl Grid {
             .save("resources/textures/grid_height.png")
             .expect("Failed to save grid height");
     }
+
 }

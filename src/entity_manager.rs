@@ -1,11 +1,12 @@
-#![allow(dead_code, clippy::too_many_arguments)]
+#![allow(clippy::too_many_arguments)]
 use std::collections::HashSet;
 
-use glam::{vec3, Quat, Vec3};
+use glam::{vec3, Mat4, Quat, Vec3};
+use libc::EILSEQ;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-use crate::{animation::animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model}, camera::Camera, collision_system, config::entity_config::{AnimationPropHelper, EntityConfig}, debug::gizmos::{Cuboid, Cylinder}, enums_types::{CameraState, CellType, EntityType, Faction, Parent, Rotator, SimState, Transform}, grid::Grid, movement::{handle_npc_movement, handle_player_movement, revolve_around_something}, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, state_machines::entity_sim_state_machine, terrain::Terrain};
+use crate::{animation::{animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model}, animation_system}, camera::Camera, collision_system, config::entity_config::{AnimationPropHelper, EntityConfig}, debug::gizmos::{Cuboid, Cylinder}, enums_types::{CellType, EntityType, Faction, Parent, Rotator, SimState, Transform}, grid::Grid, movement_system, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, state_machines, terrain::Terrain};
 
 pub struct EntityManager {
     pub next_entity_id: usize,
@@ -71,6 +72,7 @@ impl EntityManager {
                         &entity.bone_path,
                         &entity.animation_properties,
                         entity.entity_type.clone(),
+                        entity.hit_cyl.clone(),
                     );
                 },
                 Faction::World | Faction::Static | Faction::Gizmo => {
@@ -118,7 +120,7 @@ impl EntityManager {
         self.next_entity_id += 1;
     }
 
-    pub fn create_animated_entity(&mut self, faction: Faction, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str, animation_path: &str, animation_props: &[AnimationPropHelper], entity_type: EntityType) {
+    pub fn create_animated_entity(&mut self, faction: Faction, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str, animation_path: &str, animation_props: &[AnimationPropHelper], entity_type: EntityType, cylinder: Cylinder) {
         let transform = Transform {
             position,
             rotation,
@@ -195,22 +197,7 @@ impl EntityManager {
 
         self.next_entity_id += 1;
 
-        // TODO: Do not hard code cylinder sizes, put them in the config
-        let cyl = match entity_type {
-            EntityType::MooseMan => {
-                Cylinder {
-                    r: 0.5,
-                    h: 2.0,
-                }
-            },
-            _ => {
-                Cylinder {
-                    r: 0.22,
-                    h: 1.6,
-                }
-            },
-        };
-
+        let cyl = cylinder;
 
         let cyl_mod = cyl.create_model(12);
         self.cylinders.insert(self.next_entity_id, cyl);
@@ -232,140 +219,33 @@ impl EntityManager {
         self.next_entity_id += 1;
     }
 
+    pub fn get_ids_for_faction(&self, faction: Faction) -> Vec<usize> {
+        let result: Vec<usize> = self.factions
+            .iter()
+            .filter_map(|f|
+                if *f.value() == faction {
+                    Some(f.key())
+                } else {
+                    None
+                }
+            )
+            .collect();
 
-    // TODO: This should be in grid
-    pub fn populate_floor_tiles(&mut self, grid: &Grid, model_path: &str) {
-        for cell in grid.cells.iter() {
-            let pos = cell.position;
-            self.create_static_entity(EntityType::BlockGrass, Faction::World, pos, vec3(1.0, 1.0, 1.0), Quat::IDENTITY, model_path);
-        }
+            result
     }
 
-    pub fn populate_cell_rng(&mut self, grid: &Grid) {
-        for cell in grid.cells.iter() {
-
-            let (entity_data, subtile_size, entity_type) = match cell.cell_type {
-                CellType::Tree => (TREES, 3.0, EntityType::Tree),
-                CellType::Grass => (GRASSES, 3.0, EntityType::Grass),
-                _=> continue,
-            };
-
-            let within = grid.cell_size / subtile_size;
-
-            let cell_pos = cell.position;
-            for x in -1..=1 {
-                for z in -1..=1 {
-                    let num = self.rng.random_range(0..entity_data.len() + 1);
-                    let scale = match entity_type {
-                        EntityType::Grass => self.rng.random_range(20..=45) as f32 / 100.0,
-                        EntityType::Tree => self.rng.random_range(90..=110) as f32 / 100.0,
-                        _=> 1.0,
-                };
-                    let smoff = self.rng.random_range(-0.1..=0.1);
-
-                    let offset_x = x as f32 * within;
-                    let offset_z = z as f32 * within;
-
-                    if num < entity_data.len() {
-                        self.create_static_entity(
-                            entity_type.clone(),
-                            Faction::World,
-                            vec3(cell_pos.x + offset_x + smoff, 0.0, cell_pos.z + offset_z + smoff),
-                            Vec3::splat(scale),
-                            Quat::IDENTITY,
-                            entity_data[num],
-                        );
-                    }
+    pub fn get_ids_for_type(&self, entity_type: EntityType) -> Vec<usize> {
+        let result: Vec<usize> = self.entity_types
+            .iter()
+            .filter_map(|f|
+                if *f.value() == entity_type {
+                    Some(f.key())
+                } else {
+                    None
                 }
-            }
-        }
+            )
+            .collect();
 
-    }
-
-    pub fn update(&mut self, pressed_keys: &HashSet<glfw::Key>, delta: f64, elapsed_time: f32, camera: &Camera, terrain: &Terrain) {
-        handle_npc_movement(self, terrain, delta as f32);
-        entity_sim_state_machine(self);
-        collision_system::update(self);
-
-        // =============================================================
-        // Player Pass
-        // =============================================================
-        if let Some(player_entry) = self.factions.iter().find(|e| e.value() == &Faction::Player) {
-            let player_key = player_entry.key();
-
-            if camera.move_state != CameraState::Free {
-                handle_player_movement(pressed_keys, self, player_key, delta, camera, terrain);
-            }
-
-            let animator = self.animators.get_mut(player_key).unwrap();
-            let skellington = self.skellingtons.get_mut(player_key).unwrap();
-            animator.update(skellington, delta as f32);
-
-            if let Some(donut) = self.entity_types.iter().find(|e| e.value() == &EntityType::Donut) {
-                let donut_key = donut.key();
-
-                let player_position = self.transforms.get(player_key).map(|t| t.position);
-
-                if let Some(donut_transform) = self.transforms.get_mut(donut_key) {
-                    if let Some(player_position) = player_position {
-                        revolve_around_something(
-                            &mut donut_transform.position,
-                            &player_position,
-                            elapsed_time,
-                            2.0,
-                            5.0
-                        );
-                    }
-                }
-            }
-        }
-
-        // =============================================================
-        // Non-player pass
-        // =============================================================
-        for faction in self.factions.iter() {
-            if faction.value() == &Faction::Player {
-                continue;
-            }
-            let entity_key = faction.key();
-
-            if let (Some(animator), Some(skellington)) = (
-                self.animators.get_mut(entity_key), 
-                self.skellingtons.get_mut(entity_key)
-            ) {
-                animator.update(skellington, delta as f32);
-            }
-        }
-
-        // =============================================================
-        // Gizmo Pass
-        // =============================================================
-        let mut transforms_to_update:Vec<(usize, usize)> = vec![];
-        for faction in self.factions.iter() {
-            if faction.value() == &Faction::Gizmo {
-                let entity_key = faction.key();
-
-                if let Some(parent) = self.parents.get(entity_key) {
-                    transforms_to_update.push((entity_key, parent.parent_id))
-                }
-            }
-        }
-
-        for (child_id, parent_id) in transforms_to_update {
-            let parent_transform = self.transforms.get(parent_id).unwrap().clone();
-            let child_transform = self.transforms.get(child_id).unwrap().clone();
-            
-            // Some magic to make sure the cylinder is rotated properly despite the parent being originally offset in some way
-            let adjusted_rotation = parent_transform.rotation
-            * parent_transform.original_rotation.inverse()
-            * child_transform.original_rotation.inverse();
-
-            self.transforms.insert(child_id, Transform {
-                position: parent_transform.position,
-                rotation: adjusted_rotation,
-                scale: child_transform.scale,
-                original_rotation: child_transform.original_rotation,
-            });
-        }
+            result
     }
 }

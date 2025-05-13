@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 use std::fmt::{self, Display, Formatter};
 
-use glam::{Quat, Vec3};
+use glam::{Mat4, Quat, Vec3};
 use serde::Deserialize;
 
 #[derive(Debug, Eq, PartialEq, Hash)]
@@ -67,14 +67,8 @@ pub struct Transform {
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 pub enum EntityType {
     Donut,
-    ArcherTower01,
-    BlockGrass,
-    Tree,
     TreeFoliage,
     TreeTrunk,
-    Grass,
-    DemonLady,
-    BigGuy,
     MooseMan,
     YRobot,
     Terrain,

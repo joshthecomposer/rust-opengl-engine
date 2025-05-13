@@ -1,0 +1,6 @@
+Simulation Update:
+
+Query phase:
+	- We gather all the entity ids of each faction type
+Update Phase: 
+	- We access the entities and the components needed in the update pass based on the ID (key())

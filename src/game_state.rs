@@ -7,14 +7,14 @@ use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{camera::Camera, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, debug::gizmos::Cylinder, entity_manager::EntityManager, enums_types::{CameraState, EntityType, Faction, Transform}, gl_call, grid::Grid, input::handle_keyboard_input, lights::{DirLight, Lights}, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, terrain::Terrain, ui::imgui::ImguiManager};
+use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, debug::gizmos::Cylinder, entity_manager::EntityManager, enums_types::{CameraState, EntityType, Faction, Transform}, gl_call, grid::Grid, input::handle_keyboard_input, lights::{DirLight, Lights}, movement_system, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::imgui::ImguiManager};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
 pub struct GameState {
-    pub delta_time: f64,
-    pub last_frame: f64,
-    pub elapsed: f64,
+    pub delta_time: f32,
+    pub last_frame: f32,
+    pub elapsed: f32,
     pub camera: Camera,
     pub window_width: u32,
     pub window_height: u32,
@@ -112,7 +112,7 @@ impl GameState {
 
         let game_config = GameConfig::load_from_file("config/game_config.json");
 
-        let mut sound_manager = SoundManager::new(&game_config);
+        let sound_manager = SoundManager::new(&game_config);
 
         let mut entity_config = EntityConfig::load_from_file("config/entity_config.json");
         let mut entity_manager = EntityManager::new(10_000);
@@ -197,29 +197,36 @@ impl GameState {
     }
 
     pub fn update(&mut self) {
-        // DELTA TIME 
-        let current_frame = self.glfw.get_time();
+        // CALC DELTA TIME 
+        let current_frame = self.glfw.get_time() as f32;
         self.delta_time = current_frame - self.last_frame;
         self.last_frame = current_frame;
         self.elapsed += self.delta_time;
 
-        // CHECK IF PAUSED OR SHOULD QUIT
+        // SHOULD WE QUIT THE GAME?
         if self.paused { return; }
         if self.pressed_keys.contains(&glfw::Key::Escape) {
             self.window.set_should_close(true);
         }
 
-        // UPDATE SYSTEMS
+        // UPDATE OOP-ESQUE STRUCTS
         self.camera.update(&self.entity_manager);
         self.sound_manager.update(&self.camera);
-
-        self.entity_manager.update(&self.pressed_keys, self.delta_time, self.elapsed as f32, &self.camera, &self.terrain);
         self.light_manager.update(&self.delta_time);
+
+        // UPDATE SYSTEMS
+        movement_system::update(
+            &mut self.entity_manager, &self.terrain, self.delta_time, &self.camera, &self.pressed_keys
+        );
+        animation_system::update(&mut self.entity_manager, self.delta_time);
+        state_machines::update(&mut self.entity_manager);
+        collision_system::update(&mut self.entity_manager);
+
     }
 
     pub fn render(&mut self) {
         self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
-        self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, self.fb_width, self.fb_height, &mut self.sound_manager);
+        self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, &mut self.sound_manager, self.fb_width, self.fb_height);
 
         self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera);
         self.window.swap_buffers();

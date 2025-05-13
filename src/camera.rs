@@ -26,7 +26,6 @@ pub struct Camera {
 
     pub projection: Mat4,
     pub view: Mat4,
-    pub model: Mat4,
     pub light_space: Mat4,
 
     pub last_f_state: bool,
@@ -63,7 +62,6 @@ impl Camera {
 
             projection: Mat4::IDENTITY,
             view: Mat4::IDENTITY,
-            model: Mat4::IDENTITY,
             light_space: Mat4::IDENTITY,
 
             last_f_state: true,
@@ -123,8 +121,6 @@ impl Camera {
         self.target = self.position + self.forward;
 
         self.view = Mat4::look_at_rh(self.position, self.target, self.up);
-
-        self.model = Mat4::IDENTITY;
     }
 
     pub fn process_mouse_input(&mut self, window: &PWindow, event: &WindowEvent) {
@@ -219,7 +215,7 @@ impl Camera {
         }
     }
 
-    pub fn process_key_event(&mut self, window: &PWindow, delta: f64) {
+    pub fn process_key_event(&mut self, window: &PWindow, delta: f32) {
         let f_pressed = window.get_key(Key::F) == Action::Press;
 
         if f_pressed && !self.last_f_state {
@@ -242,16 +238,16 @@ impl Camera {
 
         if self.move_state == CameraState::Free {
             if window.get_key(Key::W) == Action::Press {
-                self.position += (self.movement_speed * self.forward) * delta as f32;
+                self.position += (self.movement_speed * self.forward) * delta;
             }
             if window.get_key(Key::S) == Action::Press {
-                self.position -= (self.movement_speed * self.forward) * delta as f32;
+                self.position -= (self.movement_speed * self.forward) * delta;
             }
             if window.get_key(Key::A) == Action::Press {
-                self.position += ((self.up.cross(self.forward).normalize()) * self.movement_speed) * delta as f32;
+                self.position += ((self.up.cross(self.forward).normalize()) * self.movement_speed) * delta;
             }
             if window.get_key(Key::D) == Action::Press {
-                self.position -= ((self.up.cross(self.forward).normalize()) * self.movement_speed) * delta as f32;
+                self.position -= ((self.up.cross(self.forward).normalize()) * self.movement_speed) * delta;
             }
         }
 

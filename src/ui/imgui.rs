@@ -59,11 +59,11 @@ impl ImguiManager {
         }
     }
 
-    pub fn draw(&mut self, window: &mut PWindow, width: f32, height: f32, delta: f64, lm: &mut Lights, rdr: &mut Renderer, sm: &mut SoundManager, camera: &Camera) {
+    pub fn draw(&mut self, window: &mut PWindow, width: f32, height: f32, delta: f32, lm: &mut Lights, rdr: &mut Renderer, sm: &mut SoundManager, camera: &Camera) {
         {
             let io = self.imgui.io_mut();
             io.display_size = [width, height];
-            io.delta_time   = delta as f32;
+            io.delta_time   = delta;
         }
         let ui = self.imgui.frame();
 
