@@ -43,37 +43,17 @@
 // TODO: This terrain adjustment should be in the collision system file.
 
 ===========================================
-./src\renderer.rs:258
-===========================================
-// TODO:: Get rid of this. instead we should do passes for each entity faction.
-
-===========================================
-./src\renderer.rs:278
-===========================================
-// TODO: Fix the wrapping of this quad
-
-===========================================
-./src\renderer.rs:290
-===========================================
-// TODO:: Get rid of this.
-
-===========================================
 ./src\renderer.rs:310
-===========================================
-// TODO: Fix the wrapping of this quad
-
-===========================================
-./src\renderer.rs:329
 ===========================================
 // TODO: DOn't clone, we really need an enum here.
 
 ===========================================
-./src\renderer.rs:407
+./src\renderer.rs:430
 ===========================================
 // TODO: Fix the wrapping of this quad
 
 ===========================================
-./src\renderer.rs:495
+./src\renderer.rs:533
 ===========================================
 // TODO:: Get rid of this.
 

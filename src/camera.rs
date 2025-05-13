@@ -26,7 +26,6 @@ pub struct Camera {
 
     pub projection: Mat4,
     pub view: Mat4,
-    pub model: Mat4,
     pub light_space: Mat4,
 
     pub last_f_state: bool,
@@ -63,7 +62,6 @@ impl Camera {
 
             projection: Mat4::IDENTITY,
             view: Mat4::IDENTITY,
-            model: Mat4::IDENTITY,
             light_space: Mat4::IDENTITY,
 
             last_f_state: true,
@@ -123,8 +121,6 @@ impl Camera {
         self.target = self.position + self.forward;
 
         self.view = Mat4::look_at_rh(self.position, self.target, self.up);
-
-        self.model = Mat4::IDENTITY;
     }
 
     pub fn process_mouse_input(&mut self, window: &PWindow, event: &WindowEvent) {

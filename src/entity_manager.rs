@@ -1,7 +1,7 @@
 #![allow(clippy::too_many_arguments)]
 use std::collections::HashSet;
 
-use glam::{vec3, Quat, Vec3};
+use glam::{vec3, Mat4, Quat, Vec3};
 use libc::EILSEQ;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
@@ -224,6 +224,21 @@ impl EntityManager {
             .iter()
             .filter_map(|f|
                 if *f.value() == faction {
+                    Some(f.key())
+                } else {
+                    None
+                }
+            )
+            .collect();
+
+            result
+    }
+
+    pub fn get_ids_for_type(&self, entity_type: EntityType) -> Vec<usize> {
+        let result: Vec<usize> = self.entity_types
+            .iter()
+            .filter_map(|f|
+                if *f.value() == entity_type {
                     Some(f.key())
                 } else {
                     None

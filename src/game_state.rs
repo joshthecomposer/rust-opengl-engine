@@ -226,7 +226,7 @@ impl GameState {
 
     pub fn render(&mut self) {
         self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
-        self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, self.fb_width, self.fb_height, &mut self.sound_manager);
+        self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, &mut self.sound_manager, self.fb_width, self.fb_height);
 
         self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera);
         self.window.swap_buffers();
