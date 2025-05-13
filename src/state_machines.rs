@@ -1,6 +1,10 @@
 use crate::{entity_manager::EntityManager, enums_types::{Faction, SimState}};
 
-pub fn entity_sim_state_machine(em: &mut EntityManager) {
+pub fn update(em: &mut EntityManager) {
+    entity_sim_state_machine(em);
+}
+
+fn entity_sim_state_machine(em: &mut EntityManager) {
     for fac in em.factions.iter() {
         if *fac.value() == Faction::Enemy {
             let state = em.sim_states.get_mut(fac.key()).unwrap();

@@ -18,11 +18,6 @@
 // TODO: This overwrites multiple times potentially, we should check if the texture has already been saved.
 
 ===========================================
-./src\entity_manager.rs:222
-===========================================
-// TODO: This should be in grid
-
-===========================================
 ./src\grid.rs:82
 ===========================================
 // TODO: This only works with even numbered grid sizes, fix
@@ -33,19 +28,19 @@
 // TODO: If you are out of bounds do something else, like a -1 or something to signify.
 
 ===========================================
-./src\movement.rs:68
+./src\movement_system.rs:83
 ===========================================
-// TODO: This terrain adjustment should be in the collision system file.
+// TODO: This should likely be different and calculated in the collision system
 
 ===========================================
-./src\movement.rs:90
-===========================================
-// TODO: This is handling the player terrain logic, we should move this into the player and leave this in the faction check block
-
-===========================================
-./src\movement.rs:110
+./src\movement_system.rs:116
 ===========================================
 // TODO: This clamps rotation to around Y, which should be not the case forever.
+
+===========================================
+./src\movement_system.rs:142
+===========================================
+// TODO: This terrain adjustment should be in the collision system file.
 
 ===========================================
 ./src\renderer.rs:258

@@ -14,7 +14,7 @@ mod renderer;
 mod animation;
 mod debug;
 mod input;
-mod movement;
+mod movement_system;
 mod ui;
 mod sound;
 mod config;

@@ -202,3 +202,81 @@
 			"bone_path":"",
 			"animation_properties" : []
 		}
+
+
+
+
+
+
+
+            // Donut revolution stuff
+            if let Some(donut) = self.entity_types.iter().find(|e| e.value() == &EntityType::Donut) {
+                let donut_key = donut.key();
+
+                let player_position = self.transforms.get(player_key).map(|t| t.position);
+
+                if let Some(donut_transform) = self.transforms.get_mut(donut_key) {
+                    if let Some(player_position) = player_position {
+                        revolve_around_something(
+                            &mut donut_transform.position,
+                            &player_position,
+                            elapsed_time,
+                            2.0,
+                            5.0
+                        );
+                    }
+                }
+            }
+
+
+
+
+
+        /// RNG FLAT MAP STUFF
+    pub fn populate_floor_tiles(&mut self, grid: &Grid, model_path: &str) {
+        for cell in grid.cells.iter() {
+            let pos = cell.position;
+            self.create_static_entity(EntityType::BlockGrass, Faction::World, pos, vec3(1.0, 1.0, 1.0), Quat::IDENTITY, model_path);
+        }
+    }
+
+    pub fn populate_cell_rng(&mut self, grid: &Grid) {
+        for cell in grid.cells.iter() {
+
+            let (entity_data, subtile_size, entity_type) = match cell.cell_type {
+                CellType::Tree => (TREES, 3.0, EntityType::Tree),
+                CellType::Grass => (GRASSES, 3.0, EntityType::Grass),
+                _=> continue,
+            };
+
+            let within = grid.cell_size / subtile_size;
+
+            let cell_pos = cell.position;
+            for x in -1..=1 {
+                for z in -1..=1 {
+                    let num = self.rng.random_range(0..entity_data.len() + 1);
+                    let scale = match entity_type {
+                        EntityType::Grass => self.rng.random_range(20..=45) as f32 / 100.0,
+                        EntityType::Tree => self.rng.random_range(90..=110) as f32 / 100.0,
+                        _=> 1.0,
+                };
+                    let smoff = self.rng.random_range(-0.1..=0.1);
+
+                    let offset_x = x as f32 * within;
+                    let offset_z = z as f32 * within;
+
+                    if num < entity_data.len() {
+                        self.create_static_entity(
+                            entity_type.clone(),
+                            Faction::World,
+                            vec3(cell_pos.x + offset_x + smoff, 0.0, cell_pos.z + offset_z + smoff),
+                            Vec3::splat(scale),
+                            Quat::IDENTITY,
+                            entity_data[num],
+                        );
+                    }
+                }
+            }
+        }
+    }
+

@@ -219,7 +219,7 @@ impl Camera {
         }
     }
 
-    pub fn process_key_event(&mut self, window: &PWindow, delta: f64) {
+    pub fn process_key_event(&mut self, window: &PWindow, delta: f32) {
         let f_pressed = window.get_key(Key::F) == Action::Press;
 
         if f_pressed && !self.last_f_state {
@@ -242,16 +242,16 @@ impl Camera {
 
         if self.move_state == CameraState::Free {
             if window.get_key(Key::W) == Action::Press {
-                self.position += (self.movement_speed * self.forward) * delta as f32;
+                self.position += (self.movement_speed * self.forward) * delta;
             }
             if window.get_key(Key::S) == Action::Press {
-                self.position -= (self.movement_speed * self.forward) * delta as f32;
+                self.position -= (self.movement_speed * self.forward) * delta;
             }
             if window.get_key(Key::A) == Action::Press {
-                self.position += ((self.up.cross(self.forward).normalize()) * self.movement_speed) * delta as f32;
+                self.position += ((self.up.cross(self.forward).normalize()) * self.movement_speed) * delta;
             }
             if window.get_key(Key::D) == Action::Press {
-                self.position -= ((self.up.cross(self.forward).normalize()) * self.movement_speed) * delta as f32;
+                self.position -= ((self.up.cross(self.forward).normalize()) * self.movement_speed) * delta;
             }
         }
 
