@@ -85,6 +85,8 @@ impl GameState {
             }
         });
 
+        glfw.set_swap_interval(glfw::SwapInterval::Sync(1));
+
 
         let (fb_width, fb_height) = window.get_framebuffer_size();
 
@@ -218,7 +220,7 @@ impl GameState {
         }
 
         // UPDATE OOP-ESQUE STRUCTS
-        self.camera.update(&self.entity_manager);
+        self.camera.update(&self.entity_manager, self.delta_time);
         self.sound_manager.update(&self.camera);
         self.light_manager.update(&self.delta_time);
 
@@ -237,6 +239,7 @@ impl GameState {
         self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, &mut self.sound_manager, self.fb_width, self.fb_height, self.elapsed);
 
         self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera, &mut self.entity_manager);
+
         self.window.swap_buffers();
         self.glfw.poll_events()
     }

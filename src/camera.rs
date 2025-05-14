@@ -37,6 +37,9 @@ pub struct Camera {
 
     pub locked_position: Vec3,
     pub locked_target: Vec3,
+
+    pub desired_position: Vec3,
+    pub desired_target: Vec3,
 }
 
 impl Camera {
@@ -72,10 +75,13 @@ impl Camera {
 
             locked_position: vec3(0.0, 15.0, 0.0),
             locked_target: vec3(2.5, 0.0, 0.0),
+
+            desired_position: vec3(0.0, 15.0, 0.0),
+            desired_target: vec3(2.5, 0.0, 0.0),
         }
     }
 
-    pub fn update(&mut self, _em: &EntityManager) {
+    pub fn update(&mut self, _em: &EntityManager, dt: f32) {
         match self.move_state {
             CameraState::Free => {
                 self.forward = self.direction.normalize();
@@ -84,7 +90,7 @@ impl Camera {
                 if let Some(player_key) = _em.factions.iter().find(|e| e.value() == &Faction::Player) {
                     let player_transform = _em.transforms.get(player_key.key()).unwrap();
 
-                    self.target = player_transform.position + vec3(0.0, 1.1, 0.0);
+                    self.desired_target = player_transform.position + vec3(0.0, 1.1, 0.0);
 
                     let yaw_rad = self.yaw.to_radians() as f32;
                     let pitch_rad = self.pitch.to_radians() as f32;
@@ -93,10 +99,14 @@ impl Camera {
                     let y = self.distance_from_target * pitch_rad.sin();
                     let z = self.distance_from_target * yaw_rad.sin() * pitch_rad.cos();
 
-                    self.position = self.target + vec3(x, y, z);
-
-                    self.forward = Vec3::normalize(self.target - self.position);
+                    self.desired_position = self.desired_target + vec3(x, y, z);
                 }
+                
+                // Interpolate camera
+                let smoothing = 40.0 * dt; // tweak this
+                self.position = self.position.lerp(self.desired_position, smoothing);
+                self.target = self.target.lerp(self.desired_target, smoothing);
+                self.forward = (self.target - self.position).normalize();
             }
             CameraState::Locked => {
                 self.target = self.locked_target;

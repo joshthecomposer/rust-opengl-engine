@@ -2,7 +2,7 @@
 use std::{collections::HashMap, ffi::c_void, mem, ptr::null_mut};
 
 use gl::CULL_FACE;
-use glam::{vec3, vec4, Mat4};
+use glam::{vec3, vec4, Mat4, Vec3, Vec4};
 use image::GenericImageView;
 
 use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{EntityType, Faction, FboType, ShaderType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}, sound::sound_manager::SoundManager};
@@ -304,6 +304,7 @@ impl Renderer {
 
             let animator = em.animators.get(id).unwrap();
             let animation = animator.animations.get(&animator.current_animation).unwrap();
+
             for os in animation.one_shots.iter() {
                 if animation.current_segment == os.segment {
                     if !os.triggered.get() {
@@ -659,5 +660,20 @@ impl Renderer {
             gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 6));
             gl_call!(gl::BindVertexArray(0));
         }
+    }
+
+    fn snap_to_pixel_grid(position: Vec3, pixel_size: f32) -> Vec3 {
+        vec3(
+            (position.x / pixel_size).round() * pixel_size,
+            (position.y / pixel_size).round() * pixel_size,
+            (position.z / pixel_size).round() * pixel_size,
+        )
+    }
+
+    fn compute_pixel_world_size(camera: &Camera, fb_height: f32) -> f32 {
+        let distance = (camera.target - camera.position).length();
+        let half_fov_rad = camera.fovy.to_radians() * 0.5;
+        let view_height = 2.0 * (half_fov_rad.tan() * distance);
+        view_height / fb_height
     }
 }

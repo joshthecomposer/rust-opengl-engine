@@ -18,6 +18,11 @@
 // TODO: This overwrites multiple times potentially, we should check if the texture has already been saved.
 
 ===========================================
+./src\entity_manager.rs:125
+===========================================
+// TODO: Should foliage be a child of the tree trunk?? Then when doing things we iterate up the parent tree?
+
+===========================================
 ./src\grid.rs:82
 ===========================================
 // TODO: This only works with even numbered grid sizes, fix
@@ -43,17 +48,17 @@
 // TODO: This terrain adjustment should be in the collision system file.
 
 ===========================================
-./src\renderer.rs:310
+./src\renderer.rs:311
 ===========================================
 // TODO: DOn't clone, we really need an enum here.
 
 ===========================================
-./src\renderer.rs:437
+./src\renderer.rs:438
 ===========================================
 // TODO: Fix the wrapping of this quad
 
 ===========================================
-./src\renderer.rs:540
+./src\renderer.rs:541
 ===========================================
 // TODO:: Get rid of this.
 

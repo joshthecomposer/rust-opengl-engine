@@ -122,6 +122,8 @@ impl EntityManager {
         
         self.next_entity_id += 1;
 
+        // TODO: Should foliage be a child of the tree trunk?? Then when doing things we iterate up the parent tree?
+
         // CYLINDER PASS
         let cyl = cylinder;
 
