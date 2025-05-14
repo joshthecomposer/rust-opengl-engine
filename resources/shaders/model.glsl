@@ -98,6 +98,13 @@ uniform DirLight dir_light;
 uniform float bias_scalar;
 uniform vec3 view_position;
 uniform bool alpha_test_pass;
+uniform bool selection_fresnel;
+uniform bool do_reg_fresnel;
+uniform float elapsed;
+
+float fresnel_bias = 0.1; // minimum effect strength
+float fresnel_scale = 1.0; // how strong the effect is
+float fresnel_power = 3.0; // sharpness of the edge
 
 float ShadowCalculation(float dot_light_normal) {
 	vec3 pos = FragPosLightSpace.xyz * 0.5 + 0.5;
@@ -158,10 +165,28 @@ vec4 calculate_directional_light() {
 
     vec3 result_rgb = ((shadow * (diffuse + specular )) + ambient) * tex_color.rgb + emiss_color;
 
+	if (do_reg_fresnel) {
+		float reg_fresnel = fresnel_bias + fresnel_scale * pow(1.0 - max(dot(norm, viewDir), 0.0), fresnel_power);
+		vec3 reg_fresnel_color = vec3(1.0);
+		result_rgb = mix(result_rgb, reg_fresnel_color, reg_fresnel * 0.6);
+	}
+
+	if (selection_fresnel) {
+		float fresnel = fresnel_bias + fresnel_scale * pow(1.0 - max(dot(norm, viewDir), 0.0), fresnel_power);
+		float pulse = 0.875 + 0.125 * sin(elapsed * 6.0);
+		pulse = pow(pulse, 3.0);
+		vec3 fresnel_color = vec3(2.0, 0.0, 3.5);
+		vec3 glow = fresnel_color * pulse;
+
+		// result_rgb += mix(result_rgb, fresnel_color, fresnel);
+		result_rgb += fresnel * glow;
+	}
+
+
 	return vec4(result_rgb, alpha);
 }
 
 void main() {    
 	vec4 result = calculate_directional_light();
-	FragColor = vec4(result);
+	FragColor = result;
 }

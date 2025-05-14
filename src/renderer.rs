@@ -30,7 +30,7 @@ impl Renderer {
         let debug_light_shader = Shader::new("resources/shaders/point_light.glsl");
         let depth_shader = Shader::new("resources/shaders/depth_shader.glsl");
         let text_shader = Shader::new("resources/shaders/text.glsl");
-        let model_shader = Shader::new("resources/shaders/model_rework.glsl");
+        let model_shader = Shader::new("resources/shaders/model.glsl");
         let gizmo_shader = Shader::new("resources/shaders/gizmo.glsl");
 
         let mut vao = 0;
@@ -230,6 +230,7 @@ impl Renderer {
         sound_manager: &mut SoundManager,
         fb_width: u32,
         fb_height: u32,
+        elapsed: f32,
     ) {
         self.shadow_pass(em, camera, light_manager, fb_width, fb_height);
 
@@ -244,8 +245,8 @@ impl Renderer {
         // Render ECS things
         // =============================================================
         // Gizmo pass
-        let gizmo_ids = em.get_ids_for_faction(Faction::Gizmo);
-        self.gizmo_pass(camera, em, gizmo_ids);
+        // let gizmo_ids = em.get_ids_for_faction(Faction::Gizmo);
+        // self.gizmo_pass(camera, em, gizmo_ids);
 
         // Non-animated models
         let foliage_ids = em.get_ids_for_type(EntityType::TreeFoliage);
@@ -258,8 +259,8 @@ impl Renderer {
         let y_robot_ids = em.get_ids_for_type(EntityType::YRobot);
         let moose_ids = em.get_ids_for_type(EntityType::MooseMan);
 
-        self.ani_model_pass(camera, em, light_manager, sound_manager, y_robot_ids);
-        self.ani_model_pass(camera, em, light_manager, sound_manager, moose_ids);
+        self.ani_model_pass(camera, em, light_manager, sound_manager, y_robot_ids, elapsed);
+        self.ani_model_pass(camera, em, light_manager, sound_manager, moose_ids, elapsed);
     }
 
 
@@ -286,13 +287,18 @@ impl Renderer {
         }
     }
 
-    fn ani_model_pass(&mut self, camera: &mut Camera, em: &EntityManager, light_manager: &Lights, sound_manager: &mut SoundManager, ids: Vec<usize>) {
+    fn ani_model_pass(&mut self, camera: &mut Camera, em: &EntityManager, light_manager: &Lights, sound_manager: &mut SoundManager, ids: Vec<usize>, elapsed: f32) {
         let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
         shader.activate();
 
         shader.set_bool("is_animated", true);
         shader.set_bool("alpha_test_pass", false);
+        shader.set_float("elapsed", elapsed);
+        shader.set_bool("do_reg_fresnel", true);
         for id in ids {
+            let selected = em.selected.get(id).unwrap();
+            shader.set_bool("selection_fresnel", *selected);
+
             let model = em.ani_models.get(id).unwrap();
             let trans = em.transforms.get(id).unwrap();
 
@@ -336,7 +342,9 @@ impl Renderer {
             }
 
             model.draw(shader);
+            shader.set_bool("selection_fresnel", false);
         }
+        shader.set_bool("do_reg_fresnel", false);
     }
 
 
@@ -351,7 +359,10 @@ impl Renderer {
         shader.activate();
         shader.set_bool("is_animated", false);
         shader.set_bool("alpha_test_pass", true);
+        shader.set_bool("do_fresnel", false);
         for id in ids.iter() {
+            let selected = em.selected.get(*id).unwrap();
+            shader.set_bool("selection_fresnel", *selected);
             let model = em.models.get(*id).unwrap();
             let trans = em.transforms.get(*id).unwrap();
             let m_mat = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
@@ -379,6 +390,8 @@ impl Renderer {
         }
         shader.set_bool("alpha_test_pass", false);
         for id in ids {
+            let selected = em.selected.get(id).unwrap();
+            shader.set_bool("selection_fresnel", *selected);
             let model = em.models.get(id).unwrap();
             let trans = em.transforms.get(id).unwrap();
             let m_mat = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);

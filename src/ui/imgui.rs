@@ -1,10 +1,11 @@
 use glfw::{Action, MouseButton, PWindow, WindowEvent};
 
-use crate::{animation::animation::Animator, camera::Camera, enums_types::CameraState, gl_call, lights::Lights, renderer::Renderer, sound::sound_manager::SoundManager};
+use crate::{animation::animation::Animator, camera::Camera, entity_manager::EntityManager, enums_types::CameraState, gl_call, lights::Lights, renderer::Renderer, sound::sound_manager::SoundManager};
 
 pub struct ImguiManager {
     pub imgui: imgui::Context,
     pub renderer: imgui_opengl_renderer::Renderer,
+    pub selected_entity: i32,
 }
 
 impl ImguiManager {
@@ -17,6 +18,7 @@ impl ImguiManager {
         Self {
             imgui,
             renderer,
+            selected_entity: 0,
         }
     }
 
@@ -59,7 +61,7 @@ impl ImguiManager {
         }
     }
 
-    pub fn draw(&mut self, window: &mut PWindow, width: f32, height: f32, delta: f32, lm: &mut Lights, rdr: &mut Renderer, sm: &mut SoundManager, camera: &Camera) {
+    pub fn draw(&mut self, window: &mut PWindow, width: f32, height: f32, delta: f32, lm: &mut Lights, rdr: &mut Renderer, sm: &mut SoundManager, camera: &Camera, em: &mut EntityManager) {
         {
             let io = self.imgui.io_mut();
             io.display_size = [width, height];
@@ -69,6 +71,7 @@ impl ImguiManager {
 
         if camera.move_state == CameraState::Locked {
             window.set_cursor_mode(glfw::CursorMode::Normal);
+
             ui.window("Lights")
                 .size([500.0, 200.0], imgui::Condition::FirstUseEver)
                 .position([50.0, 50.0], imgui::Condition::FirstUseEver)
@@ -129,6 +132,26 @@ impl ImguiManager {
                         sm.set_master_volume("music");
                     }
 
+                });
+
+            ui.window("Selection")
+                .size([500.0, 200.0], imgui::Condition::FirstUseEver)
+                .position([50.0, 250.0], imgui::Condition::FirstUseEver)
+                .build(|| {
+                    ui.text("Select Entity by ID");
+                    ui.separator();
+
+                    if ui.input_int("Selected Entity", &mut self.selected_entity).build() {
+                        let selected_id = self.selected_entity;
+
+                        em.selected.iter_mut().for_each(|s| s.value = false);
+
+                        if selected_id >= 0 {
+                            if let Some(selected) = em.selected.get_mut(selected_id as usize) {
+                                *selected = true;
+                            }
+                        }
+                    }
                 });
 
         } else {

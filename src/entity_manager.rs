@@ -19,6 +19,7 @@ pub struct EntityManager {
     pub skellingtons: SparseSet<Bone>,
     pub rotators: SparseSet<Rotator>,
     pub sim_states: SparseSet<SimState>,
+    pub selected: SparseSet<bool>,
 
     // Simulation/Behavior Components
     pub destinations: SparseSet<Vec3>,
@@ -44,6 +45,7 @@ impl EntityManager {
             skellingtons: SparseSet::with_capacity(max_entities),
             rotators: SparseSet::with_capacity(max_entities),
             sim_states: SparseSet::with_capacity(max_entities),
+            selected: SparseSet::with_capacity(max_entities),
 
             destinations: SparseSet::with_capacity(max_entities),
 
@@ -83,13 +85,14 @@ impl EntityManager {
                         vec3(entity.scale[0], entity.scale[1], entity.scale[2]), 
                         rotation, 
                         &entity.mesh_path, 
+                        entity.hit_cyl.clone(),
                     );
                 },
             }
         }
     }
 
-    pub fn create_static_entity(&mut self,entity_type: EntityType, faction: Faction, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str) {
+    pub fn create_static_entity(&mut self,entity_type: EntityType, faction: Faction, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str, cylinder: Cylinder) {
         self.factions.insert(self.next_entity_id, faction);
         self.entity_types.insert(self.next_entity_id, entity_type);
 
@@ -115,8 +118,30 @@ impl EntityManager {
             model = import_model_data(model_path, &Animation::default());
         }
         self.models.insert(self.next_entity_id, model);
-
+        self.selected.insert(self.next_entity_id, false);
         
+        self.next_entity_id += 1;
+
+        // CYLINDER PASS
+        let cyl = cylinder;
+
+        let cyl_mod = cyl.create_model(12);
+        self.cylinders.insert(self.next_entity_id, cyl);
+        
+        self.models.insert(self.next_entity_id, cyl_mod);
+        self.factions.insert(self.next_entity_id, Faction::Gizmo);
+        self.entity_types.insert(self.next_entity_id, EntityType::Cylinder);
+        self.transforms.insert(self.next_entity_id, Transform {
+            position,
+            rotation: Quat::IDENTITY,
+            scale: Vec3::splat(1.0),
+            original_rotation: Quat::IDENTITY,
+        });
+
+        self.parents.insert(self.next_entity_id, Parent{
+            parent_id: self.next_entity_id - 1,
+        });
+
         self.next_entity_id += 1;
     }
 
@@ -176,9 +201,8 @@ impl EntityManager {
         if faction != Faction::Player {
             self.destinations.insert(self.next_entity_id, position);
         }
-
         self.animators.insert(self.next_entity_id, animator);
-
+        self.selected.insert(self.next_entity_id, false);
         self.skellingtons.insert(self.next_entity_id, skellington.clone());
         self.transforms.insert(self.next_entity_id, transform);
         self.factions.insert(self.next_entity_id, faction.clone());

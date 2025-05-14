@@ -2,12 +2,12 @@
 use std::collections::HashSet;
 
 use gl::AttachShader;
-use glam::{vec3, Quat, Vec3};
-use glfw::{Context, Glfw, GlfwReceiver, PWindow, WindowEvent};
+use glam::{vec3, Quat, Vec2, Vec3};
+use glfw::{Context, Glfw, GlfwReceiver, Key, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, debug::gizmos::Cylinder, entity_manager::EntityManager, enums_types::{CameraState, EntityType, Faction, Transform}, gl_call, grid::Grid, input::handle_keyboard_input, lights::{DirLight, Lights}, movement_system, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::imgui::ImguiManager};
+use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, debug::gizmos::Cylinder, entity_manager::EntityManager, enums_types::{CameraState, EntityType, Faction, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::imgui::ImguiManager};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -41,6 +41,7 @@ pub struct GameState {
     pub sound_manager: SoundManager,
 
     pub terrain: Terrain,
+    pub cursor_pos: Vec2,
 }
 
 impl GameState {
@@ -58,7 +59,7 @@ impl GameState {
         let (mut window, events) = glfw
             .create_window(width as u32, height as u32, "Hello this is window", glfw::WindowMode::Windowed)
             .expect("Failed to create GLFW window.");
-        window.set_key_polling(true);
+        // window.set_key_polling(true);
         // window.set_sticky_keys(true); 
         window.set_cursor_mode(glfw::CursorMode::Disabled);
         window.set_all_polling(true);
@@ -68,17 +69,17 @@ impl GameState {
             if let Some(monitor) = maybe_monitor {
                 if let Some(video_mode) = monitor.get_video_mode() {
                     // Extract the current resolution & refresh rate from the monitor
-                    // (width, height) = (video_mode.width as i32, video_mode.height as i32);
-                    // let refresh_rate    = video_mode.refresh_rate; // e.g. 60, 144, etc.
+                    (width, height) = (video_mode.width as i32, video_mode.height as i32);
+                    let refresh_rate    = video_mode.refresh_rate; // e.g. 60, 144, etc.
 
                     window.set_monitor(
-                        glfw::WindowMode::Windowed,
-                        // glfw::WindowMode::FullScreen(monitor),
+                        // glfw::WindowMode::Windowed,
+                        glfw::WindowMode::FullScreen(monitor),
                         100,      // X-position on that monitor
                         100,      // Y-position on that monitor
                         width as u32,
                         height as u32,
-                        None
+                        Some(refresh_rate)
                     );
                 }
             }
@@ -169,6 +170,7 @@ impl GameState {
             sound_manager,
 
             terrain,
+            cursor_pos: Vec2::new(0.0, 0.0),
         }
     }
 
@@ -186,12 +188,18 @@ impl GameState {
                         gl::Viewport(0, 0, self.window_width as i32, self.window_height as i32);
                     }
                 },
+                glfw::WindowEvent::CursorPos(xpos, ypos) => {
+                    self.camera.process_mouse_input(&self.window, &event);
+                    self.cursor_pos.x = xpos as f32;
+                    self.cursor_pos.y = ypos as f32;
+                },
                 glfw::WindowEvent::Key(key, _, action, _) => {
                     handle_keyboard_input(key, action, &mut self.pressed_keys);
                 },
-                _ => {
-                    self.camera.process_mouse_input(&self.window, &event);
+                glfw::WindowEvent::MouseButton(btn, action, _) => {
+                    handle_mouse_input(btn, action, self.cursor_pos, Vec2::new(self.fb_width as f32, self.fb_height as f32), &self.camera, &mut self.entity_manager);
                 },
+                _ => (),
             }
         }
     }
@@ -226,9 +234,9 @@ impl GameState {
 
     pub fn render(&mut self) {
         self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
-        self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, &mut self.sound_manager, self.fb_width, self.fb_height);
+        self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, &mut self.sound_manager, self.fb_width, self.fb_height, self.elapsed);
 
-        self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera);
+        self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera, &mut self.entity_manager);
         self.window.swap_buffers();
         self.glfw.poll_events()
     }
