@@ -19,17 +19,19 @@ pub struct EntityManager {
     pub skellingtons: SparseSet<Bone>,
     pub rotators: SparseSet<Rotator>,
     pub sim_states: SparseSet<SimState>,
-    pub selected: SparseSet<bool>,
 
     // Simulation/Behavior Components
     pub destinations: SparseSet<Vec3>,
 
     // Simulation gizmos
-    pub cuboids: SparseSet<Cuboid>,
+    // pub cuboids: SparseSet<Cuboid>,
     pub cylinders: SparseSet<Cylinder>,
 
     pub parents: SparseSet<Parent>,
     pub rng: ChaCha8Rng,
+
+    pub selected: Vec<usize>,
+    pub entity_trashcan: Vec<usize>,
 }
 
 impl EntityManager {
@@ -45,15 +47,17 @@ impl EntityManager {
             skellingtons: SparseSet::with_capacity(max_entities),
             rotators: SparseSet::with_capacity(max_entities),
             sim_states: SparseSet::with_capacity(max_entities),
-            selected: SparseSet::with_capacity(max_entities),
 
             destinations: SparseSet::with_capacity(max_entities),
 
-            cuboids: SparseSet::with_capacity(max_entities),
+            // cuboids: SparseSet::with_capacity(max_entities),
             cylinders: SparseSet::with_capacity(max_entities),
 
             parents: SparseSet::with_capacity(max_entities),
-            rng: ChaCha8Rng::seed_from_u64(1)
+            rng: ChaCha8Rng::seed_from_u64(1),
+
+            selected: Vec::new(),
+            entity_trashcan: Vec::new(),
         }
     }
 
@@ -118,7 +122,6 @@ impl EntityManager {
             model = import_model_data(model_path, &Animation::default());
         }
         self.models.insert(self.next_entity_id, model);
-        self.selected.insert(self.next_entity_id, false);
         
         self.next_entity_id += 1;
 
@@ -204,7 +207,6 @@ impl EntityManager {
             self.destinations.insert(self.next_entity_id, position);
         }
         self.animators.insert(self.next_entity_id, animator);
-        self.selected.insert(self.next_entity_id, false);
         self.skellingtons.insert(self.next_entity_id, skellington.clone());
         self.transforms.insert(self.next_entity_id, transform);
         self.factions.insert(self.next_entity_id, faction.clone());
@@ -243,6 +245,29 @@ impl EntityManager {
         });
 
         self.next_entity_id += 1;
+    }
+
+    pub fn update(&mut self) {
+        self.delete_entities();
+    }
+
+    pub fn delete_entities(&mut self) {
+        for id in self.entity_trashcan.iter() {
+            self.transforms.remove(*id);
+            self.factions.remove(*id);
+            self.entity_types.remove(*id);
+            self.models.remove(*id);
+            self.ani_models.remove(*id);
+            self.animators.remove(*id);
+            self.skellingtons.remove(*id);
+            self.rotators.remove(*id);
+            self.sim_states.remove(*id);
+            self.destinations.remove(*id);
+            self.cylinders.remove(*id);
+            self.parents.remove(*id);
+        }
+
+        self.entity_trashcan.clear();
     }
 
     pub fn get_ids_for_faction(&self, faction: Faction) -> Vec<usize> {

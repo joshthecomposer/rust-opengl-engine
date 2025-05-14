@@ -245,8 +245,8 @@ impl Renderer {
         // Render ECS things
         // =============================================================
         // Gizmo pass
-        // let gizmo_ids = em.get_ids_for_faction(Faction::Gizmo);
-        // self.gizmo_pass(camera, em, gizmo_ids);
+        let gizmo_ids = em.get_ids_for_faction(Faction::Gizmo);
+        self.gizmo_pass(camera, em, gizmo_ids);
 
         // Non-animated models
         let foliage_ids = em.get_ids_for_type(EntityType::TreeFoliage);
@@ -296,8 +296,8 @@ impl Renderer {
         shader.set_float("elapsed", elapsed);
         shader.set_bool("do_reg_fresnel", true);
         for id in ids {
-            let selected = em.selected.get(id).unwrap();
-            shader.set_bool("selection_fresnel", *selected);
+            let is_selected = em.selected.contains(&id);
+            shader.set_bool("selection_fresnel", is_selected);
 
             let model = em.ani_models.get(id).unwrap();
             let trans = em.transforms.get(id).unwrap();
@@ -362,8 +362,9 @@ impl Renderer {
         shader.set_bool("alpha_test_pass", true);
         shader.set_bool("do_fresnel", false);
         for id in ids.iter() {
-            let selected = em.selected.get(*id).unwrap();
-            shader.set_bool("selection_fresnel", *selected);
+            let is_selected = em.selected.contains(&id);
+            shader.set_bool("selection_fresnel", is_selected);
+
             let model = em.models.get(*id).unwrap();
             let trans = em.transforms.get(*id).unwrap();
             let m_mat = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
@@ -382,6 +383,7 @@ impl Renderer {
                 model.draw(shader);
                 gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
             }
+            shader.set_bool("selection_fresnel", false);
         }
 
         unsafe {
@@ -391,8 +393,9 @@ impl Renderer {
         }
         shader.set_bool("alpha_test_pass", false);
         for id in ids {
-            let selected = em.selected.get(id).unwrap();
-            shader.set_bool("selection_fresnel", *selected);
+            let is_selected = em.selected.contains(&id);
+            shader.set_bool("selection_fresnel", is_selected);
+
             let model = em.models.get(id).unwrap();
             let trans = em.transforms.get(id).unwrap();
             let m_mat = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
@@ -411,12 +414,16 @@ impl Renderer {
                 model.draw(shader);
                 gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
             }
+            shader.set_bool("selection_fresnel", false);
         }
 
         unsafe {
             gl_call!(gl::Disable(gl::BLEND));
             gl_call!(gl::DepthMask(gl::TRUE));
         }
+
+        shader.set_bool("do_reg_fresnel", false);
+        shader.set_bool("selection_fresnel", false);
     }
 
     fn grid_pass(&mut self,grid: &mut Grid, camera: &mut Camera, light_manager: &Lights) {

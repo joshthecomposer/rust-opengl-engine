@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use glam::{vec2, vec3, vec4, Mat4, Vec2, Vec3, Vec4Swizzles};
+use glam::{vec2, vec3, vec4, Mat4, Vec2, Vec3, Vec3Swizzles, Vec4Swizzles};
 use glfw::MouseButton;
 
 use crate::{camera::{self, Camera}, entity_manager::EntityManager};
@@ -16,13 +16,13 @@ pub fn handle_keyboard_input(key: glfw::Key, action: glfw::Action, pressed_keys:
 pub fn handle_mouse_motion() {
 }
 
-pub fn handle_mouse_input(button: MouseButton, action: glfw::Action, cursor_pos: Vec2, screen_size: Vec2, camera: &Camera, em: &mut EntityManager) {
+pub fn handle_mouse_input(button: MouseButton, action: glfw::Action, cursor_pos: Vec2, screen_size: Vec2, camera: &Camera, em: &mut EntityManager, pressed_keys: &HashSet<glfw::Key>) {
     match action {
         glfw::Action::Press => { 
             if button == glfw::MouseButtonLeft {
 
-                for s in em.selected.iter_mut() {
-                    s.value = false;
+                if !pressed_keys.contains(&glfw::Key::LeftShift) {
+                    em.selected.clear();
                 }
 
                 let (ray_origin, ray_dir) = mouse_ray_from_screen(cursor_pos, screen_size, camera);
@@ -48,7 +48,8 @@ pub fn handle_mouse_input(button: MouseButton, action: glfw::Action, cursor_pos:
                 if let Some(id) = closest {
                     let parent_id = em.parents.get(id).unwrap().parent_id;
 
-                    em.selected.insert(parent_id, true);
+                    em.selected.push(parent_id);
+                    em.selected.push(id);
                 }
             }
         },
@@ -64,12 +65,17 @@ fn mouse_ray_from_screen(
 ) -> (Vec3, Vec3) {
     let (mouse_x, mouse_y) = (mouse_pos.x, mouse_pos.y);
     let (screen_w, screen_h) = (screen_size.x, screen_size.y);
-
+    
+    // Calculate NDC
+    // transform x to match opengl left-to-right convention
     let x = (2.0 * mouse_x) / screen_w - 1.0;
+    // invert y. Screen space Y is top-down whereas opengl is bottom-up
     let y = 1.0 - (2.0 * mouse_y) / screen_h;
+    // the ray goes INTO the screen (negative z)
     let z = -1.0;
-
     let ray_ndc = vec4(x, y, z, 1.0);
+
+    // we want to reverse the transform pipeline. clip -> view -> world
     let inv_proj = camera.projection.inverse();
     let inv_view = camera.view.inverse();
 
@@ -77,7 +83,7 @@ fn mouse_ray_from_screen(
     let ray_eye = vec4(ray_eye.x, ray_eye.y, -1.0, 0.0);
 
     let ray_world = (inv_view * ray_eye).xyz().normalize();
-    let camera_pos = inv_view.transform_point3(vec3(0.0, 0.0, 0.0));
+    let camera_pos = camera.position;
 
     (camera_pos, ray_world)
 }

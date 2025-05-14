@@ -18,7 +18,7 @@
 // TODO: This overwrites multiple times potentially, we should check if the texture has already been saved.
 
 ===========================================
-./src\entity_manager.rs:125
+./src\entity_manager.rs:128
 ===========================================
 // TODO: Should foliage be a child of the tree trunk?? Then when doing things we iterate up the parent tree?
 
@@ -53,12 +53,12 @@
 // TODO: DOn't clone, we really need an enum here.
 
 ===========================================
-./src\renderer.rs:438
+./src\renderer.rs:445
 ===========================================
 // TODO: Fix the wrapping of this quad
 
 ===========================================
-./src\renderer.rs:541
+./src\renderer.rs:548
 ===========================================
 // TODO:: Get rid of this.
 

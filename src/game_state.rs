@@ -1,13 +1,13 @@
 #![allow(dead_code)]
 use std::collections::HashSet;
 
-use gl::AttachShader;
+use gl::{AttachShader, PixelStoref};
 use glam::{vec3, Quat, Vec2, Vec3};
 use glfw::{Context, Glfw, GlfwReceiver, Key, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, debug::gizmos::Cylinder, entity_manager::EntityManager, enums_types::{CameraState, EntityType, Faction, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::imgui::ImguiManager};
+use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, debug::gizmos::Cylinder, entity_manager::{self, EntityManager}, enums_types::{CameraState, EntityType, Faction, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::imgui::ImguiManager};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -199,7 +199,7 @@ impl GameState {
                     handle_keyboard_input(key, action, &mut self.pressed_keys);
                 },
                 glfw::WindowEvent::MouseButton(btn, action, _) => {
-                    handle_mouse_input(btn, action, self.cursor_pos, Vec2::new(self.fb_width as f32, self.fb_height as f32), &self.camera, &mut self.entity_manager);
+                    handle_mouse_input(btn, action, self.cursor_pos, Vec2::new(self.fb_width as f32, self.fb_height as f32), &self.camera, &mut self.entity_manager, &self.pressed_keys);
                 },
                 _ => (),
             }
@@ -207,7 +207,13 @@ impl GameState {
     }
 
     pub fn update(&mut self) {
-        // CALC DELTA TIME 
+        if self.pressed_keys.contains(&glfw::Key::Delete) {
+            for id in self.entity_manager.selected.iter() {
+                self.entity_manager.entity_trashcan.push(*id);
+            }
+        }
+
+        // CALC DELTA TIME
         let current_frame = self.glfw.get_time() as f32;
         self.delta_time = current_frame - self.last_frame;
         self.last_frame = current_frame;
@@ -231,6 +237,7 @@ impl GameState {
         animation_system::update(&mut self.entity_manager, self.delta_time);
         state_machines::update(&mut self.entity_manager);
         collision_system::update(&mut self.entity_manager);
+        self.entity_manager.update();
 
     }
 
