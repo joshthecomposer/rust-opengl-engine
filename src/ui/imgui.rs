@@ -175,6 +175,8 @@ impl ImguiManager {
                                 trans.rotation = Quat::from_euler(glam::EulerRot::YXZ, y, x, z);
                             }
                         }
+
+                        ui.separator();
                     }
 
                 });
