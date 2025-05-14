@@ -75,6 +75,22 @@ pub enum EntityType {
     Cylinder,
 }
 
+impl Display for EntityType {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            EntityType::Donut => write!(f, "Donut"),
+            EntityType::TreeFoliage => write!(f, "TreeFoliage"),
+            EntityType::TreeTrunk => write!(f, "TreeTrunk"),
+            EntityType::MooseMan => write!(f, "MooseMan"),
+            EntityType::YRobot => write!(f, "YRobot"),
+            EntityType::Terrain => write!(f, "Terrain"),
+            EntityType::Cylinder => write!(f, "Cylinder"),
+        }
+    }
+}
+
+
+
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 pub enum Faction {
     Enemy,

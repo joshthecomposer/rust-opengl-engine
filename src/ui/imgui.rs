@@ -1,4 +1,6 @@
+use glam::{Quat, Vec3};
 use glfw::{Action, MouseButton, PWindow, WindowEvent};
+use imgui::Drag;
 
 use crate::{animation::animation::Animator, camera::Camera, entity_manager::EntityManager, enums_types::CameraState, gl_call, lights::Lights, renderer::Renderer, sound::sound_manager::SoundManager};
 
@@ -132,18 +134,49 @@ impl ImguiManager {
 
                 });
 
-            ui.window("Selection")
+            ui.window("Entity Editing")
                 .size([500.0, 200.0], imgui::Condition::FirstUseEver)
                 .position([50.0, 250.0], imgui::Condition::FirstUseEver)
                 .build(|| {
-                    ui.text("Select Entity by ID");
                     ui.separator();
-                    ui.text(format!("Selected entities: {}", em.selected.len()));
-                    if ui.button("Delete") {
-                        for id in em.selected.iter() {
-                            em.entity_trashcan.push(*id);
+
+                    for i in em.selected.iter() {
+                        if let Some(trans) = em.transforms.get_mut(*i) {
+                            ui.text(format!("Entity: {}, Type: {}", i, em.entity_types.get(*i).unwrap()));
+
+                            let mut position = [trans.position.x, trans.position.y, trans.position.z];
+                            let mut scale = [trans.scale.x];
+
+                            // convert quat to euler angle degrees
+                            let euler_degrees = trans.rotation.to_euler(glam::EulerRot::YXZ);
+                            let mut rotation_deg = [
+                                euler_degrees.0.to_degrees(),
+                                euler_degrees.1.to_degrees(),
+                                euler_degrees.2.to_degrees(),
+                            ];
+
+                            // position
+                            if Drag::new("Position").speed(0.1).build_array(ui, &mut position) {
+                                trans.position = Vec3::from(position);
+                            }
+
+                            //  scale
+                            if Drag::new("Scale").speed(0.001).build_array(ui, &mut scale) {
+                                trans.scale = Vec3::splat(scale[0]);
+                            }
+
+                            // rotation
+                            if Drag::new("Rotation").speed(0.5).build_array(ui, &mut rotation_deg) {
+                                let (y, x, z) = (
+                                    rotation_deg[0].to_radians(),
+                                    rotation_deg[1].to_radians(),
+                                    rotation_deg[2].to_radians(),
+                                );
+                                trans.rotation = Quat::from_euler(glam::EulerRot::YXZ, y, x, z);
+                            }
                         }
                     }
+
                 });
 
         } else {
