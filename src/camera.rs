@@ -103,7 +103,7 @@ impl Camera {
                 }
                 
                 // Interpolate camera
-                let smoothing = 40.0 * dt; // tweak this
+                let smoothing = 40.0 * dt; // tweak this, higher value is faster lerp
                 self.position = self.position.lerp(self.desired_position, smoothing);
                 self.target = self.target.lerp(self.desired_target, smoothing);
                 self.forward = (self.target - self.position).normalize();
