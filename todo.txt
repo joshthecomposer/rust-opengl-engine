@@ -48,17 +48,17 @@
 // TODO: This terrain adjustment should be in the collision system file.
 
 ===========================================
-./src\renderer.rs:311
+./src\renderer.rs:315
 ===========================================
 // TODO: DOn't clone, we really need an enum here.
 
 ===========================================
-./src\renderer.rs:445
+./src\renderer.rs:449
 ===========================================
 // TODO: Fix the wrapping of this quad
 
 ===========================================
-./src\renderer.rs:548
+./src\renderer.rs:556
 ===========================================
 // TODO:: Get rid of this.
 

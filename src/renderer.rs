@@ -234,6 +234,10 @@ impl Renderer {
     ) {
         self.shadow_pass(em, camera, light_manager, fb_width, fb_height);
 
+        if self.shadow_debug {
+            return;
+        }
+
         // =============================================================
         // Render OOP-esque things
         // =============================================================
@@ -498,10 +502,14 @@ impl Renderer {
         // Calculate dir_light pos
         let light_dir = light_manager.dir_light.direction.normalize();
         let light_distance = light_manager.dir_light.distance;
-        let light_pos = camera.position + light_dir * light_distance;
+        let camera_forward = camera.forward.normalize();
+        let shadow_push = half_bound * 1.2;
+        let shadow_center = camera.position + camera_forward * shadow_push;
+
+        let light_pos = shadow_center + light_dir * light_distance;
 
         let light_projection = Mat4::orthographic_rh_gl(bound_l, bound_r, bound_b, bound_t, near_plane, far_plane);
-        let light_view = Mat4::look_at_rh(light_pos, camera.position, vec3(0.0, 1.0, 0.0));
+        let light_view = Mat4::look_at_rh(light_pos, shadow_center, vec3(0.0, 1.0, 0.0));
 
         camera.light_space = light_projection * light_view;
         shader.activate();
@@ -627,11 +635,11 @@ impl Renderer {
             // Positions      // Texture Coords
             -1.0,  1.0, 0.0,  0.0, 1.0,
             -1.0, -1.0, 0.0,  0.0, 0.0,
-            1.0, -1.0, 0.0,  1.0, 0.0,
+             1.0, -1.0, 0.0,  1.0, 0.0,
 
             -1.0,  1.0, 0.0,  0.0, 1.0,
-            1.0, -1.0, 0.0,  1.0, 0.0,
-            1.0,  1.0, 0.0,  1.0, 1.0
+             1.0, -1.0, 0.0,  1.0, 0.0,
+             1.0,  1.0, 0.0,  1.0, 1.0
         ];
 
         unsafe {
