@@ -661,19 +661,4 @@ impl Renderer {
             gl_call!(gl::BindVertexArray(0));
         }
     }
-
-    fn snap_to_pixel_grid(position: Vec3, pixel_size: f32) -> Vec3 {
-        vec3(
-            (position.x / pixel_size).round() * pixel_size,
-            (position.y / pixel_size).round() * pixel_size,
-            (position.z / pixel_size).round() * pixel_size,
-        )
-    }
-
-    fn compute_pixel_world_size(camera: &Camera, fb_height: f32) -> f32 {
-        let distance = (camera.target - camera.position).length();
-        let half_fov_rad = camera.fovy.to_radians() * 0.5;
-        let view_height = 2.0 * (half_fov_rad.tan() * distance);
-        view_height / fb_height
-    }
 }
