@@ -183,9 +183,9 @@ impl Grid {
 
         for (x, _y, pixel) in imgbuf.enumerate_pixels_mut() {
             if x < width / 2 {
-                *pixel = Rgba([color_dark, color_dark, color_dark, 100]);
+                *pixel = Rgba([color_dark, color_dark, color_dark, 90]);
             } else {
-                *pixel = Rgba([color_light, color_light, color_light, 100]);
+                *pixel = Rgba([color_light, color_light, color_light, 90]);
             }
         }
 
