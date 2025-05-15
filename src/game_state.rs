@@ -7,7 +7,7 @@ use glfw::{Context, Glfw, GlfwReceiver, Key, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, debug::gizmos::Cylinder, entity_manager::{self, EntityManager}, enums_types::{CameraState, EntityType, Faction, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::imgui::ImguiManager};
+use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, debug::gizmos::Cylinder, entity_manager::{self, EntityManager}, enums_types::{CameraState, EntityType, Faction, ShaderType, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::{font::{self, FontManager}, imgui::ImguiManager}};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -42,6 +42,7 @@ pub struct GameState {
 
     pub terrain: Terrain,
     pub cursor_pos: Vec2,
+    pub font_manager: FontManager,
 }
 
 impl GameState {
@@ -145,6 +146,10 @@ impl GameState {
 
         // sound_manager.play_sound_3d("moose3D".to_string(), &vec3(0.0, 0.0, 4.0));
 
+        let mut font_manager = FontManager::new();
+        font_manager.load_phrase("Hello world");
+        font_manager.setup_buffers();
+
         Self {
             delta_time: 0.0,
             last_frame: 0.0,
@@ -173,6 +178,7 @@ impl GameState {
 
             terrain,
             cursor_pos: Vec2::new(0.0, 0.0),
+            font_manager,
         }
     }
 
@@ -238,7 +244,6 @@ impl GameState {
         state_machines::update(&mut self.entity_manager);
         collision_system::update(&mut self.entity_manager);
         self.entity_manager.update();
-
     }
 
     pub fn render(&mut self) {
@@ -246,6 +251,14 @@ impl GameState {
         self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, &mut self.sound_manager, self.fb_width, self.fb_height, self.elapsed);
 
         self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera, &mut self.entity_manager);
+       self.font_manager.render_phrase(
+           "Hello world",
+           100.0,
+           100.0,
+           self.fb_width as f32,
+           self.fb_height as f32,
+           self.renderer.shaders.get_mut(&ShaderType::Text).unwrap(),
+       );
 
         self.window.swap_buffers();
         self.glfw.poll_events()

@@ -30,6 +30,11 @@ impl Renderer {
         let debug_light_shader = Shader::new("resources/shaders/point_light.glsl");
         let depth_shader = Shader::new("resources/shaders/depth_shader.glsl");
         let text_shader = Shader::new("resources/shaders/text.glsl");
+        text_shader.activate();
+        let loc = unsafe { gl::GetUniformLocation(text_shader.id, b"textTexture\0".as_ptr() as *const _) };
+        unsafe {
+            gl::Uniform1i(loc, 1); 
+        }
         let model_shader = Shader::new("resources/shaders/model.glsl");
         let gizmo_shader = Shader::new("resources/shaders/gizmo.glsl");
 
@@ -431,8 +436,16 @@ impl Renderer {
     }
 
     fn grid_pass(&mut self,grid: &mut Grid, camera: &mut Camera, light_manager: &Lights) {
+        unsafe {
+            gl::Enable(gl::BLEND);
+            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
+        }
         let shader = self.shaders.get_mut(&ShaderType::Model).unwrap();
         shader.activate();
+
+        shader.set_bool("do_reg_fresnel", false);
+        shader.set_bool("selection_fresnel", false);
+
         shader.set_mat4("model", Mat4::IDENTITY);
         shader.set_mat4("view", camera.view);
         shader.set_mat4("projection", camera.projection);
@@ -446,9 +459,9 @@ impl Renderer {
             gl_call!(gl::ActiveTexture(gl::TEXTURE0));
             gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.depth_map));
             shader.set_int("shadow_map", 0);
-            // TODO: Fix the wrapping of this quad
 
             grid.draw(shader);
+            gl::Disable(gl::BLEND)
         }
     }
 
