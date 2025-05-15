@@ -1,5 +1,5 @@
 ===========================================
-./src\animation\animation.rs:276
+./src\animation\animation.rs:303
 ===========================================
 // TODO: THIS IS POTENTIALLY ERROR PRONE. it is really easy to accidentally remove something
 // twice and have it be gone forever, causing an unwrap() on a None animation value later in
@@ -8,7 +8,7 @@
 // This along with a separate query loop and update loop might help.
 
 ===========================================
-./src\animation\animation.rs:787
+./src\animation\animation.rs:814
 ===========================================
 // TODO: Parse BSDF color instead or something.
 
@@ -51,11 +51,6 @@
 ./src\renderer.rs:320
 ===========================================
 // TODO: DOn't clone, we really need an enum here.
-
-===========================================
-./src\renderer.rs:569
-===========================================
-// TODO:: Get rid of this.
 
 ===========================================
 ./src\sound\sound_manager.rs:18

@@ -43,6 +43,8 @@ pub struct GameState {
     pub terrain: Terrain,
     pub cursor_pos: Vec2,
     pub font_manager: FontManager,
+    pub fps: u32,
+    pub last_fps_update: f32,
 }
 
 impl GameState {
@@ -147,7 +149,7 @@ impl GameState {
         // sound_manager.play_sound_3d("moose3D".to_string(), &vec3(0.0, 0.0, 4.0));
 
         let mut font_manager = FontManager::new();
-        font_manager.load_phrase("Hello world");
+        font_manager.load_chars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:,.!?()[]{}<>");
         font_manager.setup_buffers();
 
         Self {
@@ -179,6 +181,8 @@ impl GameState {
             terrain,
             cursor_pos: Vec2::new(0.0, 0.0),
             font_manager,
+            fps: 0,
+            last_fps_update: 0.0,
         }
     }
 
@@ -251,14 +255,24 @@ impl GameState {
         self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, &mut self.sound_manager, self.fb_width, self.fb_height, self.elapsed);
 
         self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera, &mut self.entity_manager);
-       self.font_manager.render_phrase(
-           "Hello world",
-           100.0,
-           100.0,
-           self.fb_width as f32,
-           self.fb_height as f32,
-           self.renderer.shaders.get_mut(&ShaderType::Text).unwrap(),
-       );
+        let fps_now = (1.0 / self.delta_time.max(0.0001)) as u32;
+
+        if self.elapsed - self.last_fps_update >= 0.5 {
+            self.fps = fps_now;
+            self.last_fps_update = self.elapsed;
+        }
+
+        let phrase = format!("FPS: {}", self.fps);
+
+        self.font_manager.render_phrase(
+            &phrase,
+            100.0,
+            100.0,
+            self.fb_width as f32,
+            self.fb_height as f32,
+            self.renderer.shaders.get_mut(&ShaderType::Text).unwrap(),
+            0.5,
+        );
 
         self.window.swap_buffers();
         self.glfw.poll_events()

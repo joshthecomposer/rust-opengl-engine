@@ -28,7 +28,7 @@ impl FontManager {
         }
     }
 
-    pub fn load_phrase(&mut self, phrase: &str) {
+    pub fn load_chars(&mut self, phrase: &str) {
         let font_data = include_bytes!("../../resources/fonts/JetBrainsMonoNL-Regular.ttf");
         let font = Font::try_from_bytes(font_data).unwrap();
         let scale = Scale::uniform(64.0); // Smaller size
@@ -111,7 +111,7 @@ impl FontManager {
         }
     }
 
-    pub fn render_phrase(&self, phrase: &str, x: f32, y: f32, fb_width: f32, fb_height: f32, shader: &Shader) {
+    pub fn render_phrase(&self, phrase: &str, x: f32, y: f32, fb_width: f32, fb_height: f32, shader: &Shader, scale: f32) {
         shader.activate();
 
         unsafe {
@@ -124,7 +124,7 @@ impl FontManager {
 
         for c in phrase.chars() {
             if c == ' ' {
-                cursor_x += 20.0; // fixed width space
+                cursor_x += 10.0 * scale; // fixed width space
                 continue;
             }
 
@@ -132,11 +132,11 @@ impl FontManager {
                 let sx = 2.0 / fb_width;
                 let sy = 2.0 / fb_height;
 
-                let w = glyph.width as f32;
-                let h = glyph.height as f32;
+                let w = glyph.width as f32 * scale;
+                let h = glyph.height as f32 * scale;
 
                 let xpos = cursor_x;
-                let ypos = y - glyph.bearing_y;
+                let ypos = y - glyph.bearing_y * scale;
 
                 let x0 = xpos * sx - 1.0;
                 let x1 = (xpos + w) * sx - 1.0;
@@ -165,7 +165,7 @@ impl FontManager {
                     gl::DrawArrays(gl::TRIANGLES, 0, 6);
                 }
 
-                cursor_x += glyph.advance;
+                cursor_x += glyph.advance * scale;
             }
         }
 
