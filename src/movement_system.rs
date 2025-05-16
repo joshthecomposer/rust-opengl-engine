@@ -24,6 +24,11 @@ fn handle_player_movement(pressed_keys: &HashSet<glfw::Key>, em: &mut EntityMana
     assert!(player_keys.len() == 1 && player_keys.len() > 0);
 
     let player_key = *player_keys.first().unwrap();
+    let animator = em.animators.get_mut(player_key).unwrap();
+
+    if animator.next_animation == "Death".to_string() {
+        return;
+    }
 
     let speed = 5.0 * delta;
     let mut move_dir = vec3(0.0, 0.0, 0.0);
@@ -68,7 +73,6 @@ fn handle_player_movement(pressed_keys: &HashSet<glfw::Key>, em: &mut EntityMana
             rotator.cur_rot = rotator.next_rot;
         }
     }
-    let animator = em.animators.get_mut(player_key).unwrap();
 
     animator.next_animation = new_state.to_string();
 

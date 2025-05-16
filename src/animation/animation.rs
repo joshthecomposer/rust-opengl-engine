@@ -273,6 +273,16 @@ impl Animator {
 
     pub fn update(&mut self, skellington: &mut Bone, dt: f32) {
 
+        // Check death conditioin:
+        if self.current_animation == "Death" {
+            if let Some(anim) = self.animations.get("Death") {
+                if anim.current_time >= anim.duration {
+                    return;
+                }
+            }
+        }
+
+
         // TODO: THIS IS POTENTIALLY ERROR PRONE. it is really easy to accidentally remove something
         // twice and have it be gone forever, causing an unwrap() on a None animation value later in 
         // the rendering stage. Note: when using insert() with the SparseSet, it overrides the previous
@@ -308,7 +318,7 @@ impl Animator {
 
 #[derive(Debug, Clone)]
 pub struct Animation {
-    duration: f32,
+    pub duration: f32,
     ticks_per_second: f32,
     model_animation_join: Vec<BoneJoinInfo>,
     bone_transforms: HashMap<String, BoneTransformTrack>,
@@ -319,6 +329,7 @@ pub struct Animation {
     pub continuous_sounds: Vec<ContinuousSound>,
 
     pub current_time: f32,
+    pub looping: bool,
 }
 
 impl Animation {
@@ -336,6 +347,7 @@ impl Animation {
             continuous_sounds: vec![],
 
             current_time: 0.0,
+            looping: true,
         }
     }
 
@@ -452,7 +464,11 @@ impl Animation {
     pub fn update(&mut self, skellington: &mut Bone, other_animation: Option<&mut Animation>, blend_factor: f32, dt: f32) {
         self.current_time += dt;
         if self.current_time > self.duration {
-            self.current_time = 0.0;
+            if self.looping {
+                self.current_time = 0.0;
+            } else {
+                self.current_time = self.duration - 0.001;
+            }
         }
 
         if let Some(other_animation) = other_animation {
@@ -590,6 +606,9 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animator, Animation) {
                     // Save the previous animation before creating a new one
                     animation.model_animation_join = model_animation_join.clone();
                     animation.ticks_per_second = ticks_per_second;
+                    if current_anim_name == "Death".to_string() {
+                        animation.looping = false;
+                    }
 
                     animator.animations.insert(current_anim_name.clone(), animation.clone());
                 }

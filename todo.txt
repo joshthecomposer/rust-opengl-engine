@@ -1,5 +1,5 @@
 ===========================================
-./src\animation\animation.rs:276
+./src\animation\animation.rs:286
 ===========================================
 // TODO: THIS IS POTENTIALLY ERROR PRONE. it is really easy to accidentally remove something
 // twice and have it be gone forever, causing an unwrap() on a None animation value later in
@@ -8,7 +8,7 @@
 // This along with a separate query loop and update loop might help.
 
 ===========================================
-./src\animation\animation.rs:787
+./src\animation\animation.rs:806
 ===========================================
 // TODO: Parse BSDF color instead or something.
 
@@ -33,17 +33,17 @@
 // TODO: If you are out of bounds do something else, like a -1 or something to signify.
 
 ===========================================
-./src\movement_system.rs:83
+./src\movement_system.rs:87
 ===========================================
 // TODO: This should likely be different and calculated in the collision system
 
 ===========================================
-./src\movement_system.rs:116
+./src\movement_system.rs:120
 ===========================================
 // TODO: This clamps rotation to around Y, which should be not the case forever.
 
 ===========================================
-./src\movement_system.rs:142
+./src\movement_system.rs:146
 ===========================================
 // TODO: This terrain adjustment should be in the collision system file.
 
