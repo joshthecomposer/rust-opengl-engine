@@ -7,8 +7,8 @@
 			"__note__": "use Quat::from_rotation_x()",
 			"rotation": "-FRAC_PI_2",
 			"faction": "Player",
-			"mesh_path": "resources/poop_mesh.txt", 
-			"bone_path":"resources/poop_bones.txt",
+			"mesh_path": "resources/models/animated/002_y_robot/y_robot_model_FINAL.txt", 
+			"bone_path":"resources/models/animated/002_y_robot/y_robot_bones_FINAL.txt",
 			"hit_cyl": { "r": 0.22, "h": 1.6 },
 			"animation_properties" : [
 				{
