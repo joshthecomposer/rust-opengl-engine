@@ -109,6 +109,7 @@ def export_animation_data(filepath):
                         f.write(f"{scale.x:.5f} {scale.y:.5f} {scale.z:.5f}\n\n")
 
         armature.animation_data.action = None  # Clear the assigned action to avoid conflicts
+
 def export_mesh_with_indices(filepath):
     with open(filepath, "w") as f:
         meshes = [obj for obj in bpy.context.selected_objects if obj.type == 'MESH']

@@ -217,15 +217,17 @@ impl GameState {
     }
 
     pub fn update(&mut self) {
-        let player_key = self.entity_manager.factions.iter().find(|f| f.value() == &Faction::Player).unwrap().key();
-        let animator = self.entity_manager.animators.get_mut(player_key).unwrap();
+        if let Some(player_entry) = self.entity_manager.factions.iter().find(|f| f.value() == &Faction::Player) {
+            let player_key = player_entry.key();
+            let animator = self.entity_manager.animators.get_mut(player_key).unwrap();
 
-        if self.pressed_keys.contains(&glfw::Key::P) {
-            animator.set_next_animation("Death");
-        }
+            if self.pressed_keys.contains(&glfw::Key::P) {
+                animator.set_next_animation("Death");
+            }
 
-        if self.pressed_keys.contains(&glfw::Key::O) {
-            animator.set_next_animation("Idle");
+            if self.pressed_keys.contains(&glfw::Key::O) {
+                animator.set_next_animation("Idle");
+            }
         }
 
         if self.pressed_keys.contains(&glfw::Key::Delete) {

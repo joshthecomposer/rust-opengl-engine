@@ -12,7 +12,9 @@ pub fn update(em: &mut EntityManager, terrain: &Terrain, dt: f32, camera: &Camer
     let gizmo_keys = em.get_ids_for_faction(Faction::Gizmo);
 
     if camera.move_state != CameraState::Free {
-        handle_player_movement(pressed_keys, em, player_keys, dt, camera, terrain);
+        if player_keys.len() > 0 {
+            handle_player_movement(pressed_keys, em, player_keys, dt, camera, terrain);
+        }
     }
     handle_enemy_movement(enemy_keys, em, terrain, dt,);
     handle_static_movement(static_keys, em, terrain);
@@ -21,8 +23,6 @@ pub fn update(em: &mut EntityManager, terrain: &Terrain, dt: f32, camera: &Camer
 
 fn handle_player_movement(pressed_keys: &HashSet<glfw::Key>, em: &mut EntityManager, player_keys: Vec<usize>, delta: f32, camera: &Camera, terrain: &Terrain) {
     // We don't want multiple players yet, and we want at least one. Both these things can/will change later
-    assert!(player_keys.len() == 1 && player_keys.len() > 0);
-
     let player_key = *player_keys.first().unwrap();
     let animator = em.animators.get_mut(player_key).unwrap();
 
