@@ -68,6 +68,11 @@
 pub sound_type: String, // TODO: JW - This sound_type should probably be an enum of SoundType?? Maybe?
 
 ===========================================
+./src\state_machines.rs:61
+===========================================
+// TODO: Be careful about this 0.001 calculation, if we change it elsewhere it might break
+
+===========================================
 ./src\terrain.rs:28
 ===========================================
 // TODO: replace 10.0 with some max height value
