@@ -1,6 +1,6 @@
 use glam::Vec3;
 
-use crate::{entity_manager::EntityManager, enums_types::{AnimationType, Faction, SimState}};
+use crate::{entity_manager::EntityManager, enums_types::{AnimationType, Faction, SimState, VisualEffect}};
 
 pub fn update(em: &mut EntityManager, dt: f32) {
     entity_sim_state_machine(em, dt);
@@ -56,10 +56,14 @@ fn entity_sim_state_machine(em: &mut EntityManager, dt: f32) {
                 SimState::Dying => {
                     animator.set_next_animation(AnimationType::Death);
                     *destination = entity_pos;
-
-                    let anim = animator.animations.get(&AnimationType::Death).unwrap();
-                    if anim.current_time >= anim.duration - 0.001 {
-                        return SimState::Dead { time: 0.0, target_time: 5.0 }
+                    
+                    if let Some(anim) = animator.animations.get(&AnimationType::Death) {
+                        // TODO: Be careful about this 0.001 calculation, if we change it elsewhere it might break
+                        if anim.current_time >= anim.duration - 0.001 {
+                            return SimState::Dead { time: 0.0, target_time: 5.0 }
+                        } 
+                    } else {
+                        em.entity_trashcan.push(fac.key());
                     }
                     
                     SimState::Dying
@@ -68,6 +72,10 @@ fn entity_sim_state_machine(em: &mut EntityManager, dt: f32) {
                     animator.set_next_animation(AnimationType::Death);
 
                     let new_time = *time + dt;
+
+                    if new_time >= 4.0 {
+                        em.v_effects.insert(fac.key(), VisualEffect::Flashing);
+                    }
 
                     if new_time >= *target_time {
                         em.entity_trashcan.push(fac.key());

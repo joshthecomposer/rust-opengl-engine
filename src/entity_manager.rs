@@ -6,7 +6,7 @@ use libc::EILSEQ;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-use crate::{animation::{animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model}, animation_system}, camera::Camera, collision_system, config::entity_config::{AnimationPropHelper, EntityConfig}, debug::gizmos::{Cuboid, Cylinder}, enums_types::{CellType, EntityType, Faction, Parent, Rotator, SimState, Transform}, grid::Grid, movement_system, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, state_machines, terrain::Terrain};
+use crate::{animation::{animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model}, animation_system}, camera::Camera, collision_system, config::entity_config::{AnimationPropHelper, EntityConfig}, debug::gizmos::{Cuboid, Cylinder}, enums_types::{CellType, EntityType, Faction, Parent, Rotator, SimState, Transform, VisualEffect}, grid::Grid, movement_system, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, state_machines, terrain::Terrain};
 
 pub struct EntityManager {
     pub next_entity_id: usize,
@@ -31,6 +31,7 @@ pub struct EntityManager {
     pub rng: ChaCha8Rng,
 
     pub selected: Vec<usize>,
+    pub v_effects: SparseSet<VisualEffect>,
     pub entity_trashcan: Vec<usize>,
 }
 
@@ -57,6 +58,7 @@ impl EntityManager {
             rng: ChaCha8Rng::seed_from_u64(1),
 
             selected: Vec::new(),
+            v_effects: SparseSet::with_capacity(max_entities),
             entity_trashcan: Vec::new(),
         }
     }
@@ -265,6 +267,7 @@ impl EntityManager {
             self.destinations.remove(*id);
             self.cylinders.remove(*id);
             self.parents.remove(*id);
+            self.v_effects.remove(*id);
         }
 
         self.entity_trashcan.clear();

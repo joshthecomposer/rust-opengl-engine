@@ -191,3 +191,7 @@ impl AnimationType {
     }
 
 }
+
+pub enum VisualEffect {
+    Flashing,
+}

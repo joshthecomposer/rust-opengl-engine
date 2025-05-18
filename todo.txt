@@ -18,7 +18,7 @@
 // TODO: This overwrites multiple times potentially, we should check if the texture has already been saved.
 
 ===========================================
-./src\entity_manager.rs:128
+./src\entity_manager.rs:130
 ===========================================
 // TODO: Should foliage be a child of the tree trunk?? Then when doing things we iterate up the parent tree?
 
@@ -53,12 +53,12 @@
 // TODO: This terrain adjustment should be in the collision system file.
 
 ===========================================
-./src\renderer.rs:320
+./src\renderer.rs:324
 ===========================================
 // TODO: DOn't clone, we really need an enum here.
 
 ===========================================
-./src\renderer.rs:569
+./src\renderer.rs:574
 ===========================================
 // TODO:: Get rid of this.
 

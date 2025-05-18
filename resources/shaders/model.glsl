@@ -101,6 +101,7 @@ uniform bool alpha_test_pass;
 uniform bool selection_fresnel;
 uniform bool do_reg_fresnel;
 uniform float elapsed;
+uniform bool flash_white;
 
 float fresnel_bias = 0.1; // minimum effect strength
 float fresnel_scale = 1.0; // how strong the effect is
@@ -144,6 +145,14 @@ vec4 calculate_directional_light() {
 	if (alpha_test_pass && alpha < 0.1)
 		discard;
 
+	if (flash_white) {
+		float t = mod(elapsed, 0.15);
+		if (t < 0.075) {
+			return vec4(1.0, 1.0, 1.0, alpha);	
+		} else {
+			discard;
+		}
+	}
 	// Ambient
     vec3 ambient = vec3(dir_light.ambient);
 	
@@ -164,6 +173,7 @@ vec4 calculate_directional_light() {
 	float shadow = ShadowCalculation(dot_light_normal);
 
     vec3 result_rgb = ((shadow * (diffuse + specular )) + ambient) * tex_color.rgb + emiss_color;
+
 
 	if (do_reg_fresnel) {
 		float reg_fresnel = fresnel_bias + fresnel_scale * pow(1.0 - max(dot(norm, viewDir), 0.0), fresnel_power);
