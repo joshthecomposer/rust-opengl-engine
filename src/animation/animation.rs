@@ -4,7 +4,7 @@ use image::{DynamicImage, GenericImageView, ImageBuffer, Rgba};
 use core::f32;
 use std::{collections::HashMap, ffi::c_void, mem::{self, offset_of}, path::Path, ptr, str::Lines};
 
-use crate::{enums_types::TextureType, gl_call, shaders::Shader, some_data::MAX_BONE_INFLUENCE, sound::sound_manager::{ContinuousSound, OneShot}};
+use crate::{enums_types::{AnimationType, TextureType}, gl_call, shaders::Shader, some_data::MAX_BONE_INFLUENCE, sound::sound_manager::{ContinuousSound, OneShot}};
 
 #[derive(Debug, Clone)]
 #[repr(C)]
@@ -245,9 +245,9 @@ impl BoneTransformTrack {
 
 #[derive(Debug)]
 pub struct Animator {
-    pub current_animation: String,
-    pub next_animation: String,
-    pub animations: HashMap<String, Animation>,
+    pub current_animation: AnimationType,
+    pub next_animation: AnimationType,
+    pub animations: HashMap<AnimationType, Animation>,
     pub blend_factor: f32,
     pub blend_time: f32,
 }
@@ -255,27 +255,27 @@ pub struct Animator {
 impl Animator {
     pub fn new() -> Self {
         Self {
-            current_animation: "".to_string(),
-            next_animation: "".to_string(),
+            current_animation: AnimationType::Idle,
+            next_animation: AnimationType::Idle,
             animations: HashMap::new(),
             blend_factor: 0.0,
             blend_time: 0.2,
         }
     }
 
-    pub fn set_current_animation(&mut self, input: &str) {
-        self.current_animation = input.to_string();
+    pub fn set_current_animation(&mut self, input: AnimationType) {
+        self.current_animation = input;
     }
 
-    pub fn set_next_animation(&mut self, input: &str) {
-        self.next_animation = input.to_string();
+    pub fn set_next_animation(&mut self, input: AnimationType) {
+        self.next_animation = input;
     }
 
     pub fn update(&mut self, skellington: &mut Bone, dt: f32) {
 
         // Check death conditioin:
-        if self.current_animation == "Death" {
-            if let Some(anim) = self.animations.get("Death") {
+        if self.current_animation == AnimationType::Death {
+            if let Some(anim) = self.animations.get(&AnimationType::Death) {
                 if anim.current_time >= anim.duration {
                     return;
                 }
@@ -570,7 +570,7 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animator, Animation) {
     // ============================================================
     lines = data.lines();
     let mut animation = Animation::default();
-    let mut current_anim_name = "".to_string();
+    let mut current_anim_str = "";
 
     // Get gpu bone info to use for later to gather a final matrix array
     let mut model_animation_join = vec![];
@@ -602,21 +602,21 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animator, Animation) {
 
         match parts[0] {
             "ANIMATION_NAME:" => {
-                if !current_anim_name.is_empty() {
+                if !current_anim_str.is_empty() {
                     // Save the previous animation before creating a new one
                     animation.model_animation_join = model_animation_join.clone();
                     animation.ticks_per_second = ticks_per_second;
-                    if current_anim_name == "Death".to_string() {
+                    if current_anim_str == "Death" {
                         animation.looping = false;
                     }
 
-                    animator.animations.insert(current_anim_name.clone(), animation.clone());
+                    animator.animations.insert(AnimationType::from_str(current_anim_str).unwrap(), animation.clone());
                 }
 
                 animation = Animation::default();
-                current_anim_name = parts[1].to_string();
+                current_anim_str = parts[1];
 
-                dbg!(&current_anim_name);
+                dbg!(&current_anim_str);
 
                 for b in &bones_no_children {
                     animation.current_pose.push(b.offset);
@@ -671,10 +671,9 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animator, Animation) {
     animation.model_animation_join = model_animation_join.clone();
     animation.ticks_per_second = ticks_per_second;
 
-
-    animator.set_current_animation(current_anim_name.as_str());
-    animator.set_next_animation(current_anim_name.as_str());
-    animator.animations.insert(current_anim_name.clone(), animation.clone());
+    animator.set_current_animation(AnimationType::from_str(current_anim_str).unwrap());
+    animator.set_next_animation(AnimationType::from_str(current_anim_str).unwrap());
+    animator.animations.insert(AnimationType::from_str(current_anim_str).unwrap(), animation.clone());
 
     for (_, animation) in animator.animations.iter_mut() {
         for (_, track) in animation.bone_transforms.iter_mut() {

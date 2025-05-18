@@ -8,7 +8,7 @@
 // This along with a separate query loop and update loop might help.
 
 ===========================================
-./src\animation\animation.rs:806
+./src\animation\animation.rs:805
 ===========================================
 // TODO: Parse BSDF color instead or something.
 

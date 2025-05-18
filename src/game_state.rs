@@ -7,7 +7,7 @@ use glfw::{Context, Glfw, GlfwReceiver, Key, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, debug::gizmos::Cylinder, entity_manager::{self, EntityManager}, enums_types::{CameraState, EntityType, Faction, ShaderType, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::{font::{self, FontManager}, imgui::ImguiManager}};
+use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, debug::gizmos::Cylinder, entity_manager::{self, EntityManager}, enums_types::{AnimationType, CameraState, EntityType, Faction, ShaderType, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::{font::{self, FontManager}, imgui::ImguiManager}};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -222,11 +222,11 @@ impl GameState {
             let animator = self.entity_manager.animators.get_mut(player_key).unwrap();
 
             if self.pressed_keys.contains(&glfw::Key::P) {
-                animator.set_next_animation("Death");
+                animator.set_next_animation(AnimationType::Death);
             }
 
             if self.pressed_keys.contains(&glfw::Key::O) {
-                animator.set_next_animation("Idle");
+                animator.set_next_animation(AnimationType::Idle);
             }
         }
 

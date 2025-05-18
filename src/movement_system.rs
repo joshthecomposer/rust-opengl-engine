@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use glam::{vec3, Quat, Vec3};
 
-use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{CameraState, EntityType, Faction, Transform}, terrain::Terrain};
+use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{AnimationType, CameraState, EntityType, Faction, Transform}, terrain::Terrain};
 
 pub fn update(em: &mut EntityManager, terrain: &Terrain, dt: f32, camera: &Camera, pressed_keys: &HashSet<glfw::Key>) {
     
@@ -26,7 +26,7 @@ fn handle_player_movement(pressed_keys: &HashSet<glfw::Key>, em: &mut EntityMana
     let player_key = *player_keys.first().unwrap();
     let animator = em.animators.get_mut(player_key).unwrap();
 
-    if animator.next_animation == "Death".to_string() {
+    if animator.next_animation == AnimationType::Death {
         return;
     }
 
@@ -58,10 +58,10 @@ fn handle_player_movement(pressed_keys: &HashSet<glfw::Key>, em: &mut EntityMana
 
         let rot =Quat::from_rotation_y(f32::atan2(-move_dir.x, -move_dir.z));
         new_rotation = Some(rot * em.transforms.get(player_key).unwrap().original_rotation.normalize());
-        "Run"
+        AnimationType::Run 
     } else {
         new_rotation = None;
-        "Idle"
+        AnimationType::Idle
     };
 
     let transform = em.transforms.get_mut(player_key).unwrap();
@@ -74,7 +74,7 @@ fn handle_player_movement(pressed_keys: &HashSet<glfw::Key>, em: &mut EntityMana
         }
     }
 
-    animator.next_animation = new_state.to_string();
+    animator.next_animation = new_state;
 
     if let Some(rot) = new_rotation {
         if rotator.blend_factor == 0.0 && rot != rotator.cur_rot {

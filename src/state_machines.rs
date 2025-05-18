@@ -1,6 +1,6 @@
 use glam::Vec3;
 
-use crate::{entity_manager::EntityManager, enums_types::{Faction, SimState}};
+use crate::{entity_manager::EntityManager, enums_types::{AnimationType, Faction, SimState}};
 
 pub fn update(em: &mut EntityManager) {
     entity_sim_state_machine(em);
@@ -24,7 +24,7 @@ fn entity_sim_state_machine(em: &mut EntityManager) {
                     SimState::Dancing
                 },
                 SimState::Waiting => {
-                    animator.set_next_animation("Idle");
+                    animator.set_next_animation(AnimationType::Idle);
                     *destination = entity_pos;
 
                     let to_player = (player_pos - entity_pos).with_y(0.0).normalize();
@@ -43,7 +43,7 @@ fn entity_sim_state_machine(em: &mut EntityManager) {
                     SimState::Waiting
                 },
                 SimState::Aggro => {
-                    animator.set_next_animation("Run");
+                    animator.set_next_animation(AnimationType::Run);
                     *destination = player_pos;
 
                     if entity_pos.distance(player_pos) > 12.0 {

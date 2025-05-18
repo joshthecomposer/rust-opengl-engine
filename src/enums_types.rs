@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use std::fmt::{self, Display, Formatter};
+use std::{fmt::{self, Display, Formatter}, str::FromStr};
 
 use glam::{Mat4, Quat, Vec3};
 use serde::Deserialize;
@@ -156,4 +156,33 @@ pub enum SimState {
     Aggro,
     Waiting,
     Dancing,
+}
+
+#[derive(Clone, Debug, PartialEq, Hash, Eq, Deserialize)]
+pub enum AnimationType {
+    Run,
+    Idle,
+    Death,
+}
+
+impl Display for AnimationType {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            AnimationType::Run => write!(f, "Run"),
+            AnimationType::Idle => write!(f, "Idle"),
+            AnimationType::Death => write!(f, "Death"),
+        }
+    }
+}
+
+impl AnimationType {
+    pub fn from_str(input: &str) -> Option<Self> {
+        match input {
+            "Run" => Some(AnimationType::Run),
+            "Idle" => Some(AnimationType::Idle),
+            "Death" => Some(AnimationType::Death),
+            _ => panic!("Invalid AnimationType passed in."),
+        }
+    }
+
 }
