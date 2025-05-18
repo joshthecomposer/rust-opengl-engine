@@ -7,7 +7,7 @@ use glfw::{Context, Glfw, GlfwReceiver, Key, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, debug::gizmos::Cylinder, entity_manager::{self, EntityManager}, enums_types::{AnimationType, CameraState, EntityType, Faction, ShaderType, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::{font::{self, FontManager}, imgui::ImguiManager}};
+use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, debug::gizmos::Cylinder, entity_manager::{self, EntityManager}, enums_types::{AnimationType, CameraState, EntityType, Faction, ShaderType, SimState, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::{font::{self, FontManager}, imgui::ImguiManager}};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -66,6 +66,7 @@ impl GameState {
         // window.set_sticky_keys(true); 
         window.set_cursor_mode(glfw::CursorMode::Disabled);
         window.set_all_polling(true);
+        window.set_framebuffer_size_polling(true);
         window.make_current();
 
         glfw.with_primary_monitor(|_glfw, maybe_monitor| {
@@ -232,7 +233,14 @@ impl GameState {
 
         if self.pressed_keys.contains(&glfw::Key::Delete) {
             for id in self.entity_manager.selected.iter() {
-                self.entity_manager.entity_trashcan.push(*id);
+                self.entity_manager.sim_states.insert(*id, SimState::Dying);
+                if let Some(parent) = self.entity_manager.parents.iter().find(|p| p.value().parent_id == *id) {
+                    let cyl_id = parent.key();
+
+                    if let Some(_cyl) = self.entity_manager.cylinders.get(cyl_id) {
+                        self.entity_manager.entity_trashcan.push(cyl_id);
+                    }
+                }
             }
         }
 
@@ -258,13 +266,57 @@ impl GameState {
             &mut self.entity_manager, &self.terrain, self.delta_time, &self.camera, &self.pressed_keys
         );
         animation_system::update(&mut self.entity_manager, self.delta_time);
-        state_machines::update(&mut self.entity_manager);
+        state_machines::update(&mut self.entity_manager, self.delta_time);
         collision_system::update(&mut self.entity_manager);
         self.entity_manager.update();
     }
 
     pub fn render(&mut self) {
-        self.camera.reset_matrices(self.window_width as f32 / self.window_height as f32);
+        // ======================================
+        // Handle windowed/FullScreen
+        // ======================================
+        // TODO: should we abstract this out somewhere?
+        if self.pressed_keys.contains(&glfw::Key::H) {
+            self.glfw.with_primary_monitor(|_glfw, maybe_monitor| {
+                if let Some(monitor) = maybe_monitor {
+                    if let Some(video_mode) = monitor.get_video_mode() {
+                        let refresh_rate    = video_mode.refresh_rate;
+
+                        self.window.set_monitor(
+                            glfw::WindowMode::FullScreen(monitor),
+                            0,      // X-position on that monitor
+                            0,      // Y-position on that monitor
+                            video_mode.width,
+                            video_mode.height,
+                            Some(refresh_rate)
+                        );
+                    }
+                }
+            });
+        } else if self.pressed_keys.contains(&glfw::Key::J) {
+            self.window.set_monitor(
+                glfw::WindowMode::Windowed,
+                100,
+                100,
+                1920,
+                1080,
+                None,
+            );
+        }
+        let (new_width, new_height) = self.window.get_framebuffer_size();
+        if new_width as u32 != self.fb_width || new_height as u32 != self.fb_height {
+            self.fb_width = new_width as u32;
+            self.fb_height = new_height as u32;
+
+            unsafe { gl::Viewport(0, 0, new_width, new_height); }
+
+            let aspect = new_width as f32 / new_height as f32;
+            self.camera.reset_matrices(aspect);
+        }
+
+        // ======================================
+        // Actually draw stuff
+        // ======================================
         self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, &mut self.sound_manager, self.fb_width, self.fb_height, self.elapsed);
 
         self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera, &mut self.entity_manager);

@@ -67,7 +67,7 @@
 			"hit_cyl": { "r": 0.5, "h": 2.0 },
 			"animation_properties" : [
 				{
-					"name": "Idle",
+					"name": "Dance",
 					"one_shots": { },
 					"continuous_sounds": [
 						"moose3D"
@@ -75,9 +75,6 @@
 				}
 			]
 		},
-
-
-
 		{
 			"entity_type": "TreeFoliage",
 			"position": [-4.2, 0.0, -3.1],

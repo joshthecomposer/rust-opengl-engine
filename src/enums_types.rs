@@ -156,6 +156,8 @@ pub enum SimState {
     Aggro,
     Waiting,
     Dancing,
+    Dying ,
+    Dead { time: f32, target_time: f32 },
 }
 
 #[derive(Clone, Debug, PartialEq, Hash, Eq, Deserialize)]
@@ -163,6 +165,7 @@ pub enum AnimationType {
     Run,
     Idle,
     Death,
+    Dance,
 }
 
 impl Display for AnimationType {
@@ -171,6 +174,7 @@ impl Display for AnimationType {
             AnimationType::Run => write!(f, "Run"),
             AnimationType::Idle => write!(f, "Idle"),
             AnimationType::Death => write!(f, "Death"),
+            AnimationType::Dance => write!(f, "Dance"),
         }
     }
 }
@@ -181,6 +185,7 @@ impl AnimationType {
             "Run" => Some(AnimationType::Run),
             "Idle" => Some(AnimationType::Idle),
             "Death" => Some(AnimationType::Death),
+            "Dance" => Some(AnimationType::Dance),
             _ => panic!("Invalid AnimationType passed in."),
         }
     }

@@ -2,11 +2,11 @@ use glam::Vec3;
 
 use crate::{entity_manager::EntityManager, enums_types::{AnimationType, Faction, SimState}};
 
-pub fn update(em: &mut EntityManager) {
-    entity_sim_state_machine(em);
+pub fn update(em: &mut EntityManager, dt: f32) {
+    entity_sim_state_machine(em, dt);
 }
 
-fn entity_sim_state_machine(em: &mut EntityManager) {
+fn entity_sim_state_machine(em: &mut EntityManager, dt: f32) {
     for fac in em.factions.iter() {
         if *fac.value() == Faction::Enemy {
             let state = em.sim_states.get_mut(fac.key()).unwrap();
@@ -21,6 +21,7 @@ fn entity_sim_state_machine(em: &mut EntityManager) {
             let next_state = (|| match state {
                 SimState::Dancing => {
                     *destination = entity_pos;
+                    animator.set_next_animation(AnimationType::Dance);
                     SimState::Dancing
                 },
                 SimState::Waiting => {
@@ -51,6 +52,28 @@ fn entity_sim_state_machine(em: &mut EntityManager) {
                     } 
 
                     SimState::Aggro
+                },
+                SimState::Dying => {
+                    animator.set_next_animation(AnimationType::Death);
+                    *destination = entity_pos;
+
+                    let anim = animator.animations.get(&AnimationType::Death).unwrap();
+                    if anim.current_time >= anim.duration - 0.001 {
+                        return SimState::Dead { time: 0.0, target_time: 5.0 }
+                    }
+                    
+                    SimState::Dying
+                },
+                SimState::Dead { time, target_time } => {
+                    animator.set_next_animation(AnimationType::Death);
+
+                    let new_time = *time + dt;
+
+                    if new_time >= *target_time {
+                        em.entity_trashcan.push(fac.key());
+                    }
+
+                    SimState::Dead { time: new_time, target_time: *target_time }
                 },
             })();
 
