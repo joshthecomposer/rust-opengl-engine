@@ -101,7 +101,7 @@ fn entity_sim_state_machine(em: &mut EntityManager, dt: f32, particles: &mut Par
                                 let position = bone_world_space.w_axis.truncate();
 
                                 // You can randomize velocity or make it static for now
-                                particles.spawn_particles(10, position);
+                                particles.spawn_particles(100, position);
                             }
                         }
 

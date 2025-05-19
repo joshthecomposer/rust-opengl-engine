@@ -15,5 +15,12 @@ void main() {
 out vec4 FragColor;
 
 void main() {
-    FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+    vec2 frag = gl_FragCoord.xy;
+
+    // Blood-like dark red variation
+    float r = 0.5; // 0.3 to 0.5
+    float g = 0.03; // 0.0 to 0.04
+    float b = 0.02; // 0.0 to 0.03
+
+    FragColor = vec4(r, g, b, 0.5);
 }

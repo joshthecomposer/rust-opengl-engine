@@ -27,7 +27,7 @@ impl Particles {
     }
 
     pub fn update(&mut self, dt: f32) {
-        let gravity = vec3(0.0, -5.0, 0.0);
+        let gravity = vec3(0.0, -9.8, 0.0);
         let mut i = 0;
 
         while i < self.positions.len() {
@@ -48,6 +48,10 @@ impl Particles {
                 self.velocities[i] += gravity * dt;
                 self.positions[i] += self.velocities[i] * dt;
                 self.times_alive[i] += dt;
+
+                if self.positions[i].y <= 0.0 {
+                    self.positions[i].y = 0.0;
+                }
                 i += 1;
             }
         }
@@ -95,7 +99,12 @@ impl Particles {
     }
 
     pub fn render(&mut self, shader: &mut Shader, camera: &Camera) {
+        unsafe {
+            gl::Enable(gl::BLEND);
+            gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
+        }
         shader.activate();
+
         for (i, p) in self.positions.iter().enumerate() {
             let view = camera.view;
             let view_rot = Mat3::from_cols(
@@ -116,8 +125,10 @@ impl Particles {
                 gl_call!(gl::BindVertexArray(self.vao));
                 gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 6));
                 gl_call!(gl::BindVertexArray(0));
+
             }
         }
+       unsafe { gl::Enable(gl::BLEND); }
     }
 
     pub fn spawn_particles(&mut self, count: u32, origin: Vec3) {
@@ -135,7 +146,7 @@ impl Particles {
             let upward = vec3(0.0, rng.random_range(0.0..2.0), 0.0);
             let velocity = (outward + upward).normalize() * rng.random_range(1.0..3.0);
 
-            let lifetime = rng.random_range(0.7..1.3);
+            let lifetime = rng.random_range(2.0..3.0);
             let scale = Vec3::splat(rng.random_range(0.005..0.010));
 
             self.positions.push(position);
