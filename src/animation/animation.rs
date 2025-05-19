@@ -214,7 +214,7 @@ pub struct Bone {
 
 #[derive(Debug, Clone)]
 pub struct BoneJoinInfo {
-    name: String,
+    pub name: String,
     // offset: Mat4,
 }
 
@@ -320,8 +320,8 @@ impl Animator {
 pub struct Animation {
     pub duration: f32,
     ticks_per_second: f32,
-    model_animation_join: Vec<BoneJoinInfo>,
-    bone_transforms: HashMap<String, BoneTransformTrack>,
+    pub model_animation_join: Vec<BoneJoinInfo>,
+    pub bone_transforms: HashMap<String, BoneTransformTrack>,
     pub current_pose: Vec<Mat4>,
 
     pub current_segment: u32,
@@ -459,6 +459,31 @@ impl Animation {
 
             (interpolated_position, interpolated_rotation, interpolated_scale)
         }
+    }
+
+    pub fn get_raw_global_bone_transform_by_name(
+        &mut self,
+        bone_name: &str,
+        skeleton: &Bone,
+        parent_transform: Mat4,
+    ) -> Option<Mat4> {
+        if skeleton.name == bone_name {
+            let (pos, rot, scale) = self.get_bone_local_transform(skeleton, self.current_time);
+            let local = Mat4::from_scale_rotation_translation(scale, rot, pos);
+            return Some(parent_transform * local);
+        }
+
+        for child in &skeleton.children {
+            let (pos, rot, scale) = self.get_bone_local_transform(skeleton, self.current_time);
+            let local = Mat4::from_scale_rotation_translation(scale, rot, pos);
+            let next_parent = parent_transform * local;
+
+            if let Some(found) = self.get_raw_global_bone_transform_by_name(bone_name, child, next_parent) {
+                return Some(found);
+            }
+        }
+
+        None
     }
 
     pub fn update(&mut self, skellington: &mut Bone, other_animation: Option<&mut Animation>, blend_factor: f32, dt: f32) {

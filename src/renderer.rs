@@ -37,6 +37,7 @@ impl Renderer {
         }
         let model_shader = Shader::new("resources/shaders/model.glsl");
         let gizmo_shader = Shader::new("resources/shaders/gizmo.glsl");
+        let particle_shader = Shader::new("resources/shaders/particles.glsl");
 
         let mut vao = 0;
         let mut vbo = 0;
@@ -214,6 +215,7 @@ impl Renderer {
         shaders.insert(ShaderType::DebugShadowMap, debug_depth_quad);
         shaders.insert(ShaderType::Text, text_shader);
         shaders.insert(ShaderType::Gizmo, gizmo_shader);
+        shaders.insert(ShaderType::Particles, particle_shader);
 
         Self {
             shaders,

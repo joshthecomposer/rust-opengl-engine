@@ -7,7 +7,7 @@ use glfw::{Context, Glfw, GlfwReceiver, Key, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, debug::gizmos::Cylinder, entity_manager::{self, EntityManager}, enums_types::{AnimationType, CameraState, EntityType, Faction, ShaderType, SimState, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::{font::{self, FontManager}, imgui::ImguiManager}};
+use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, debug::{gizmos::Cylinder, write::write_data}, entity_manager::{self, EntityManager}, enums_types::{AnimationType, CameraState, EntityType, Faction, ShaderType, SimState, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, particles::Particles, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::{font::{self, FontManager}, imgui::ImguiManager}};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -45,6 +45,7 @@ pub struct GameState {
     pub font_manager: FontManager,
     pub fps: u32,
     pub last_fps_update: f32,
+    pub particles: Particles,
 }
 
 impl GameState {
@@ -153,6 +154,11 @@ impl GameState {
         font_manager.load_chars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:,.!?()[]{}<>");
         font_manager.setup_buffers();
 
+        let mut particles = Particles::new();
+        particles.setup_opengl();
+
+        write_data(entity_manager.animators.first().unwrap().value().animations.get(&AnimationType::Idle).unwrap().bone_transforms.clone(), "test.txt");
+
         Self {
             delta_time: 0.0,
             last_frame: 0.0,
@@ -184,6 +190,7 @@ impl GameState {
             font_manager,
             fps: 0,
             last_fps_update: 0.0,
+            particles,
         }
     }
 
@@ -207,6 +214,14 @@ impl GameState {
                     self.cursor_pos.y = ypos as f32;
                 },
                 glfw::WindowEvent::Key(key, _, action, _) => {
+                    match key {
+                        glfw::Key::G => {
+                            if action == glfw::Action::Press {
+                                self.particles.spawn_particles(1000, Vec3::splat(0.0));
+                            }
+                        },
+                        _ => {}
+                    }
                     handle_keyboard_input(key, action, &mut self.pressed_keys);
                 },
                 glfw::WindowEvent::MouseButton(btn, action, _) => {
@@ -218,6 +233,8 @@ impl GameState {
     }
 
     pub fn update(&mut self) {
+        self.particles.update(self.delta_time);
+
         if let Some(player_entry) = self.entity_manager.factions.iter().find(|f| f.value() == &Faction::Player) {
             let player_key = player_entry.key();
             let animator = self.entity_manager.animators.get_mut(player_key).unwrap();
@@ -266,7 +283,7 @@ impl GameState {
             &mut self.entity_manager, &self.terrain, self.delta_time, &self.camera, &self.pressed_keys
         );
         animation_system::update(&mut self.entity_manager, self.delta_time);
-        state_machines::update(&mut self.entity_manager, self.delta_time);
+        state_machines::update(&mut self.entity_manager, self.delta_time, &mut self.particles);
         collision_system::update(&mut self.entity_manager);
         self.entity_manager.update();
     }
@@ -337,6 +354,11 @@ impl GameState {
             self.fb_height as f32,
             self.renderer.shaders.get_mut(&ShaderType::Text).unwrap(),
             0.5,
+        );
+
+        self.particles.render(
+            self.renderer.shaders.get_mut(&ShaderType::Particles).unwrap(),
+            &self.camera,
         );
 
         self.window.swap_buffers();

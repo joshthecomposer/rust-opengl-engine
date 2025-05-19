@@ -1,12 +1,12 @@
-use glam::Vec3;
+use glam::{Mat4, Vec3};
 
-use crate::{entity_manager::EntityManager, enums_types::{AnimationType, Faction, SimState, VisualEffect}};
+use crate::{entity_manager::EntityManager, enums_types::{AnimationType, Faction, SimState, VisualEffect}, particles::Particles};
 
-pub fn update(em: &mut EntityManager, dt: f32) {
-    entity_sim_state_machine(em, dt);
+pub fn update(em: &mut EntityManager, dt: f32, particles: &mut Particles) {
+    entity_sim_state_machine(em, dt, particles);
 }
 
-fn entity_sim_state_machine(em: &mut EntityManager, dt: f32) {
+fn entity_sim_state_machine(em: &mut EntityManager, dt: f32, particles: &mut Particles) {
     for fac in em.factions.iter() {
         if *fac.value() == Faction::Enemy {
             let state = em.sim_states.get_mut(fac.key()).unwrap();
@@ -63,6 +63,7 @@ fn entity_sim_state_machine(em: &mut EntityManager, dt: f32) {
                             return SimState::Dead { time: 0.0, target_time: 5.0 }
                         } 
                     } else {
+                        particles.spawn_particles(1000, entity_pos);
                         em.entity_trashcan.push(fac.key());
                     }
                     
@@ -78,6 +79,48 @@ fn entity_sim_state_machine(em: &mut EntityManager, dt: f32) {
                     }
 
                     if new_time >= *target_time {
+                        let model_transform = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
+                        let skellington = em.skellingtons.get_mut(fac.key()).unwrap();
+
+                        let bone_names: Vec<String> = {
+                            let anim = animator.animations.get(&animator.current_animation).unwrap();
+                            anim.model_animation_join.iter().map(|b| b.name.clone()).collect()
+                        };
+
+                        dbg!(&bone_names.len());
+
+                        let anim = animator.animations.get_mut(&animator.current_animation).unwrap();
+
+                        for bone_name in bone_names{
+                            if let Some(bone_world_model_space) = anim.get_raw_global_bone_transform_by_name(
+                                &bone_name,
+                                skellington,
+                                Mat4::IDENTITY,
+                            ) {
+                                let bone_world_space = model_transform * bone_world_model_space;
+                                let position = bone_world_space.w_axis.truncate();
+
+                                // You can randomize velocity or make it static for now
+                                particles.spawn_particles(10, position);
+                            }
+                        }
+
+
+                        // let model = Mat4::from_scale_rotation_translation(trans.scale, trans.rotation, trans.position);
+                        // let  anim = animator.animations.get_mut(&animator.current_animation).unwrap();
+                        // let skellington = em.skellingtons.get(fac.key()).unwrap();
+
+                        // if let Some(neck_transform_model_space) = anim.get_raw_global_bone_transform("mixamorig:Neck", skellington, Mat4::IDENTITY) {
+                        //     let world_transform = model * neck_transform_model_space;
+                        //     let neck_position = world_transform.w_axis.truncate();
+                        //     particles.spawn_particles(1000, neck_position);
+                        // }
+
+                        // if let Some(hip_transform_model_space) = anim.get_raw_global_bone_transform("mixamorig:Hips", skellington, Mat4::IDENTITY) {
+                        //     let world_transform = model * hip_transform_model_space;
+                        //     let neck_position = world_transform.w_axis.truncate();
+                        //     particles.spawn_particles(1000, neck_position);
+                        // }
                         em.entity_trashcan.push(fac.key());
                     }
 
