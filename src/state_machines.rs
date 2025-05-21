@@ -1,12 +1,12 @@
 use glam::{Mat4, Vec3};
 
-use crate::{entity_manager::EntityManager, enums_types::{AnimationType, Faction, SimState, VisualEffect}, particles::Particles};
+use crate::{entity_manager::EntityManager, enums_types::{AnimationType, Faction, SimState, VisualEffect}, particles::ParticleSystem};
 
-pub fn update(em: &mut EntityManager, dt: f32, particles: &mut Particles) {
+pub fn update(em: &mut EntityManager, dt: f32, particles: &mut ParticleSystem) {
     entity_sim_state_machine(em, dt, particles);
 }
 
-fn entity_sim_state_machine(em: &mut EntityManager, dt: f32, particles: &mut Particles) {
+fn entity_sim_state_machine(em: &mut EntityManager, dt: f32, particles: &mut ParticleSystem) {
     for fac in em.factions.iter() {
         if *fac.value() == Faction::Enemy {
             let state = em.sim_states.get_mut(fac.key()).unwrap();
@@ -63,7 +63,7 @@ fn entity_sim_state_machine(em: &mut EntityManager, dt: f32, particles: &mut Par
                             return SimState::Dead { time: 0.0, target_time: 5.0 }
                         } 
                     } else {
-                        particles.spawn_particles(1000, entity_pos);
+                        particles.low_poly_explosion(1000, entity_pos);
                         em.entity_trashcan.push(fac.key());
                     }
                     
@@ -101,7 +101,7 @@ fn entity_sim_state_machine(em: &mut EntityManager, dt: f32, particles: &mut Par
                                 let position = bone_world_space.w_axis.truncate();
 
                                 // You can randomize velocity or make it static for now
-                                particles.spawn_particles(100, position);
+                                particles.low_poly_explosion(100, position);
                             }
                         }
 

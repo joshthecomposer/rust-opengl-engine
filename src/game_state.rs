@@ -7,7 +7,7 @@ use glfw::{Context, Glfw, GlfwReceiver, Key, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, debug::{gizmos::Cylinder, write::write_data}, entity_manager::{self, EntityManager}, enums_types::{AnimationType, CameraState, EntityType, Faction, ShaderType, SimState, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, particles::Particles, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::{font::{self, FontManager}, imgui::ImguiManager}};
+use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, debug::{gizmos::Cylinder, write::write_data}, entity_manager::{self, EntityManager}, enums_types::{AnimationType, CameraState, EntityType, Faction, ShaderType, SimState, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, particles::{Emitter, ParticleSystem}, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::{font::{self, FontManager}, imgui::ImguiManager}};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -45,7 +45,7 @@ pub struct GameState {
     pub font_manager: FontManager,
     pub fps: u32,
     pub last_fps_update: f32,
-    pub particles: Particles,
+    pub particles: ParticleSystem,
 }
 
 impl GameState {
@@ -154,10 +154,8 @@ impl GameState {
         font_manager.load_chars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:,.!?()[]{}<>");
         font_manager.setup_buffers();
 
-        let mut particles = Particles::new();
-        particles.setup_opengl();
-
-        write_data(entity_manager.animators.first().unwrap().value().animations.get(&AnimationType::Idle).unwrap().bone_transforms.clone(), "test.txt");
+        let mut particles = ParticleSystem::new();
+        particles.low_poly_fountain(50, Vec3::splat(0.0));
 
         Self {
             delta_time: 0.0,
@@ -217,7 +215,7 @@ impl GameState {
                     match key {
                         glfw::Key::G => {
                             if action == glfw::Action::Press {
-                                self.particles.spawn_particles(1000, Vec3::splat(0.0));
+                                self.particles.low_poly_explosion(50, Vec3::splat(0.0));
                             }
                         },
                         _ => {}
@@ -233,6 +231,16 @@ impl GameState {
     }
 
     pub fn update(&mut self) {
+        // CALC DELTA TIME
+        let current_frame = self.glfw.get_time() as f32;
+        self.delta_time = current_frame - self.last_frame;
+        self.last_frame = current_frame;
+        self.elapsed += self.delta_time;
+
+        if self.delta_time <= 0.0 {
+            return;
+        }
+
         self.particles.update(self.delta_time);
 
         if let Some(player_entry) = self.entity_manager.factions.iter().find(|f| f.value() == &Faction::Player) {
@@ -261,11 +269,6 @@ impl GameState {
             }
         }
 
-        // CALC DELTA TIME
-        let current_frame = self.glfw.get_time() as f32;
-        self.delta_time = current_frame - self.last_frame;
-        self.last_frame = current_frame;
-        self.elapsed += self.delta_time;
 
         // SHOULD WE QUIT THE GAME?
         if self.paused { return; }
