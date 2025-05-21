@@ -9,8 +9,12 @@ pub struct Emitter {
     pub lifetimes: Vec<f32>,
     pub velocities: Vec<Vec3>,
     pub scales: Vec<Vec3>,
+    pub rotation_speeds: Vec<f32>,
+    pub rotation_offsets: Vec<f32>,
+
     pub count: usize,
     pub alive: bool,
+    pub emit_type: String,
 
     pub pps: usize,
     pub emit_accumulator: f32,
@@ -25,8 +29,13 @@ impl Emitter {
             lifetimes: vec![],
             velocities: vec![],
             scales: vec![],
+
+            rotation_speeds: vec![],
+            rotation_offsets: vec![],
             count: 0,
             alive: true,
+            emit_type: "".to_string(),
+
             pps: 0,
             emit_accumulator: 0.0,
             origin: Vec3::splat(1.0),
@@ -41,27 +50,71 @@ impl Emitter {
 
         shader.activate();
 
-        for i in 0..self.count {
-            let view = camera.view;
-            let view_rot = Mat3::from_cols(
-                view.x_axis.truncate(),
-                view.y_axis.truncate(),
-                view.z_axis.truncate(),
-            );
-            let inv_view_rot = view_rot.transpose();
-            let model_rot = Mat4::from_mat3(inv_view_rot);
-            let model = Mat4::from_translation(self.positions[i]) * model_rot * Mat4::from_scale(self.scales[i]);
+        match self.emit_type.as_str() {
+            "Smoke" => {
+                for i in 0..self.count {
+                    let view = camera.view;
+                    let view_rot = Mat3::from_cols(
+                        view.x_axis.truncate(),
+                        view.y_axis.truncate(),
+                        view.z_axis.truncate(),
+                    );
+                    let inv_view_rot = view_rot.transpose();
+                    let model_rot = Mat4::from_mat3(inv_view_rot);
+                    let t = self.times_alive[i] / self.lifetimes[i];
+                    let growth = 1.0 + t * 1.5; // increase size as it lives
+                    let scale = self.scales[i] * growth;
 
-            shader.set_mat4("model", model);
-            shader.set_mat4("view", camera.view);
-            shader.set_mat4("projection", camera.projection);
+                    let t = self.times_alive[i];
+                    let rotation = self.rotation_offsets[i] + self.rotation_speeds[i] * t;
+                    let z_rotation = Mat4::from_rotation_z(rotation);
 
-            unsafe {
-                gl_call!(gl::BindVertexArray(vao));
-                gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 6));
-                gl_call!(gl::BindVertexArray(0));
-            }
+                    let model = Mat4::from_translation(self.positions[i])
+                    * model_rot
+                    * z_rotation
+                    * Mat4::from_scale(scale);
+
+                    let alpha = (1.0 - t) * 1.0; // fade out
+
+                    shader.set_mat4("model", model);
+                    shader.set_mat4("view", camera.view);
+                    shader.set_mat4("projection", camera.projection);
+                    shader.set_float("particle_alpha", alpha);
+
+                    unsafe {
+                        gl_call!(gl::BindVertexArray(vao));
+                        gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 6));
+                        gl_call!(gl::BindVertexArray(0));
+                    }
+                }
+            },
+            _ => {
+                for i in 0..self.count {
+                    let view = camera.view;
+                    let view_rot = Mat3::from_cols(
+                        view.x_axis.truncate(),
+                        view.y_axis.truncate(),
+                        view.z_axis.truncate(),
+                    );
+                    let inv_view_rot = view_rot.transpose();
+                    let model_rot = Mat4::from_mat3(inv_view_rot);
+                    let model = Mat4::from_translation(self.positions[i]) * model_rot * Mat4::from_scale(self.scales[i]);
+
+                    shader.set_mat4("model", model);
+                    shader.set_mat4("view", camera.view);
+                    shader.set_mat4("projection", camera.projection);
+                    shader.set_float("particle_alpha", 0.67);
+
+                    unsafe {
+                        gl_call!(gl::BindVertexArray(vao));
+                        gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 6));
+                        gl_call!(gl::BindVertexArray(0));
+
+                    }
+                }
+            },
         }
+
     }
 }
 
@@ -133,32 +186,43 @@ impl ParticleSystem {
             emitter.lifetimes.push(lifetime);
             emitter.scales.push(scale);
             emitter.times_alive.push(0.0);
+            emitter.rotation_speeds.push(0.0);
+            emitter.rotation_offsets.push(0.0);
         }
 
         emitter.count = count;
         self.emitters.push(emitter);
     }
 
-    pub fn spawn_continuous_emitter(&mut self, pps: usize, origin: Vec3) {
+    pub fn spawn_continuous_emitter(&mut self, pps: usize, origin: Vec3, emit_type: &str) {
         let mut emitter = Emitter::new();
         emitter.pps = pps;
         emitter.origin = origin;
+        emitter.emit_type = emit_type.to_string();
         self.emitters.push(emitter);
     }
 
     pub fn update(&mut self, dt: f32) {
-        let gravity = vec3(0.0, -6.0, 0.0);
+        let mut gravity = vec3(0.0, 0.0, 0.0);
 
         for emitter in self.emitters.iter_mut() {
+            match emitter.emit_type.as_str() {
+                "Smoke" => {
+                    gravity.y = 0.0;
+                },
+                _ => {
+                    gravity.y = -9.8;
+                }
+            }
             if emitter.pps > 0 {
                 emitter.emit_accumulator += dt;
                 let seconds_per_particle = 1.0 / emitter.pps as f32;
 
                 while emitter.emit_accumulator >= seconds_per_particle {
                     emitter.emit_accumulator -= seconds_per_particle;
-                    Self::spawn_particle(emitter);
+                            Self::spawn_particle(emitter);
+                    }
                 }
-            }
 
             let mut i = 0;
             while i < emitter.count {
@@ -169,6 +233,8 @@ impl ParticleSystem {
                     emitter.times_alive.swap(i, last);
                     emitter.lifetimes.swap(i, last);
                     emitter.velocities.swap(i, last);
+                    emitter.rotation_speeds.swap(i, last);
+                    emitter.rotation_offsets.swap(i, last);
 
                     emitter.count -= 1;
                 } else {
@@ -205,14 +271,17 @@ impl ParticleSystem {
 
         let x = radius * angle.cos();
         let z = radius * angle.sin();
-        let position = emitter.origin + vec3(x, 0.0, z);
+        let position = emitter.origin;
 
         let outward = vec3(x, 0.0, z).normalize_or_zero();
-        let upward = vec3(0.0, rng.random_range(2.0..5.0), 0.0);
-        let velocity = outward * rng.random_range(1.0..2.0) + upward;
+        let upward = vec3(0.0, rng.random_range(1.5..2.5), 0.0);
+        let velocity = outward * rng.random_range(0.5..0.8) + upward;
 
-        let lifetime = rng.random_range(3.0..5.5);
-        let scale = Vec3::splat(rng.random_range(0.009..0.013));
+        let lifetime = rng.random_range(1.0..2.0);
+        let scale = Vec3::splat(rng.random_range(0.09..0.10));
+
+        let rotation_speed = rng.random_range(-2.0..2.0); // Radians per second
+        let rotation_offset = rng.random_range(0.0..std::f32::consts::TAU);
 
         // TODO: Instead allocate the right size at the beginning by multiplying the particles per second by the lifetimes
         if emitter.count < emitter.positions.len() {
@@ -222,12 +291,16 @@ impl ParticleSystem {
             emitter.lifetimes[i] = lifetime;
             emitter.scales[i] = scale;
             emitter.times_alive[i] = 0.0;
+            emitter.rotation_speeds[i] = rotation_speed;
+            emitter.rotation_offsets[i] = rotation_offset;
         } else {
             emitter.positions.push(position);
             emitter.velocities.push(velocity);
             emitter.lifetimes.push(lifetime);
             emitter.scales.push(scale);
             emitter.times_alive.push(0.0);
+            emitter.rotation_speeds.push(rotation_speed);
+            emitter.rotation_offsets.push(rotation_offset);
         }
         emitter.count += 1;
     }

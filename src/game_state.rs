@@ -155,7 +155,7 @@ impl GameState {
         font_manager.setup_buffers();
 
         let mut particles = ParticleSystem::new();
-        particles.spawn_continuous_emitter(50, Vec3::splat(0.0));
+        particles.spawn_continuous_emitter(50, Vec3::splat(0.0), "Smoke");
 
         Self {
             delta_time: 0.0,
