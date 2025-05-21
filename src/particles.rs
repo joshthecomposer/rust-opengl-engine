@@ -108,7 +108,7 @@ impl ParticleSystem {
         }
     }
 
-    pub fn low_poly_explosion(&mut self, count: usize, origin: Vec3) {
+    pub fn spawn_oneshot_emitter(&mut self, count: usize, origin: Vec3) {
         let mut rng = rng();
 
         let mut emitter = Emitter::new();
@@ -139,7 +139,7 @@ impl ParticleSystem {
         self.emitters.push(emitter);
     }
 
-    pub fn low_poly_fountain(&mut self, pps: usize, origin: Vec3) {
+    pub fn spawn_continuous_emitter(&mut self, pps: usize, origin: Vec3) {
         let mut emitter = Emitter::new();
         emitter.pps = pps;
         emitter.origin = origin;
@@ -147,7 +147,7 @@ impl ParticleSystem {
     }
 
     pub fn update(&mut self, dt: f32) {
-        let gravity = vec3(0.0, -9.8, 0.0);
+        let gravity = vec3(0.0, -6.0, 0.0);
 
         for emitter in self.emitters.iter_mut() {
             if emitter.pps > 0 {
@@ -179,6 +179,11 @@ impl ParticleSystem {
                     if emitter.positions[i].y <= 0.0 {
                         emitter.positions[i].y = 0.0;
                         emitter.velocities[i].y *= -0.3;
+
+
+                        let friction = 0.9; // Lower = more friction, e.g., 0.8 retains 80% 
+                        emitter.velocities[i].x *= friction;
+                        emitter.velocities[i].z *= friction;
                     }
 
                     i += 1;
@@ -203,7 +208,7 @@ impl ParticleSystem {
         let position = emitter.origin + vec3(x, 0.0, z);
 
         let outward = vec3(x, 0.0, z).normalize_or_zero();
-        let upward = vec3(0.0, rng.random_range(1.0..3.0), 0.0);
+        let upward = vec3(0.0, rng.random_range(2.0..5.0), 0.0);
         let velocity = outward * rng.random_range(1.0..2.0) + upward;
 
         let lifetime = rng.random_range(3.0..5.5);

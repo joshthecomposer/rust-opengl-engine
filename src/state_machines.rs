@@ -63,7 +63,7 @@ fn entity_sim_state_machine(em: &mut EntityManager, dt: f32, particles: &mut Par
                             return SimState::Dead { time: 0.0, target_time: 5.0 }
                         } 
                     } else {
-                        particles.low_poly_explosion(1000, entity_pos);
+                        particles.spawn_oneshot_emitter(1000, entity_pos);
                         em.entity_trashcan.push(fac.key());
                     }
                     
@@ -101,7 +101,7 @@ fn entity_sim_state_machine(em: &mut EntityManager, dt: f32, particles: &mut Par
                                 let position = bone_world_space.w_axis.truncate();
 
                                 // You can randomize velocity or make it static for now
-                                particles.low_poly_explosion(100, position);
+                                particles.spawn_oneshot_emitter(100, position);
                             }
                         }
 

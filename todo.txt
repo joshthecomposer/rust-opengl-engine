@@ -53,6 +53,11 @@
 // TODO: This terrain adjustment should be in the collision system file.
 
 ===========================================
+./src\particles.rs:217
+===========================================
+// TODO: Instead allocate the right size at the beginning by multiplying the particles per second by the lifetimes
+
+===========================================
 ./src\renderer.rs:326
 ===========================================
 // TODO: DOn't clone, we really need an enum here.

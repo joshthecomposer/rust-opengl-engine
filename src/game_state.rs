@@ -155,7 +155,7 @@ impl GameState {
         font_manager.setup_buffers();
 
         let mut particles = ParticleSystem::new();
-        particles.low_poly_fountain(50, Vec3::splat(0.0));
+        particles.spawn_continuous_emitter(50, Vec3::splat(0.0));
 
         Self {
             delta_time: 0.0,
@@ -215,7 +215,7 @@ impl GameState {
                     match key {
                         glfw::Key::G => {
                             if action == glfw::Action::Press {
-                                self.particles.low_poly_explosion(50, Vec3::splat(0.0));
+                                self.particles.spawn_oneshot_emitter(50, Vec3::splat(0.0));
                             }
                         },
                         _ => {}
@@ -358,7 +358,6 @@ impl GameState {
             self.renderer.shaders.get_mut(&ShaderType::Text).unwrap(),
             0.5,
         );
-
         self.particles.render(
             self.renderer.shaders.get_mut(&ShaderType::Particles).unwrap(),
             &self.camera,
