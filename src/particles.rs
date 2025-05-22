@@ -1,7 +1,8 @@
 use glam::{vec3, Mat3, Mat4, Quat, Vec3};
+use image::GenericImageView;
 use rand::{rng, Rng};
 
-use crate::{camera::Camera, gl_call, shaders::Shader};
+use crate::{camera::Camera, gl_call, lights::Lights, shaders::Shader};
 
 pub struct Emitter {
     pub positions: Vec<Vec3>,
@@ -19,6 +20,7 @@ pub struct Emitter {
     pub pps: usize,
     pub emit_accumulator: f32,
     pub origin: Vec3,
+    pub texture: Option<u32>,
 }
 
 impl Emitter {
@@ -39,6 +41,7 @@ impl Emitter {
             pps: 0,
             emit_accumulator: 0.0,
             origin: Vec3::splat(1.0),
+            texture: None,
         }
     }
 
@@ -46,6 +49,7 @@ impl Emitter {
         unsafe {
             gl::Enable(gl::BLEND);
             gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA);
+            gl_call!(gl::DepthMask(gl::FALSE));
         }
 
         shader.activate();
@@ -61,8 +65,8 @@ impl Emitter {
                     );
                     let inv_view_rot = view_rot.transpose();
                     let model_rot = Mat4::from_mat3(inv_view_rot);
-                    let t = self.times_alive[i] / self.lifetimes[i];
-                    let growth = 1.0 + t * 1.5; // increase size as it lives
+                    let t_norm = self.times_alive[i] / self.lifetimes[i];
+                    let growth = 1.0 + t_norm * 8.0; // increase size as it lives
                     let scale = self.scales[i] * growth;
 
                     let t = self.times_alive[i];
@@ -74,18 +78,35 @@ impl Emitter {
                     * z_rotation
                     * Mat4::from_scale(scale);
 
-                    let alpha = (1.0 - t) * 1.0; // fade out
+                    let alpha = 0.4 - t_norm; // fade out
 
                     shader.set_mat4("model", model);
                     shader.set_mat4("view", camera.view);
                     shader.set_mat4("projection", camera.projection);
                     shader.set_float("particle_alpha", alpha);
 
+                    if let Some(texture) = self.texture {
+                        shader.set_int("texture1", 1);
+                        shader.set_bool("has_tex", true);
+
+                        unsafe {
+                            gl_call!(gl::ActiveTexture(gl::TEXTURE1));
+                            gl_call!(gl::BindTexture(gl::TEXTURE_2D, texture));
+                        }
+                    }
+
                     unsafe {
                         gl_call!(gl::BindVertexArray(vao));
                         gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 6));
                         gl_call!(gl::BindVertexArray(0));
+
                     }
+                }
+
+                shader.set_bool("has_tex", false);
+                unsafe { 
+                    gl_call!(gl::BindTexture(gl::TEXTURE_2D, 0));
+                    gl_call!(gl::DepthMask(gl::TRUE)); 
                 }
             },
             _ => {
@@ -104,6 +125,7 @@ impl Emitter {
                     shader.set_mat4("view", camera.view);
                     shader.set_mat4("projection", camera.projection);
                     shader.set_float("particle_alpha", 0.67);
+                    shader.set_bool("has_tex", false);
 
                     unsafe {
                         gl_call!(gl::BindVertexArray(vao));
@@ -112,6 +134,7 @@ impl Emitter {
 
                     }
                 }
+                unsafe { gl_call!(gl::DepthMask(gl::TRUE)); }
             },
         }
 
@@ -128,13 +151,15 @@ impl ParticleSystem {
         let mut vao = 0;
         let mut vbo = 0;
 
-        let quad_vertices: [f32; 18] = [
-            -1.0,  1.0, 0.0,
-            -1.0, -1.0, 0.0,
-            1.0, -1.0, 0.0,
-            -1.0,  1.0, 0.0,
-            1.0, -1.0, 0.0,
-            1.0,  1.0, 0.0,
+        let quad_vertices: [f32; 30] = [
+            // coords            // tex_coords
+            -1.0,  1.0, 0.0,     0.0, 1.0,
+            -1.0, -1.0, 0.0,     0.0, 0.0,
+             1.0, -1.0, 0.0,     1.0, 0.0,
+
+            -1.0,  1.0, 0.0,     0.0, 1.0,
+             1.0, -1.0, 0.0,     1.0, 0.0,
+             1.0,  1.0, 0.0,     1.0, 1.0,
         ];
 
         unsafe {
@@ -150,8 +175,15 @@ impl ParticleSystem {
                 gl::STATIC_DRAW,
             ));
 
+            let stride = (5 * std::mem::size_of::<f32>()) as i32;
+
             gl_call!(gl::EnableVertexAttribArray(0));
-            gl_call!(gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, 3 * 4, std::ptr::null()));
+            gl_call!(gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, stride, std::ptr::null()));
+
+            gl_call!(gl::EnableVertexAttribArray(1));
+            gl_call!(gl::VertexAttribPointer(1, 2, gl::FLOAT, gl::FALSE, stride, (3 * std::mem::size_of::<f32>()) as *const _));
+
+            gl_call!(gl::BindBuffer(gl::ARRAY_BUFFER, 0));
             gl_call!(gl::BindVertexArray(0));
         }
 
@@ -194,12 +226,50 @@ impl ParticleSystem {
         self.emitters.push(emitter);
     }
 
-    pub fn spawn_continuous_emitter(&mut self, pps: usize, origin: Vec3, emit_type: &str) {
-        let mut emitter = Emitter::new();
+    pub fn spawn_continuous_emitter(&mut self, pps: usize, origin: Vec3, emit_type: &str, texture_path: Option<&str>) {
+            let mut emitter = Emitter::new();
+            
+        unsafe {
+            if let Some(texture_path) = texture_path {
+                let mut tex = 0;
+
+                gl_call!(gl::GenTextures(1, &mut tex));
+                gl_call!(gl::BindTexture(gl::TEXTURE_2D, tex));
+                gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32));
+                gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32));
+                gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32));
+                gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as i32));
+
+                let img = match image::open(texture_path) {
+                    Ok(img) => img,
+                    _ => panic!("error opening smoke texture"),
+                };
+
+                let (img_width, img_height) = img.dimensions();
+                let rgba = img.to_rgba8();
+                let raw = rgba.as_raw();
+
+                gl_call!(gl::TexImage2D(
+                    gl::TEXTURE_2D,
+                    0,
+                    gl::RGBA8 as i32,
+                    img_width as i32,
+                    img_height as i32,
+                    0,
+                    gl::RGBA,
+                    gl::UNSIGNED_BYTE,
+                    raw.as_ptr().cast(),
+                ));
+
+                emitter.texture = Some(tex);
+            }
+        }
+
         emitter.pps = pps;
         emitter.origin = origin;
         emitter.emit_type = emit_type.to_string();
         self.emitters.push(emitter);
+
     }
 
     pub fn update(&mut self, dt: f32) {
@@ -223,7 +293,6 @@ impl ParticleSystem {
                             Self::spawn_particle(emitter);
                     }
                 }
-
             let mut i = 0;
             while i < emitter.count {
                 if emitter.times_alive[i] >= emitter.lifetimes[i] {
@@ -238,6 +307,11 @@ impl ParticleSystem {
 
                     emitter.count -= 1;
                 } else {
+                    let t_norm = (emitter.times_alive[i] / emitter.lifetimes[i]).clamp(0.0, 1.0);
+
+                    let velocity_scale = 1.0 - t_norm * t_norm;
+                    emitter.velocities[i] *= velocity_scale;
+
                     emitter.velocities[i] += gravity * dt;
                     emitter.positions[i] += emitter.velocities[i] * dt;
                     emitter.times_alive[i] += dt;
@@ -274,13 +348,13 @@ impl ParticleSystem {
         let position = emitter.origin;
 
         let outward = vec3(x, 0.0, z).normalize_or_zero();
-        let upward = vec3(0.0, rng.random_range(1.5..2.5), 0.0);
+        let upward = vec3(0.0, rng.random_range(2.0..3.8), 0.0);
         let velocity = outward * rng.random_range(0.5..0.8) + upward;
 
-        let lifetime = rng.random_range(1.0..2.0);
-        let scale = Vec3::splat(rng.random_range(0.09..0.10));
+        let lifetime = rng.random_range(5.0..7.5);
+        let scale = Vec3::splat(rng.random_range(0.1..0.24));
 
-        let rotation_speed = rng.random_range(-2.0..2.0); // Radians per second
+        let rotation_speed = rng.random_range(-1.0..1.0); // Radians per second
         let rotation_offset = rng.random_range(0.0..std::f32::consts::TAU);
 
         // TODO: Instead allocate the right size at the beginning by multiplying the particles per second by the lifetimes

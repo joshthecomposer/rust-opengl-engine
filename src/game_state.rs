@@ -155,7 +155,8 @@ impl GameState {
         font_manager.setup_buffers();
 
         let mut particles = ParticleSystem::new();
-        particles.spawn_continuous_emitter(50, Vec3::splat(0.0), "Smoke");
+        particles.spawn_continuous_emitter(50, Vec3::splat(0.0), "Smoke", Some("resources/textures/smoke.png"));
+         // particles.spawn_continuous_emitter(50, Vec3::splat(0.0), "Smoke", None);
 
         Self {
             delta_time: 0.0,
@@ -339,6 +340,11 @@ impl GameState {
         // ======================================
         self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, &mut self.sound_manager, self.fb_width, self.fb_height, self.elapsed);
 
+        self.particles.render(
+            self.renderer.shaders.get_mut(&ShaderType::Particles).unwrap(),
+            &self.camera,
+        );
+
         self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera, &mut self.entity_manager);
         let fps_now = (1.0 / self.delta_time.max(0.0001)) as u32;
 
@@ -357,10 +363,6 @@ impl GameState {
             self.fb_height as f32,
             self.renderer.shaders.get_mut(&ShaderType::Text).unwrap(),
             0.5,
-        );
-        self.particles.render(
-            self.renderer.shaders.get_mut(&ShaderType::Particles).unwrap(),
-            &self.camera,
         );
 
         self.window.swap_buffers();
