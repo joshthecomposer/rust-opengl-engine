@@ -404,6 +404,18 @@ impl ParticleSystem {
                     emitter.positions[i] += emitter.velocities[i] * dt;
                     emitter.times_alive[i] += dt;
 
+                    let sphere_center = emitter.origin;
+                    let radius = 10.0;
+
+                    let to_center = emitter.positions[i] - sphere_center;
+                    let distance = to_center.length();
+
+                    if distance > radius {
+                        let normal = to_center.normalize();
+                        emitter.positions[i] = sphere_center + normal * radius;
+                        emitter.velocities[i] = Vec3::ZERO;
+                    }
+
                     if emitter.positions[i].y <= 0.0 {
                         emitter.positions[i].y = 0.0;
                         emitter.velocities[i].y *= -0.3;
@@ -429,20 +441,20 @@ impl ParticleSystem {
     pub fn spawn_particle(emitter: &mut Emitter) {
         let mut rng = rng();
         let angle = rng.random_range(0.0..std::f32::consts::TAU);
-        let radius = rng.random_range(0.01..0.1);
+        let radius = rng.random_range(0.2..30.0);
 
         let x = radius * angle.cos();
         let z = radius * angle.sin();
         let position = emitter.origin;
 
         let outward = vec3(x, 0.0, z).normalize_or_zero();
-        let upward = vec3(0.0, rng.random_range(2.0..3.8), 0.0);
-        let velocity = outward * rng.random_range(0.5..0.8) + upward;
+        let upward = vec3(0.0, rng.random_range(-20.0..20.0), 0.0);
+        let velocity = outward * rng.random_range(2.0..30.0) + upward;
 
-        let lifetime = rng.random_range(5.0..7.5);
-        let scale = Vec3::splat(rng.random_range(0.1..0.24));
+        let lifetime = rng.random_range(6.0..15.0);
+        let scale = Vec3::splat(rng.random_range(1.0..3.0));
 
-        let rotation_speed = rng.random_range(-1.0..1.0); // Radians per second
+        let rotation_speed = rng.random_range(-3.0..3.0); // Radians per second
         let rotation_offset = rng.random_range(0.0..std::f32::consts::TAU);
 
         // TODO: Instead allocate the right size at the beginning by multiplying the particles per second by the lifetimes
