@@ -2,7 +2,7 @@ use glam::{Quat, Vec3};
 use glfw::{Action, MouseButton, PWindow, WindowEvent};
 use imgui::Drag;
 
-use crate::{animation::animation::Animator, camera::Camera, entity_manager::EntityManager, enums_types::CameraState, gl_call, lights::Lights, renderer::Renderer, sound::sound_manager::SoundManager};
+use crate::{animation::animation::Animator, camera::Camera, config::world_data::{EntityInstance, WorldData}, entity_manager::EntityManager, enums_types::{CameraState, EntityType, Faction}, gl_call, lights::Lights, renderer::Renderer, sound::sound_manager::SoundManager};
 
 pub struct ImguiManager {
     pub imgui: imgui::Context,
@@ -138,6 +138,41 @@ impl ImguiManager {
                 .size([500.0, 200.0], imgui::Condition::FirstUseEver)
                 .position([50.0, 250.0], imgui::Condition::FirstUseEver)
                 .build(|| {
+                    if ui.button("Save Entity State") {
+                        let mut save_data = WorldData {
+                            entities: vec![]
+                        };
+
+                        for e_type in em.entity_types.iter() {
+                            if *e_type.value() == EntityType::Terrain {
+                                continue;
+                            }
+
+                            if let (
+                                Some(faction),
+                                Some(trans),
+                            ) = (
+                                em.factions.get(e_type.key()),
+                                em.transforms.get(e_type.key()),
+                            ) {
+                                if *faction == Faction::Gizmo {
+                                    continue;
+                                }
+
+                                save_data.entities.push(
+                                    EntityInstance {
+                                        entity_type: e_type.value().clone(),
+                                        faction: faction.clone(),
+                                        position: trans.position.into(),
+                                        rotation: (trans.rotation * trans.original_rotation.inverse()).into(),
+                                    }
+                                );
+                            }
+                        }
+
+                        save_data.write_readable_world_data("config/world_data.toml");
+                    }
+
                     ui.separator();
 
                     for i in em.selected.iter() {
@@ -199,4 +234,6 @@ impl ImguiManager {
 
         self.renderer.render(&mut self.imgui);
     }
+
 }
+

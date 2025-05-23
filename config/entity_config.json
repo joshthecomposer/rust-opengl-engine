@@ -1,12 +1,9 @@
 {
-	"entities": [
-		{
-			"entity_type": "YRobot",
-			"position": [4.0, 0.0, 3.0],
-			"scale": [0.01, 0.01, 0.01],
+	"entity_types":{
+		"YRobot": {
 			"__note__": "use Quat::from_rotation_x()",
-			"rotation": "-FRAC_PI_2",
-			"faction": "Player",
+			"rot_correction": "-FRAC_PI_2",
+			"scale_correction": [0.01, 0.01, 0.01],
 			"mesh_path": "resources/models/animated/002_y_robot/y_robot_model_FINAL.txt", 
 			"bone_path":"resources/models/animated/002_y_robot/y_robot_bones_FINAL.txt",
 			"hit_cyl": { "r": 0.22, "h": 1.6 },
@@ -30,38 +27,10 @@
 				}
 			]
 		},
-		{
-			"entity_type": "YRobot",
-			"position": [-10.15, 0.0, -3.0],
-			"scale": [0.01, 0.01, 0.01],
+		"MooseMan": {
 			"__note__": "use Quat::from_rotation_x()",
-			"rotation": "-FRAC_PI_2",
-			"faction": "Enemy",
-			"mesh_path": "resources/models/animated/002_y_robot/y_robot_model_FINAL.txt", 
-			"bone_path":"resources/models/animated/002_y_robot/y_robot_bones_FINAL.txt",
-			"hit_cyl": { "r": 0.22, "h": 1.6 },
-			"animation_properties" : [
-				{
-					"name": "Run",
-					"one_shots": {
-						"footstep": [7, 18]
-					},
-					"continuous_sounds": []
-				},
-				{
-					"name": "Idle",
-					"one_shots": { },
-					"continuous_sounds": []
-				}
-			]
-		},
-		{
-			"entity_type": "MooseMan",
-			"position": [0.0, 0.0, 4.0],
-			"scale": [0.013, 0.013, 0.013],
-			"__note__": "use Quat::from_rotation_x()",
-			"rotation": "-FRAC_PI_2",
-			"faction": "Enemy",
+			"rot_correction": "-FRAC_PI_2",
+			"scale_correction": [0.013, 0.013, 0.013],
 			"mesh_path": "resources/models/animated/001_moose/moose_model_FINAL.txt", 
 			"bone_path": "resources/models/animated/001_moose/moose_bones_FINAL.txt",
 			"hit_cyl": { "r": 0.5, "h": 2.0 },
@@ -75,79 +44,23 @@
 				}
 			]
 		},
-		{
-			"entity_type": "TreeFoliage",
-			"position": [-4.2, 0.0, -3.1],
-			"scale": [1.0, 1.0, 1.0],
+		"TreeFoliage": {
 			"__note__": "use Quat::from_rotation_x()",
-			"rotation": "",
-			"faction": "Static",
+			"rot_correction": "",
+			"scale_correction": [1.0, 1.0, 1.0],
 			"mesh_path": "resources/models/static/trees/001_tree_foliage_model.txt", 
 			"bone_path":"",
 			"hit_cyl": { "r": 0.1, "h": 2.0 },
 			"animation_properties" : []
 		},
-		{
-			"entity_type": "TreeTrunk",
-			"position": [-4.2, 0.0, -3.1],
-			"scale": [1.0, 1.0, 1.0],
+		"TreeTrunk": {
 			"__note__": "use Quat::from_rotation_x()",
-			"rotation": "",
-			"faction": "Static",
-			"mesh_path": "resources/models/static/trees/001_tree_trunk_model.txt", 
-			"bone_path":"",
-			"hit_cyl": { "r": 0.1, "h": 2.0 },
-			"animation_properties" : []
-		},
-		{
-			"entity_type": "TreeFoliage",
-			"position": [3.0, 0.0, 2.8],
-			"scale": [1.0, 1.0, 1.0],
-			"__note__": "use Quat::from_rotation_x()",
-			"rotation": "",
-			"faction": "Static",
-			"mesh_path": "resources/models/static/trees/001_tree_foliage_model.txt", 
-			"bone_path":"",
-			"hit_cyl": { "r": 0.1, "h": 2.0 },
-			"animation_properties" : []
-		},
-		{
-			"entity_type": "TreeTrunk",
-			"position": [3.0, 0.0, 2.8],
-			"scale": [1.0, 1.0, 1.0],
-			"__note__": "use Quat::from_rotation_x()",
-			"rotation": "",
-			"faction": "Static",
-			"mesh_path": "resources/models/static/trees/001_tree_trunk_model.txt", 
-			"bone_path":"",
-			"hit_cyl": { "r": 0.1, "h": 2.0 },
-			"animation_properties" : []
-		},
-
-
-		{
-			"entity_type": "TreeFoliage",
-			"position": [5.0, 0.0, -2.1],
-			"scale": [1.0, 1.0, 1.0],
-			"__note__": "use Quat::from_rotation_x()",
-			"rotation": "",
-			"faction": "Static",
-			"mesh_path": "resources/models/static/trees/001_tree_foliage_model.txt", 
-			"bone_path":"",
-			"hit_cyl": { "r": 0.1, "h": 2.0 },
-			"animation_properties" : []
-		},
-		{
-			"entity_type": "TreeTrunk",
-			"position": [5.0, 0.0, -2.1],
-			"scale": [1.0, 1.0, 1.0],
-			"__note__": "use Quat::from_rotation_x()",
-			"rotation": "",
-			"faction": "Static",
+			"rot_correction": "",
+			"scale_correction": [1.0, 1.0, 1.0],
 			"mesh_path": "resources/models/static/trees/001_tree_trunk_model.txt", 
 			"bone_path":"",
 			"hit_cyl": { "r": 0.1, "h": 2.0 },
 			"animation_properties" : []
 		}
-	]
+	}
 }

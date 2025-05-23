@@ -6,7 +6,7 @@ use libc::EILSEQ;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-use crate::{animation::{animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model}, animation_system}, camera::Camera, collision_system, config::entity_config::{AnimationPropHelper, EntityConfig}, debug::gizmos::{Cuboid, Cylinder}, enums_types::{CellType, EntityType, Faction, Parent, Rotator, SimState, Transform, VisualEffect}, grid::Grid, movement_system, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, state_machines, terrain::Terrain};
+use crate::{animation::{animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model}, animation_system}, camera::Camera, collision_system, config::{entity_config::{AnimationPropHelper, EntityConfig}, world_data::WorldData}, debug::gizmos::{Cuboid, Cylinder}, enums_types::{CellType, EntityType, Faction, Parent, Rotator, SimState, Transform, VisualEffect}, grid::Grid, movement_system, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, state_machines, terrain::Terrain};
 
 pub struct EntityManager {
     pub next_entity_id: usize,
@@ -63,51 +63,58 @@ impl EntityManager {
         }
     }
 
-    pub fn populate_initial_entity_data(&mut self, ec: &mut EntityConfig) {
-        for entity in ec.entities.iter() {
-            let rotation = match entity.rotation.as_str() {
+    pub fn populate_initial_entity_data(&mut self, ec: &mut EntityConfig, wd: &mut WorldData) {
+        for instance in wd.entities.iter() {
+            let archetype = ec.entity_types.get(&instance.entity_type).unwrap();
+            let position = instance.position;
+            let rotation = instance.rotation;
+            let scale_correction = archetype.scale_correction;
+
+            let rot_correction = match archetype.rot_correction.as_str() {
                 "-FRAC_PI_2" => Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2),
                 _ => Quat::IDENTITY,
             };
-            match entity.faction {
+            match instance.faction {
                 Faction::Player | Faction::Enemy => {
                     self.create_animated_entity(
-                        entity.faction.clone(),
-                        vec3(entity.position[0], entity.position[1], entity.position[2]), 
-                        vec3(entity.scale[0], entity.scale[1], entity.scale[2]), 
-                        rotation, 
-                        &entity.mesh_path, 
-                        &entity.bone_path,
-                        &entity.animation_properties,
-                        entity.entity_type.clone(),
-                        entity.hit_cyl.clone(),
+                        instance.faction.clone(),
+                        position.into(), 
+                        scale_correction.into(), 
+                        rot_correction, 
+                        Quat::from_xyzw(rotation[0], rotation[1], rotation[2], rotation[3]),
+                        &archetype.mesh_path, 
+                        &archetype.bone_path,
+                        &archetype.animation_properties,
+                        instance.entity_type.clone(),
+                        archetype.hit_cyl.clone(),
                     );
                 },
                 Faction::World | Faction::Static | Faction::Gizmo => {
                     self.create_static_entity(
-                        entity.entity_type.clone(),
-                        entity.faction.clone(),
-                        vec3(entity.position[0], entity.position[1], entity.position[2]), 
-                        vec3(entity.scale[0], entity.scale[1], entity.scale[2]), 
-                        rotation, 
-                        &entity.mesh_path, 
-                        entity.hit_cyl.clone(),
+                        instance.entity_type.clone(),
+                        instance.faction.clone(),
+                        position.into(), 
+                        scale_correction.into(), 
+                        rot_correction, 
+                        Quat::from_xyzw(rotation[0], rotation[1], rotation[2], rotation[3]),
+                        &archetype.mesh_path, 
+                        archetype.hit_cyl.clone(),
                     );
                 },
             }
         }
     }
 
-    pub fn create_static_entity(&mut self,entity_type: EntityType, faction: Faction, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str, cylinder: Cylinder) {
+    pub fn create_static_entity(&mut self,entity_type: EntityType, faction: Faction, position: Vec3, scale: Vec3, rot_correction: Quat,rotation: Quat, model_path: &str, cylinder: Cylinder) {
         self.factions.insert(self.next_entity_id, faction);
         self.entity_types.insert(self.next_entity_id, entity_type);
 
         let transform = Transform {
             position,
-            rotation,
+            rotation: rotation * rot_correction,
             scale,
 
-            original_rotation: rotation,
+            original_rotation: rot_correction,
         };
         self.transforms.insert(self.next_entity_id, transform);
 
@@ -152,13 +159,13 @@ impl EntityManager {
         self.next_entity_id += 1;
     }
 
-    pub fn create_animated_entity(&mut self, faction: Faction, position: Vec3, scale: Vec3, rotation: Quat, model_path: &str, animation_path: &str, animation_props: &[AnimationPropHelper], entity_type: EntityType, cylinder: Cylinder) {
+    pub fn create_animated_entity(&mut self, faction: Faction, position: Vec3, scale: Vec3, rot_correction: Quat, rotation: Quat, model_path: &str, animation_path: &str, animation_props: &[AnimationPropHelper], entity_type: EntityType, cylinder: Cylinder) {
         let transform = Transform {
             position,
-            rotation,
+            rotation: rotation * rot_correction,
             scale,
             
-            original_rotation: rotation,
+            original_rotation: rot_correction,
         };
 
         let (skellington, mut animator, animation) = import_bone_data(animation_path);
@@ -197,9 +204,11 @@ impl EntityManager {
             model = import_model_data(model_path, &animation);
         }         
 
+        let starting_rot = rotation * rot_correction;
+
         let rotator = Rotator {
-            cur_rot: rotation,
-            next_rot: rotation,
+            cur_rot: starting_rot,
+            next_rot: starting_rot,
             blend_factor: 0.0, 
             blend_time: 0.11,
         };

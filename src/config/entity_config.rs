@@ -6,7 +6,7 @@ use crate::{debug::gizmos::Cylinder, enums_types::{AnimationType, EntityType, Fa
 
 #[derive(Deserialize, Debug)]
 pub struct EntityConfig {
-    pub entities: Vec<EntityInstanceHelper>,
+    pub entity_types: HashMap<EntityType, EntityTypeHelper>
 }
 
 impl EntityConfig {
@@ -31,12 +31,9 @@ pub struct AnimationPropHelper {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct EntityInstanceHelper {
-    pub entity_type: EntityType,
-    pub position: [f32; 3],
-    pub scale: [f32; 3],
-    pub rotation: String,
-    pub faction: Faction,
+pub struct EntityTypeHelper {
+    pub rot_correction: String,
+    pub scale_correction: [f32; 3],
     pub mesh_path: String,
     pub bone_path: String,
     pub hit_cyl: Cylinder,

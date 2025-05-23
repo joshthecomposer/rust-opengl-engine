@@ -2,7 +2,7 @@
 use std::{fmt::{self, Display, Formatter}, str::FromStr};
 
 use glam::{Mat4, Quat, Vec3};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Eq, PartialEq, Hash)]
 pub enum VaoType {
@@ -65,7 +65,7 @@ pub struct Transform {
     pub original_rotation: Quat,
 }
 
-#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Hash, Eq, Serialize)]
 pub enum EntityType {
     Donut,
     TreeFoliage,
@@ -92,13 +92,25 @@ impl Display for EntityType {
 
 
 
-#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[derive(Clone, Debug, PartialEq, Deserialize, Serialize)]
 pub enum Faction {
     Enemy,
     Static,
     World,
     Player,
     Gizmo,
+}
+
+impl Display for Faction {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            Faction::Enemy => write!(f, "Enemy"),
+            Faction::Static => write!(f, "Static"),
+            Faction::World => write!(f, "World"),
+            Faction::Player=> write!(f, "Player"),
+            Faction::Gizmo => write!(f, "Gizmo"),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
