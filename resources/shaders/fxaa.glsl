@@ -43,32 +43,13 @@ const float CA_INTENSITY = 0.0001;
 //   - Increase FXAA_REDUCE_MIN (e.g., 0.01)
 //   - Increase FXAA_REDUCE_MUL (e.g., 0.2)
 //   - Decrease FXAA_SPAN_MAX (e.g., 4.0)
-const float FXAA_REDUCE_MIN = 0.00001; // Equivalent to 0.0078125
-const float FXAA_REDUCE_MUL = 0.005; // Equivalent to 0.125
-const float FXAA_SPAN_MAX   = 128.0;
+const float FXAA_REDUCE_MIN = 0.01; // Equivalent to 0.0078125
+const float FXAA_REDUCE_MUL = 0.05; // Equivalent to 0.125
+const float FXAA_SPAN_MAX   = 16.0;
 
 void main() {
     vec2 texel = 1.0 / resolution;
     vec2 currentTexCoords = TexCoords;
-
-    // --- 1. Apply Chromatic Aberration (Subtle) ---
-    // We sample the original texture with slight offsets for each color channel.
-    // The offsets are based on the texture coordinate to create a horizontal fringe.
-    // You can modify `CA_INTENSITY` above to control its strength.
-
-    float offset_r_x = currentTexCoords.x * CA_INTENSITY;
-    float offset_b_x = -currentTexCoords.x * CA_INTENSITY; // Opposite direction for blue
-
-    vec3 color_r = texture(screenTexture, currentTexCoords + vec2(offset_r_x, 0.0)).rgb;
-    vec3 color_g = texture(screenTexture, currentTexCoords).rgb;
-    vec3 color_b = texture(screenTexture, currentTexCoords + vec2(offset_b_x, 0.0)).rgb;
-
-    // Combine the color channels from the shifted samples
-    vec3 finalColor = vec3(color_r.r, color_g.g, color_b.b);
-
-
-    // --- 2. Apply FXAA on the result of Chromatic Aberration ---
-    // (Or you could apply CA *after* FXAA, experiment to see what you prefer)
 
     vec3 rgbNW = texture(screenTexture, currentTexCoords + vec2(-1.0, -1.0) * texel).rgb;
     vec3 rgbNE = texture(screenTexture, currentTexCoords + vec2(1.0, -1.0) * texel).rgb;
@@ -105,16 +86,7 @@ void main() {
 
     float lumaResult2 = dot(result2, luma);
 
-    // Apply the FXAA blending. If the blended result is outside the min/max luma range,
-    // use the first sample result (more aggressive blend).
     vec3 final_fxaa_color = (lumaResult2 < lumaMin || lumaResult2 > lumaMax) ? result1 : result2;
 
-    // Instead of completely replacing the chromatic aberrated color, let's mix them.
-    // This allows you to combine the effects more naturally.
-    // The `rgbM` here is the original center pixel color, after chromatic aberration.
-    FragColor = vec4(mix(finalColor, final_fxaa_color, 0.5), 1.0); // Adjust mix factor (0.0 to 1.0) to control FXAA strength
-    // A mix factor of 1.0 will effectively make FXAA the dominant effect.
-    // A mix factor of 0.0 will leave only chromatic aberration.
-    // You might even just replace finalColor with final_fxaa_color if you want FXAA to completely supersede the CA.
-    // FragColor = vec4(final_fxaa_color, 1.0); // If you prefer FXAA to be the final pass.
+    FragColor = vec4(final_fxaa_color, 1.0); // Adjust mix factor (0.0 to 1.0) to control FXAA strength
 }
