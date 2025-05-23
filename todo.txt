@@ -23,7 +23,7 @@
 // TODO: Should foliage be a child of the tree trunk?? Then when doing things we iterate up the parent tree?
 
 ===========================================
-./src\game_state.rs:295
+./src\game_state.rs:299
 ===========================================
 // TODO: should we abstract this out somewhere?
 
@@ -51,6 +51,11 @@
 ./src\movement_system.rs:146
 ===========================================
 // TODO: This terrain adjustment should be in the collision system file.
+
+===========================================
+./src\particles.rs:460
+===========================================
+// TODO: Instead allocate the right size at the beginning by multiplying the particles per second by the lifetimes
 
 ===========================================
 ./src\renderer.rs:326

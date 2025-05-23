@@ -7,7 +7,7 @@ use glfw::{Context, Glfw, GlfwReceiver, Key, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, debug::{gizmos::Cylinder, write::write_data}, entity_manager::{self, EntityManager}, enums_types::{AnimationType, CameraState, EntityType, Faction, ShaderType, SimState, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, particles::Particles, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::{font::{self, FontManager}, imgui::ImguiManager}};
+use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig}, debug::{gizmos::Cylinder, write::write_data}, entity_manager::{self, EntityManager}, enums_types::{AnimationType, CameraState, EntityType, Faction, ShaderType, SimState, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, particles::{Emitter, ParticleSystem}, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::{font::{self, FontManager}, imgui::ImguiManager}};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -45,7 +45,7 @@ pub struct GameState {
     pub font_manager: FontManager,
     pub fps: u32,
     pub last_fps_update: f32,
-    pub particles: Particles,
+    pub particles: ParticleSystem,
 }
 
 impl GameState {
@@ -154,10 +154,9 @@ impl GameState {
         font_manager.load_chars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:,.!?()[]{}<>");
         font_manager.setup_buffers();
 
-        let mut particles = Particles::new();
-        particles.setup_opengl();
-
-        write_data(entity_manager.animators.first().unwrap().value().animations.get(&AnimationType::Idle).unwrap().bone_transforms.clone(), "test.txt");
+        let mut particles = ParticleSystem::new();
+        particles.spawn_continuous_emitter(100, vec3(10.0, 20.0, 10.0), "Smoke", Some("resources/textures/smoke.png"));
+         // particles.spawn_continuous_emitter(50, Vec3::splat(0.0), "Smoke", None);
 
         Self {
             delta_time: 0.0,
@@ -217,7 +216,7 @@ impl GameState {
                     match key {
                         glfw::Key::G => {
                             if action == glfw::Action::Press {
-                                self.particles.spawn_particles(1000, Vec3::splat(0.0));
+                                self.particles.spawn_oneshot_emitter(50, Vec3::splat(0.0));
                             }
                         },
                         _ => {}
@@ -233,6 +232,16 @@ impl GameState {
     }
 
     pub fn update(&mut self) {
+        // CALC DELTA TIME
+        let current_frame = self.glfw.get_time() as f32;
+        self.delta_time = current_frame - self.last_frame;
+        self.last_frame = current_frame;
+        self.elapsed += self.delta_time;
+
+        if self.delta_time <= 0.0 {
+            return;
+        }
+
         self.particles.update(self.delta_time);
 
         if let Some(player_entry) = self.entity_manager.factions.iter().find(|f| f.value() == &Faction::Player) {
@@ -261,11 +270,6 @@ impl GameState {
             }
         }
 
-        // CALC DELTA TIME
-        let current_frame = self.glfw.get_time() as f32;
-        self.delta_time = current_frame - self.last_frame;
-        self.last_frame = current_frame;
-        self.elapsed += self.delta_time;
 
         // SHOULD WE QUIT THE GAME?
         if self.paused { return; }
@@ -336,6 +340,11 @@ impl GameState {
         // ======================================
         self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, &mut self.sound_manager, self.fb_width, self.fb_height, self.elapsed);
 
+        self.particles.render(
+            self.renderer.shaders.get_mut(&ShaderType::Particles).unwrap(),
+            &self.camera,
+        );
+
         self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera, &mut self.entity_manager);
         let fps_now = (1.0 / self.delta_time.max(0.0001)) as u32;
 
@@ -354,11 +363,6 @@ impl GameState {
             self.fb_height as f32,
             self.renderer.shaders.get_mut(&ShaderType::Text).unwrap(),
             0.5,
-        );
-
-        self.particles.render(
-            self.renderer.shaders.get_mut(&ShaderType::Particles).unwrap(),
-            &self.camera,
         );
 
         self.window.swap_buffers();

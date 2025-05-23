@@ -1,26 +1,40 @@
 // VERTEX_SHADER
 #version 460 core
 layout (location = 0) in vec3 a_pos;
+layout (location = 1) in vec2 a_tex_coords;
+layout (location = 2) in mat4 instance_matrix;
+layout (location = 6) in float instance_alpha;
 
-uniform mat4 model;
+// uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+out vec2 tex_coords;
+out float particle_alpha;
+
 void main() {
-    gl_Position = projection * view * model * vec4(a_pos, 1.0);
+    gl_Position = projection * view * instance_matrix * vec4(a_pos, 1.0);
+	tex_coords = a_tex_coords;
+	particle_alpha  = instance_alpha;
 }
 
 // FRAGMENT_SHADER
 #version 460 core
+
+in vec2 tex_coords;
+in float particle_alpha;
+
+uniform sampler2D texture1;
+uniform bool has_tex;
+
 out vec4 FragColor;
 
 void main() {
-    vec2 frag = gl_FragCoord.xy;
+	vec4 color = vec4(1.0, 1.0, 1.0, particle_alpha);
 
-    // Blood-like dark red variation
-    float r = 0.5; // 0.3 to 0.5
-    float g = 0.03; // 0.0 to 0.04
-    float b = 0.02; // 0.0 to 0.03
+	if (has_tex) {
+		color = texture(texture1, tex_coords);
+	}
 
-    FragColor = vec4(r, g, b, 0.5);
+    FragColor = vec4(color.rgb * vec3(2.0, 2.0, 2.0), color.a * particle_alpha);
 }
