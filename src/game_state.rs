@@ -116,7 +116,7 @@ impl GameState {
         let mut light_manager = Lights::new(50);
         light_manager.dir_light = DirLight::default_white();
 
-        let renderer = Renderer::new();
+        let renderer = Renderer::new(fb_width, fb_height);
 
         let game_config = GameConfig::load_from_file("config/game_config.json");
 
@@ -156,7 +156,7 @@ impl GameState {
         font_manager.setup_buffers();
 
         let mut particles = ParticleSystem::new();
-        particles.spawn_continuous_emitter(100, vec3(10.0, 20.0, 10.0), "Smoke", Some("resources/textures/smoke.png"));
+        particles.spawn_continuous_emitter(50, vec3(10.0, 20.0, 10.0), "Smoke", Some("resources/textures/smoke.png"));
          // particles.spawn_continuous_emitter(50, Vec3::splat(0.0), "Smoke", None);
 
         Self {
@@ -341,30 +341,30 @@ impl GameState {
         // ======================================
         self.renderer.draw(&self.entity_manager, &mut self.camera, &self.light_manager, &mut self.grid, &mut self.sound_manager, self.fb_width, self.fb_height, self.elapsed);
 
-        self.particles.render(
-            self.renderer.shaders.get_mut(&ShaderType::Particles).unwrap(),
-            &self.camera,
-        );
+       //  self.particles.render(
+       //      self.renderer.shaders.get_mut(&ShaderType::Particles).unwrap(),
+       //      &self.camera,
+       //  );
 
-        self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera, &mut self.entity_manager);
-        let fps_now = (1.0 / self.delta_time.max(0.0001)) as u32;
+       //  self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera, &mut self.entity_manager);
+       //  let fps_now = (1.0 / self.delta_time.max(0.0001)) as u32;
 
-        if self.elapsed - self.last_fps_update >= 0.5 {
-            self.fps = fps_now;
-            self.last_fps_update = self.elapsed;
-        }
+       //  if self.elapsed - self.last_fps_update >= 0.5 {
+       //      self.fps = fps_now;
+       //      self.last_fps_update = self.elapsed;
+       //  }
 
-        let phrase = format!("FPS: {}", self.fps);
+       //  let phrase = format!("FPS: {}", self.fps);
 
-        self.font_manager.render_phrase(
-            &phrase,
-            100.0,
-            100.0,
-            self.fb_width as f32,
-            self.fb_height as f32,
-            self.renderer.shaders.get_mut(&ShaderType::Text).unwrap(),
-            0.5,
-        );
+       //  self.font_manager.render_phrase(
+       //      &phrase,
+       //      100.0,
+       //      100.0,
+       //      self.fb_width as f32,
+       //      self.fb_height as f32,
+       //      self.renderer.shaders.get_mut(&ShaderType::Text).unwrap(),
+       //      0.5,
+       //  );
 
         self.window.swap_buffers();
         self.glfw.poll_events()

@@ -2,7 +2,7 @@
 use std::{collections::HashMap, ffi::c_void, mem, ptr::null_mut};
 
 use gl::CULL_FACE;
-use glam::{vec3, vec4, Mat4, Vec3, Vec4};
+use glam::{vec2, vec3, vec4, Mat4, Vec3, Vec4};
 use image::GenericImageView;
 
 use crate::{camera::Camera, entity_manager::EntityManager, enums_types::{EntityType, Faction, FboType, ShaderType, VaoType}, gl_call, grid::Grid, lights::Lights, shaders::Shader, some_data::{FACES_CUBEMAP, POINT_LIGHT_POSITIONS, SHADOW_HEIGHT, SHADOW_WIDTH, SKYBOX_INDICES, SKYBOX_VERTICES, UNIT_CUBE_VERTICES}, sound::sound_manager::SoundManager};
@@ -15,10 +15,16 @@ pub struct Renderer {
     pub cubemap_texture: u32,
 
     pub shadow_debug: bool,
+
+    pub fxaa_fbo: u32,
+    pub fxaa_color_tex: u32,
+
+    pub quad_vao: u32,
+    pub quad_vbo: u32,
 }
 
 impl Renderer {
-    pub fn new() -> Self {
+    pub fn new(fb_width: i32, fb_height: i32) -> Self {
         // =============================================================
         // Setup Shaders
         // =============================================================
@@ -38,6 +44,7 @@ impl Renderer {
         let model_shader = Shader::new("resources/shaders/model.glsl");
         let gizmo_shader = Shader::new("resources/shaders/gizmo.glsl");
         let particle_shader = Shader::new("resources/shaders/particles.glsl");
+        let fxaa_shader = Shader::new("resources/shaders/fxaa.glsl");
 
         let mut vao = 0;
         let mut vbo = 0;
@@ -208,6 +215,98 @@ impl Renderer {
         debug_depth_quad.store_uniform_location("depth_map");
         debug_depth_quad.set_int("depth_map", 0);
 
+        // =============================================================
+        // FXAA Framebuffer
+        // =============================================================
+        let mut fxaa_fbo = 0;
+        let mut fxaa_color_tex = 0;
+
+        unsafe {
+            gl_call!(gl::GenFramebuffers(1, &mut fxaa_fbo));
+            gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER, fxaa_fbo));
+
+            gl_call!(gl::GenTextures(1, &mut fxaa_color_tex));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, fxaa_color_tex));
+            gl_call!(gl::TexImage2D(
+                gl::TEXTURE_2D,
+                0,
+                gl::RGB as i32,
+                fb_width,
+                fb_height,
+                0,
+                gl::RGB,
+                gl::UNSIGNED_BYTE,
+                std::ptr::null()
+            ));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32));
+            gl_call!(gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32));
+            gl_call!(gl::FramebufferTexture2D(
+                gl::FRAMEBUFFER,
+                gl::COLOR_ATTACHMENT0,
+                gl::TEXTURE_2D,
+                fxaa_color_tex,
+                0
+            ));
+
+            let mut rbo = 0;
+            gl_call!(gl::GenRenderbuffers(1, &mut rbo));
+            gl_call!(gl::BindRenderbuffer(gl::RENDERBUFFER, rbo));
+            gl_call!(gl::RenderbufferStorage(
+                gl::RENDERBUFFER,
+                gl::DEPTH24_STENCIL8,
+                fb_width as i32,
+                fb_height as i32
+            ));
+            gl_call!(gl::FramebufferRenderbuffer(
+                gl::FRAMEBUFFER,
+                gl::DEPTH_STENCIL_ATTACHMENT,
+                gl::RENDERBUFFER,
+                rbo
+            ));
+
+            let status = gl_call!(gl::CheckFramebufferStatus(gl::FRAMEBUFFER));
+            assert_eq!(status, gl::FRAMEBUFFER_COMPLETE, "FXAA framebuffer is not complete!");
+
+            gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER, 0));
+        }
+        // =============================================================
+        // Quad Setup for FXAA and Depth
+        // =============================================================
+        let mut quad_vao = 0;
+        let mut quad_vbo = 0;
+        unsafe {
+            let quad_vertices: [f32; 30] = [
+                // Positions      // Texture Coords
+                -1.0,  1.0, 0.0,  0.0, 1.0,
+                -1.0, -1.0, 0.0,  0.0, 0.0,
+                1.0, -1.0, 0.0,  1.0, 0.0,
+                -1.0,  1.0, 0.0,  0.0, 1.0,
+                1.0, -1.0, 0.0,  1.0, 0.0,
+                1.0,  1.0, 0.0,  1.0, 1.0
+            ];
+
+            gl_call!(gl::GenVertexArrays(1, &mut quad_vao));
+            gl_call!(gl::GenBuffers(1, &mut quad_vbo));
+            gl_call!(gl::BindVertexArray(quad_vao));
+            gl_call!(gl::BindBuffer(gl::ARRAY_BUFFER, quad_vbo));
+            gl_call!(gl::BufferData(
+                gl::ARRAY_BUFFER,
+                (quad_vertices.len() * std::mem::size_of::<f32>()) as isize,
+                quad_vertices.as_ptr() as *const _,
+                gl::STATIC_DRAW
+            ));
+
+            let stride = (5 * std::mem::size_of::<f32>()) as i32;
+            gl_call!(gl::EnableVertexAttribArray(0));
+            gl_call!(gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, stride, std::ptr::null()));
+            gl_call!(gl::EnableVertexAttribArray(1));
+            gl_call!(gl::VertexAttribPointer(1, 2, gl::FLOAT, gl::FALSE, stride, (3 * std::mem::size_of::<f32>()) as *const _));
+        }
+
+
+        // =============================================================
+        // Store Shaders
+        // =============================================================
         shaders.insert(ShaderType::Model, model_shader);
         shaders.insert(ShaderType::Skybox, skybox_shader);
         shaders.insert(ShaderType::DebugLight, debug_light_shader);
@@ -216,6 +315,7 @@ impl Renderer {
         shaders.insert(ShaderType::Text, text_shader);
         shaders.insert(ShaderType::Gizmo, gizmo_shader);
         shaders.insert(ShaderType::Particles, particle_shader);
+        shaders.insert(ShaderType::Fxaa, fxaa_shader);
 
         Self {
             shaders,
@@ -225,6 +325,11 @@ impl Renderer {
 
             cubemap_texture,
             shadow_debug: false,
+            fxaa_fbo,
+            fxaa_color_tex,
+
+            quad_vao,
+            quad_vbo,
         }
     }
 
@@ -239,10 +344,30 @@ impl Renderer {
         fb_height: u32,
         elapsed: f32,
     ) {
-        self.shadow_pass(em, camera, light_manager, fb_width, fb_height);
+        unsafe {
+            gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER, self.fxaa_fbo));
+            // Clear the FXAA framebuffer before drawing the scene into it
+            // gl_call!(gl::ClearColor(0.14, 0.13, 0.15, 1.0)); 
+            gl_call!(gl::ClearColor(1.0, 0.0, 0.0, 1.0)); 
+            gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT));
+            // Re-enable depth testing and blending if they were disabled for the previous frame's FXAA pass
+            gl_call!(gl::Enable(gl::DEPTH_TEST));
+            gl_call!(gl::Enable(gl::BLEND)); 
+            gl_call!(gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA));
+        }
 
-        if self.shadow_debug {
-            return;
+       self.shadow_pass(em, camera, light_manager, fb_width, fb_height);
+
+       if self.shadow_debug {
+           return;
+       }
+        // =============================================================
+        // Re-bind the FXAA framebuffer and set its viewport after the shadow pass
+        // =============================================================
+        unsafe {
+            gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER, self.fxaa_fbo));
+            // Restore the viewport to the dimensions of the main scene FBO
+            gl_call!(gl::Viewport(0, 0, fb_width as i32, fb_height as i32));
         }
 
         // =============================================================
@@ -251,7 +376,7 @@ impl Renderer {
         // shadow pass must come first or you're gonna have a bad time
         self.skybox_pass(camera, fb_width, fb_height);
         self.grid_pass(grid, camera, light_manager);
-        
+
         // =============================================================
         // Render ECS things
         // =============================================================
@@ -272,6 +397,31 @@ impl Renderer {
 
         self.ani_model_pass(camera, em, light_manager, sound_manager, y_robot_ids, elapsed);
         self.ani_model_pass(camera, em, light_manager, sound_manager, moose_ids, elapsed);
+
+        unsafe {
+            gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER, 0)); // Bind to the default framebuffer
+            gl_call!(gl::ClearColor(0.14, 0.13, 0.15, 1.0)); // Clear default framebuffer
+            gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT)); // Clear default framebuffer
+
+            // Disable depth testing for the 2D quad rendering
+            gl_call!(gl::Disable(gl::DEPTH_TEST)); 
+            gl_call!(gl::Disable(gl::BLEND)); // Blending is typically off for fullscreen quad
+
+            let fxaa_shader = self.shaders.get_mut(&ShaderType::Fxaa).unwrap();
+            fxaa_shader.activate();
+            fxaa_shader.set_vec2("resolution", vec2(fb_width as f32, fb_height as f32));
+
+            gl_call!(gl::ActiveTexture(gl::TEXTURE0));
+            gl_call!(gl::BindTexture(gl::TEXTURE_2D, self.fxaa_color_tex)); // Bind the color texture from your FXAA FBO
+            fxaa_shader.set_int("screenTexture", 0);
+
+            self.render_quad(); // Render the quad with the FXAA shader
+
+            // Re-enable depth testing and blending for next frame's scene rendering
+            gl_call!(gl::Enable(gl::DEPTH_TEST)); 
+            gl_call!(gl::Enable(gl::BLEND));
+            gl_call!(gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA)); // Re-set blend function if needed
+        }
     }
 
 
@@ -482,8 +632,8 @@ impl Renderer {
             }
             let skybox_shader_prog = self.shaders.get(&ShaderType::Skybox).unwrap();
 
-            gl_call!(gl::ClearColor(0.14, 0.13, 0.15, 1.0));
-            gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT));
+            // gl_call!(gl::ClearColor(0.14, 0.13, 0.15, 1.0));
+            // gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT));
 
             let view_no_translation = Mat4 {
                 x_axis: camera.view.x_axis,
@@ -549,8 +699,8 @@ impl Renderer {
             gl_call!(gl::BindFramebuffer(gl::FRAMEBUFFER,0));
             gl_call!(gl::Viewport(0, 0, fb_width as i32, fb_height as i32));
 
-            gl_call!(gl::ClearColor(0.0, 0.0, 0.0, 1.0));
-            gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT));
+            // gl_call!(gl::ClearColor(0.0, 0.0, 0.0, 1.0));
+            // gl_call!(gl::Clear(gl::COLOR_BUFFER_BIT | gl::DEPTH_BUFFER_BIT));
         }
 
         // Render only shadow from light point of view if true
@@ -648,50 +798,8 @@ impl Renderer {
     }
 
     pub fn render_quad(&self) {
-        let mut vao = 0;
-        let mut vbo = 0;
-
-        let quad_vertices: [f32; 30] = [
-            // Positions      // Texture Coords
-            -1.0,  1.0, 0.0,  0.0, 1.0,
-            -1.0, -1.0, 0.0,  0.0, 0.0,
-             1.0, -1.0, 0.0,  1.0, 0.0,
-
-            -1.0,  1.0, 0.0,  0.0, 1.0,
-             1.0, -1.0, 0.0,  1.0, 0.0,
-             1.0,  1.0, 0.0,  1.0, 1.0
-        ];
-
         unsafe {
-            gl_call!(gl::GenVertexArrays(1, &mut vao));
-            gl_call!(gl::GenBuffers(1, &mut vbo));
-            gl_call!(gl::BindVertexArray(vao));
-
-            gl_call!(gl::BindBuffer(gl::ARRAY_BUFFER, vbo));
-            gl_call!(gl::BufferData(
-                gl::ARRAY_BUFFER,
-                (quad_vertices.len() * std::mem::size_of::<f32>()) as isize,
-                quad_vertices.as_ptr() as *const _,
-                gl::STATIC_DRAW
-            ));
-
-            let stride = (5 * std::mem::size_of::<f32>()) as i32;
-
-            // Position Attribute
-            gl_call!(gl::EnableVertexAttribArray(0));
-            gl_call!(gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, stride, std::ptr::null()));
-
-            // Texture Coordinate Attribute
-            gl_call!(gl::EnableVertexAttribArray(1));
-            gl_call!(gl::VertexAttribPointer(1, 2, gl::FLOAT, gl::FALSE, stride, (3 * std::mem::size_of::<f32>()) as *const _));
-
-            gl_call!(gl::BindBuffer(gl::ARRAY_BUFFER, 0));
-            gl_call!(gl::BindVertexArray(0));
-        }
-
-        // Draw the quad
-        unsafe {
-            gl_call!(gl::BindVertexArray(vao));
+            gl_call!(gl::BindVertexArray(self.quad_vao));
             gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 6));
             gl_call!(gl::BindVertexArray(0));
         }

@@ -2,7 +2,7 @@
 use std::{collections::HashMap, ffi::CString, fs::read_to_string, ptr};
 
 use gl::types::{GLint, GLuint};
-use glam::{Mat4, Vec3};
+use glam::{Mat4, Vec2, Vec3};
 
 use crate::{gl_call, lights::{DirLight, PointLight}};
 
@@ -94,6 +94,13 @@ impl Shader {
 
     pub fn get_uniform_location(&self, name: &str) -> GLint {
         *self.uniform_locations.get(name).unwrap_or(&-1)
+    }
+
+    pub fn set_vec2(&self, name: &str, value: Vec2) {
+        let location = self.get_uniform_location(name);
+        if location != -1 {
+            unsafe { gl_call!(gl::Uniform2f(location, value.x, value.y)) }
+        }
     }
 
     pub fn set_vec3(&self, name: &str, value: Vec3) {
@@ -188,6 +195,8 @@ impl Shader {
             }
         }
     }
+
+
 
 }
 

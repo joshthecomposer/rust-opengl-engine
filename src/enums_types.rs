@@ -43,6 +43,7 @@ pub enum ShaderType {
     Text,
     Gizmo,
     Particles,
+    Fxaa,
 }
 
 /// A struct to carry some rotation state for blending between rotations smoothly
