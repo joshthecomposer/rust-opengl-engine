@@ -133,6 +133,13 @@ impl Camera {
         self.view = Mat4::look_at_rh(self.position, self.target, self.up);
     }
 
+    pub fn sync_mouse_position(&mut self, window: &PWindow) {
+        let (x, y) = window.get_cursor_pos();
+        self.last_x = x;
+        self.last_y = y;
+        self.first_mousing = true;
+    }
+
     pub fn process_mouse_input(&mut self, window: &PWindow, event: &WindowEvent) {
         if self.move_state == CameraState::Free {
             match event {

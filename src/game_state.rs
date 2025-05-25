@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use std::collections::HashSet;
+use std::collections::{HashSet, VecDeque};
 
 use gl::{AttachShader, PixelStoref};
 use glam::{vec2, vec3, Quat, Vec2, Vec3};
@@ -7,7 +7,7 @@ use glfw::{Context, Glfw, GlfwReceiver, Key, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig, world_data::WorldData}, debug::{gizmos::Cylinder, write::write_data}, entity_manager::{self, EntityManager}, enums_types::{AnimationType, CameraState, EntityType, Faction, ShaderType, SimState, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, particles::{Emitter, ParticleSystem}, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::{font::{self, FontManager}, game_ui, imgui::ImguiManager}};
+use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig, world_data::WorldData}, debug::{gizmos::Cylinder, write::write_data}, entity_manager::{self, EntityManager}, enums_types::{AnimationType, CameraState, EntityType, Faction, ShaderType, SimState, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, particles::{Emitter, ParticleSystem}, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::{font::{self, FontManager}, game_ui, imgui::ImguiManager, message_queue::{MessageQueue, UiMessage}}};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -32,6 +32,7 @@ pub struct GameState {
 
 
     pub paused: bool,
+    pub was_paused: bool,
 
     pub grid: Grid,
     pub renderer: Renderer,
@@ -46,6 +47,8 @@ pub struct GameState {
     pub fps: u32,
     pub last_fps_update: f32,
     pub particles: ParticleSystem,
+
+    pub message_queue: MessageQueue,
 }
 
 impl GameState {
@@ -177,6 +180,7 @@ impl GameState {
             imgui_manager,
 
             paused: false,
+            was_paused: false,
 
             grid,
             renderer,
@@ -190,10 +194,15 @@ impl GameState {
             fps: 0,
             last_fps_update: 0.0,
             particles,
+            message_queue: MessageQueue::new(), 
         }
     }
 
     pub fn process_events(&mut self) {
+        if self.was_paused && !self.paused {
+            self.camera.sync_mouse_position(&self.window);
+        }
+        self.was_paused = self.paused;
         self.camera.process_key_event(&self.window, self.delta_time);
         let events: Vec<(f64, glfw::WindowEvent)> = glfw::flush_messages(&self.events).collect();
 
@@ -211,8 +220,9 @@ impl GameState {
                     self.cursor_pos.x = xpos as f32;
                     self.cursor_pos.y = ypos as f32;
 
-                    if self.paused { return }
-                    self.camera.process_mouse_input(&self.window, &event);
+                    if !self.paused {
+                        self.camera.process_mouse_input(&self.window, &event);
+                    }
                 },
                 glfw::WindowEvent::Key(key, _, action, _) => {
                     match key {
@@ -232,6 +242,9 @@ impl GameState {
                 },
                 glfw::WindowEvent::MouseButton(btn, action, _) => {
                     handle_mouse_input(btn, action, self.cursor_pos, Vec2::new(self.fb_width as f32, self.fb_height as f32), &self.camera, &mut self.entity_manager, &self.pressed_keys);
+                    if btn  == glfw::MouseButtonLeft {
+                        self.message_queue.send(UiMessage::LeftMouseClicked);
+                    }
                 },
                 _ => (),
             }
@@ -387,10 +400,20 @@ impl GameState {
                 &mut self.font_manager,
                 self.renderer.shaders.get(&ShaderType::GameUi).unwrap(),
                 self.renderer.shaders.get(&ShaderType::Text).unwrap(),
+                &mut self.message_queue,
             );
         }
 
+        if self.message_queue.queue.contains(&UiMessage::WindowShouldClose) {
+            self.window.set_should_close(true);
+        }
+
+        if self.message_queue.queue.contains(&UiMessage::PauseToggle) {
+            self.paused = !self.paused;
+        }
+
         self.window.swap_buffers();
-        self.glfw.poll_events()
+        self.glfw.poll_events();
+        self.message_queue.drain();
     }
 }

@@ -2,7 +2,7 @@ use glam::{vec4, Vec2, Vec4};
 
 use crate::{enums_types::ShaderType, gl_call, renderer::Renderer, shaders::Shader};
 
-use super::{color::hex_to_vec4, font::FontManager};
+use super::{color::hex_to_vec4, font::FontManager, message_queue::{MessageQueue, UiMessage}};
 
 pub struct Rect {
     pub x: f32,
@@ -13,7 +13,7 @@ pub struct Rect {
     pub text: String,
 }
 
-pub fn do_ui(fb_width: f32, fb_height: f32, mouse_pos: Vec2, fm: &mut FontManager, shader: &Shader, font_shader: &Shader) {
+pub fn do_ui(fb_width: f32, fb_height: f32, mouse_pos: Vec2, fm: &mut FontManager, shader: &Shader, font_shader: &Shader, mq: &mut MessageQueue) {
     let mut rects = Vec::new();
     let mut w = fb_width  * 0.25;
     let mut h = fb_height * 0.45;
@@ -83,13 +83,18 @@ pub fn do_ui(fb_width: f32, fb_height: f32, mouse_pos: Vec2, fm: &mut FontManage
     pause_container.color = color_950;
 
     if hovering_exit_button {
+        if mq.queue.contains(&UiMessage::LeftMouseClicked) {
+            mq.send(UiMessage::PauseToggle);
+        }
         exit_button.color = color_800;
     } else {
         exit_button.color =color_900;
-
     };
 
     if hovering_quit_button {
+        if mq.queue.contains(&UiMessage::LeftMouseClicked) {
+            mq.send(UiMessage::WindowShouldClose);
+        }
         quit_button.color = color_800
     } else {
         quit_button.color = color_900
