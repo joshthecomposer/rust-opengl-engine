@@ -43,13 +43,22 @@ pub fn do_ui(fb_width: f32, fb_height: f32, mouse_pos: Vec2, fm: &mut FontManage
         text: "X".to_string(),
     };
 
-    let mut kill_button = Rect {
+    let mut ph1 = Rect {
         x: pause_container.x + (pause_container.w / 2.0) - (w / 2.0),
-        y: pause_container.y + h - ((button_h * 2.0) + gap),
+        y: pause_container.y + h - ((button_h * 3.0) + (gap * 2.0)),
         w,
         h: button_h,
         color: Vec4::splat(1.0),
-        text: "Kill Entities".to_string(),
+        text: "Placeholder".to_string(),
+    };
+
+    let mut ph2 = Rect {
+        x: pause_container.x + (pause_container.w / 2.0) - (w / 2.0),
+        y: pause_container.y + h - ((button_h * 2.0) + (gap * 1.0)),
+        w,
+        h: button_h,
+        color: Vec4::splat(1.0),
+        text: "Placeholder".to_string(),
     };
 
     let mut quit_button = Rect {
@@ -71,10 +80,15 @@ pub fn do_ui(fb_width: f32, fb_height: f32, mouse_pos: Vec2, fm: &mut FontManage
     && mouse_pos.x <= quit_button.x + quit_button.w 
     && mouse_pos.y <= quit_button.h + quit_button.y;
 
-    let hovering_kill_button = mouse_pos.x >= kill_button.x 
-    && mouse_pos.y >= kill_button.y
-    && mouse_pos.x <= kill_button.x + kill_button.w 
-    && mouse_pos.y <= kill_button.h + kill_button.y;
+    let hovering_ph1 = mouse_pos.x >= ph1.x 
+    && mouse_pos.y >= ph1.y
+    && mouse_pos.x <= ph1.x + ph1.w 
+    && mouse_pos.y <= ph1.h + ph1.y;
+
+    let hovering_ph2 = mouse_pos.x >= ph2.x 
+    && mouse_pos.y >= ph2.y
+    && mouse_pos.x <= ph2.x + ph2.w 
+    && mouse_pos.y <= ph2.h + ph2.y;
 
     let color_950 = hex_to_vec4("#0c0a09");
     let color_900 = hex_to_vec4("#1c1917");
@@ -100,16 +114,23 @@ pub fn do_ui(fb_width: f32, fb_height: f32, mouse_pos: Vec2, fm: &mut FontManage
         quit_button.color = color_900
     };
 
-    if hovering_kill_button {
-        kill_button.color = color_800
+    if hovering_ph1 {
+        ph1.color = color_800
     } else {
-        kill_button.color = color_900
+        ph1.color = color_900
+    };
+
+    if hovering_ph2 {
+        ph2.color = color_800
+    } else {
+        ph2.color = color_900
     };
 
     rects.push(pause_container);
     rects.push(exit_button);
     rects.push(quit_button);
-    rects.push(kill_button);
+    rects.push(ph2);
+    rects.push(ph1);
 
     draw_rects(rects, shader, fb_width, fb_height, fm, font_shader);
 }
