@@ -1,4 +1,5 @@
 use glam::{vec4, Vec2, Vec4};
+use glfw::CursorMode;
 
 use crate::{enums_types::ShaderType, gl_call, renderer::Renderer, shaders::Shader};
 
@@ -14,57 +15,110 @@ pub struct Rect {
     pub text: String,
 }
 
-pub fn do_ui(fb_width: f32, fb_height: f32, mouse_pos: Vec2, fm: &mut FontManager, shader: &Shader, font_shader: &Shader, mq: &mut MessageQueue) {
-    let mut w = fb_width  * 0.25;
-    let h = fb_height * 0.45;
+pub fn do_ui(fb_width: f32, fb_height: f32, mouse_pos: Vec2, fm: &mut FontManager, shader: &Shader, font_shader: &Shader, mq: &mut MessageQueue, paused: bool, cm: CursorMode) {
+    let mut rects = vec![];
+    // =============================================================
+    // PAUSE PANEL
+    // =============================================================
+    if paused {
+        let mut w = fb_width  * 0.25;
+        let h = fb_height * 0.45;
 
-    let pause_container = Rect {
-        x: (fb_width / 2.0) - (w / 2.0),
-        y: (fb_height / 2.0) - (h / 2.0),
-        w,
-        h,
-        color: hex_to_vec4("#030712"),
-        text: "".to_string(),
-    };
+        let main_container = Rect {
+            x: (fb_width / 2.0) - (w / 2.0),
+            y: (fb_height / 2.0) - (h / 2.0),
+            w,
+            h,
+            color: hex_to_vec4("#030712"),
+            text: "".to_string(),
+        };
+        
+        rects.push(main_container.clone());
 
-    let mut rects = vec![pause_container.clone()];
+        let button_h = main_container.h * 0.15;
+        w = main_container.w * 0.95;
 
-    let button_h = pause_container.h * 0.15;
-    w = pause_container.w * 0.95;
+        let x = main_container.x + (main_container.w / 2.0) - (w / 2.0);
+        // Bottom to top layout
+        let mut y = main_container.y + main_container.h - button_h;
 
-    let x = pause_container.x + (pause_container.w / 2.0) - (w / 2.0);
-    // Bottom to top layout
-    let mut y = pause_container.y + pause_container.h - button_h;
+        let gap = 15.0; // Pixels
 
-    let gap = 15.0; // Pixels
-    
-    y -= gap;
-    if button("Quit Game", x, y, w, button_h, mouse_pos, mq, &mut rects) {
-        mq.send(UiMessage::WindowShouldClose);
+        y -= gap;
+        if button("Quit Game", x, y, w, button_h, mouse_pos, mq, &mut rects, cm) {
+            mq.send(UiMessage::WindowShouldClose);
+        }
+
+        y -= button_h + gap;
+        if button("Placeholder 2", x, y, w, button_h, mouse_pos, mq, &mut rects, cm) {
+            println!("PH2 clicked");
+        }
+
+        y -= button_h + gap;
+        if button("Placeholder 1", x, y, w, button_h, mouse_pos, mq, &mut rects, cm) {
+            println!("PH1 clicked");
+        }
+
+        // x button (close window)
+        let exit_size = button_h / 3.0;
+        let ex = (main_container.x + main_container.w) - (exit_size + gap);
+        let ey = main_container.y + gap;
+
+        if button("X", ex, ey, exit_size, exit_size, mouse_pos, mq, &mut rects, cm) {
+            mq.send(UiMessage::PauseToggle);
+        }
     }
 
-    y -= button_h + gap;
-    if button("Placeholder 2", x, y, w, button_h, mouse_pos, mq, &mut rects) {
-        println!("PH2 clicked");
+    // =============================================================
+    // LOWER RIGHT BOX
+    // =============================================================
+    // Main panel w/h
+    {
+        let mut w = fb_width * 0.15;
+        let h = w;
+
+        let main_container = Rect {
+            x: fb_width - w,
+            y: fb_height - h,
+            w,
+            h,
+            color: hex_to_vec4("#030712"),
+            text: "".to_string(),
+        };
+
+        rects.push(main_container.clone());
+
+        let button_h = main_container.h * 0.15;
+
+        w = main_container.w * 0.95;
+
+        let x = main_container.x + (main_container.w / 2.0) - (w / 2.0);
+
+        let gap = 10.0; // Pixels
+
+        let mut y = main_container.y;
+        
+        // Top-down instead of bottom up for this one
+        y += gap;
+        if button("Placeholder 1", x, y, w, button_h, mouse_pos, mq, &mut rects, cm) {
+            println!("PH1 clicked");
+        }
+
+        y += gap + button_h;
+        if button("Placeholder 2", x, y, w, button_h, mouse_pos, mq, &mut rects, cm) {
+            println!("PH2 clicked");
+        }
     }
 
-    y -= button_h + gap;
-    if button("Placeholder 1", x, y, w, button_h, mouse_pos, mq, &mut rects) {
-        println!("PH1 clicked");
-    }
-
-    // x button (close window)
-    let exit_size = button_h / 3.0;
-    let ex = (pause_container.x + pause_container.w) - (exit_size + gap);
-    let ey = pause_container.y + gap;
-
-    if button("X", ex, ey, exit_size, exit_size, mouse_pos, mq, &mut rects) {
-        mq.send(UiMessage::PauseToggle);
-    }
-
+    // =============================================================
+    // DRAW ALL BOXES AT THE END
+    // =============================================================
     draw_rects(rects, shader, fb_width, fb_height, fm, font_shader);
 }
 
+// =============================================================
+// Rendering
+// =============================================================
 fn draw_rects(rects: Vec<Rect>, shader: &Shader, fb_width: f32, fb_height: f32, fm: &mut FontManager, font_shader: &Shader) {
     shader.activate();
     let mut vertices: Vec<f32> = Vec::with_capacity(rects.len() * 6 * 6);
@@ -141,7 +195,9 @@ fn draw_rects(rects: Vec<Rect>, shader: &Shader, fb_width: f32, fb_height: f32, 
 
 }
 
-
+// =============================================================
+// UI Elements
+// =============================================================
 pub fn button(
     label: &str,
     x: f32,
@@ -151,23 +207,29 @@ pub fn button(
     mouse_pos: Vec2,
     mq: &mut MessageQueue,
     rects: &mut Vec<Rect>,
+    cm: CursorMode,
 ) -> bool {
-    let hovered = mouse_pos.x >= x
-    && mouse_pos.y >= y
-    && mouse_pos.x <= x + w
-    && mouse_pos.y <= y + h;
-
-    let clicked = hovered && mq.queue.contains(&UiMessage::LeftMouseClicked);
-
     let color_900 = hex_to_vec4("#1c1917");
     let color_800 = hex_to_vec4("#292524");
+    let mut clicked = false;
+    let mut final_color = color_900;
+
+    if cm == CursorMode::Normal {
+        let hovered = mouse_pos.x >= x
+        && mouse_pos.y >= y
+        && mouse_pos.x <= x + w
+        && mouse_pos.y <= y + h;
+
+        clicked = hovered && mq.queue.contains(&UiMessage::LeftMouseClicked);
+        final_color = if hovered { color_800 } else { color_900 };
+    }
 
     rects.push(Rect {
         x,
         y,
         w,
         h,
-        color: if hovered { color_800 } else { color_900 },
+        color: final_color,
         text: label.to_string(),
     });
 

@@ -81,12 +81,12 @@ impl GameState {
                     let refresh_rate    = video_mode.refresh_rate; // e.g. 60, 144, etc.
 
                     window.set_monitor(
-                        glfw::WindowMode::Windowed,
-                        // glfw::WindowMode::FullScreen(monitor),
+                        // glfw::WindowMode::Windowed,
+                        glfw::WindowMode::FullScreen(monitor),
                         100,      // X-position on that monitor
                         100,      // Y-position on that monitor
-                        1920 as u32,
-                        1080 as u32,
+                        width as u32,
+                        height as u32,
                         Some(refresh_rate)
                     );
                 }
@@ -350,6 +350,7 @@ impl GameState {
                             video_mode.height,
                             Some(refresh_rate)
                         );
+                        self.window.set_cursor_mode(glfw::CursorMode::Normal);
                     }
                 }
             });
@@ -387,29 +388,29 @@ impl GameState {
         self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera, &mut self.entity_manager);
 
 
-        let phrase = format!("FPS: {}", self.fps);
+        // let phrase = format!("FPS: {}", self.fps);
 
-        self.font_manager.render_phrase(
-            &phrase,
-            100.0,
-            100.0,
-            self.fb_width as f32,
-            self.fb_height as f32,
-            self.renderer.shaders.get_mut(&ShaderType::Text).unwrap(),
-            0.7,
+        // self.font_manager.render_phrase(
+        //     &phrase,
+        //     100.0,
+        //     100.0,
+        //     self.fb_width as f32,
+        //     self.fb_height as f32,
+        //     self.renderer.shaders.get_mut(&ShaderType::Text).unwrap(),
+        //     0.7,
+        // );
+
+        game_ui::do_ui(
+            self.fb_width as f32, 
+            self.fb_height as f32, 
+            self.cursor_pos, 
+            &mut self.font_manager,
+            self.renderer.shaders.get(&ShaderType::GameUi).unwrap(),
+            self.renderer.shaders.get(&ShaderType::Text).unwrap(),
+            &mut self.message_queue,
+            self.paused,
+            self.window.get_cursor_mode(),
         );
-
-        if self.paused {
-            game_ui::do_ui(
-                self.fb_width as f32, 
-                self.fb_height as f32, 
-                self.cursor_pos, 
-                &mut self.font_manager,
-                self.renderer.shaders.get(&ShaderType::GameUi).unwrap(),
-                self.renderer.shaders.get(&ShaderType::Text).unwrap(),
-                &mut self.message_queue,
-            );
-        }
 
         if self.message_queue.queue.contains(&UiMessage::WindowShouldClose) {
             self.window.set_should_close(true);
