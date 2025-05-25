@@ -242,7 +242,7 @@ impl GameState {
                 },
                 glfw::WindowEvent::MouseButton(btn, action, _) => {
                     handle_mouse_input(btn, action, self.cursor_pos, Vec2::new(self.fb_width as f32, self.fb_height as f32), &self.camera, &mut self.entity_manager, &self.pressed_keys);
-                    if btn  == glfw::MouseButtonLeft {
+                    if btn  == glfw::MouseButtonLeft && action == glfw::Action::Press {
                         self.message_queue.send(UiMessage::LeftMouseClicked);
                     }
                 },

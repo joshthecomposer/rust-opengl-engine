@@ -4,6 +4,7 @@ use crate::{enums_types::ShaderType, gl_call, renderer::Renderer, shaders::Shade
 
 use super::{color::hex_to_vec4, font::FontManager, message_queue::{MessageQueue, UiMessage}};
 
+#[derive(Clone)]
 pub struct Rect {
     pub x: f32,
     pub y: f32,
@@ -14,123 +15,52 @@ pub struct Rect {
 }
 
 pub fn do_ui(fb_width: f32, fb_height: f32, mouse_pos: Vec2, fm: &mut FontManager, shader: &Shader, font_shader: &Shader, mq: &mut MessageQueue) {
-    let mut rects = Vec::new();
     let mut w = fb_width  * 0.25;
-    let mut h = fb_height * 0.45;
+    let h = fb_height * 0.45;
 
-    let mut pause_container = Rect {
+    let pause_container = Rect {
         x: (fb_width / 2.0) - (w / 2.0),
         y: (fb_height / 2.0) - (h / 2.0),
         w,
         h,
-        color: Vec4::splat(1.0),
+        color: hex_to_vec4("#030712"),
         text: "".to_string(),
     };
 
-    w = pause_container.w * 0.95; 
-    h = pause_container.h * 0.95; 
+    let mut rects = vec![pause_container.clone()];
 
     let button_h = pause_container.h * 0.15;
-    let  exit_button_h = button_h / 3.0;
+    w = pause_container.w * 0.95;
+
+    let x = pause_container.x + (pause_container.w / 2.0) - (w / 2.0);
+    // Bottom to top layout
+    let mut y = pause_container.y + pause_container.h - button_h;
+
     let gap = 15.0; // Pixels
+    
+    y -= gap;
+    if button("Quit Game", x, y, w, button_h, mouse_pos, mq, &mut rects) {
+        mq.send(UiMessage::WindowShouldClose);
+    }
 
-    let mut exit_button = Rect {
-        x: (pause_container.x + pause_container.w) - (exit_button_h + gap),
-        y: pause_container.y + gap,
-        w: exit_button_h,
-        h: exit_button_h,
-        color: Vec4::splat(1.0),
-        text: "X".to_string(),
-    };
+    y -= button_h + gap;
+    if button("Placeholder 2", x, y, w, button_h, mouse_pos, mq, &mut rects) {
+        println!("PH2 clicked");
+    }
 
-    let mut ph1 = Rect {
-        x: pause_container.x + (pause_container.w / 2.0) - (w / 2.0),
-        y: pause_container.y + h - ((button_h * 3.0) + (gap * 2.0)),
-        w,
-        h: button_h,
-        color: Vec4::splat(1.0),
-        text: "Placeholder".to_string(),
-    };
+    y -= button_h + gap;
+    if button("Placeholder 1", x, y, w, button_h, mouse_pos, mq, &mut rects) {
+        println!("PH1 clicked");
+    }
 
-    let mut ph2 = Rect {
-        x: pause_container.x + (pause_container.w / 2.0) - (w / 2.0),
-        y: pause_container.y + h - ((button_h * 2.0) + (gap * 1.0)),
-        w,
-        h: button_h,
-        color: Vec4::splat(1.0),
-        text: "Placeholder".to_string(),
-    };
+    // x button (close window)
+    let exit_size = button_h / 3.0;
+    let ex = (pause_container.x + pause_container.w) - (exit_size + gap);
+    let ey = pause_container.y + gap;
 
-    let mut quit_button = Rect {
-        x: pause_container.x + (pause_container.w / 2.0) - (w / 2.0),
-        y: pause_container.y + h - button_h,
-        w,
-        h: button_h,
-        color: Vec4::splat(1.0),
-        text: "Quit Game".to_string(),
-    };
-
-    let hovering_exit_button = mouse_pos.x >= exit_button.x 
-    && mouse_pos.y >= exit_button.y
-    && mouse_pos.x <= exit_button.x + exit_button.w 
-    && mouse_pos.y <= exit_button.h + exit_button.y;
-
-    let hovering_quit_button = mouse_pos.x >= quit_button.x 
-    && mouse_pos.y >= quit_button.y
-    && mouse_pos.x <= quit_button.x + quit_button.w 
-    && mouse_pos.y <= quit_button.h + quit_button.y;
-
-    let hovering_ph1 = mouse_pos.x >= ph1.x 
-    && mouse_pos.y >= ph1.y
-    && mouse_pos.x <= ph1.x + ph1.w 
-    && mouse_pos.y <= ph1.h + ph1.y;
-
-    let hovering_ph2 = mouse_pos.x >= ph2.x 
-    && mouse_pos.y >= ph2.y
-    && mouse_pos.x <= ph2.x + ph2.w 
-    && mouse_pos.y <= ph2.h + ph2.y;
-
-    let color_950 = hex_to_vec4("#0c0a09");
-    let color_900 = hex_to_vec4("#1c1917");
-    let color_800 = hex_to_vec4("#292524");
-
-    pause_container.color = color_950;
-
-    if hovering_exit_button {
-        if mq.queue.contains(&UiMessage::LeftMouseClicked) {
-            mq.send(UiMessage::PauseToggle);
-        }
-        exit_button.color = color_800;
-    } else {
-        exit_button.color =color_900;
-    };
-
-    if hovering_quit_button {
-        if mq.queue.contains(&UiMessage::LeftMouseClicked) {
-            mq.send(UiMessage::WindowShouldClose);
-        }
-        quit_button.color = color_800
-    } else {
-        quit_button.color = color_900
-    };
-
-    if hovering_ph1 {
-        ph1.color = color_800
-    } else {
-        ph1.color = color_900
-    };
-
-    if hovering_ph2 {
-        ph2.color = color_800
-    } else {
-        ph2.color = color_900
-    };
-
-    rects.push(pause_container);
-    rects.push(exit_button);
-    rects.push(quit_button);
-    rects.push(ph2);
-    rects.push(ph1);
+    if button("X", ex, ey, exit_size, exit_size, mouse_pos, mq, &mut rects) {
+        mq.send(UiMessage::PauseToggle);
+    }
 
     draw_rects(rects, shader, fb_width, fb_height, fm, font_shader);
 }
@@ -208,5 +138,39 @@ fn draw_rects(rects: Vec<Rect>, shader: &Shader, fb_width: f32, fb_height: f32, 
         }
 
     }
+
+}
+
+
+pub fn button(
+    label: &str,
+    x: f32,
+    y: f32,
+    w: f32,
+    h: f32,
+    mouse_pos: Vec2,
+    mq: &mut MessageQueue,
+    rects: &mut Vec<Rect>,
+) -> bool {
+    let hovered = mouse_pos.x >= x
+    && mouse_pos.y >= y
+    && mouse_pos.x <= x + w
+    && mouse_pos.y <= y + h;
+
+    let clicked = hovered && mq.queue.contains(&UiMessage::LeftMouseClicked);
+
+    let color_900 = hex_to_vec4("#1c1917");
+    let color_800 = hex_to_vec4("#292524");
+
+    rects.push(Rect {
+        x,
+        y,
+        w,
+        h,
+        color: if hovered { color_800 } else { color_900 },
+        text: label.to_string(),
+    });
+
+    clicked
 }
 
