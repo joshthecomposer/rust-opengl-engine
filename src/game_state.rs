@@ -303,7 +303,10 @@ impl GameState {
             self.window.set_cursor_mode(glfw::CursorMode::Normal);
             return; 
         } else {
-            self.window.set_cursor_mode(glfw::CursorMode::Disabled);
+            // TODO: maybe determining cursor lock state should be just done by the message queue, but that could be just as confusing.
+            if self.camera.move_state != CameraState::Locked {
+                self.window.set_cursor_mode(glfw::CursorMode::Disabled);
+            }
         }
         // if self.pressed_keys.contains(&glfw::Key::Escape) {
         //     self.window.set_should_close(true);
@@ -377,7 +380,7 @@ impl GameState {
             &self.camera,
         );
         
-        // self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera, &mut self.entity_manager);
+        self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera, &mut self.entity_manager);
 
 
         let phrase = format!("FPS: {}", self.fps);
