@@ -326,7 +326,7 @@ impl Renderer {
                 if animation.current_segment == os.segment {
                     if !os.triggered.get() {
                         // TODO: DOn't clone, we really need an enum here.
-                        sound_manager.play_sound_3d(os.sound_type.clone(), &trans.position);
+                        sound_manager.play_sound_3d(os.sound_type.clone(), &trans.position, id);
                         os.triggered.set(true);
                     }
                 } else {
@@ -336,7 +336,7 @@ impl Renderer {
 
             for cs in animation.continuous_sounds.iter() {
                 if !cs.playing.get() {
-                    sound_manager.play_sound_3d(cs.sound_type.clone(), &trans.position);
+                    sound_manager.play_sound_3d(cs.sound_type.clone(), &trans.position, id);
                     cs.playing.set(true);
                 }
             }

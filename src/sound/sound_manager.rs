@@ -36,6 +36,7 @@ pub struct SoundManager {
     pub fmod_system: FMOD_STUDIO_SYSTEM,
     pub sounds: HashMap<String, SoundData>, //The key (String) is the sound_name in the game_config.json
     pub active_sounds: HashMap<String, FMOD_STUDIO_EVENTINSTANCE>,
+    pub active_3d_sounds: HashMap<usize, Vec<FMOD_STUDIO_EVENTINSTANCE>>,
     pub playing_bg: bool,
     pub master_volume: f32,
 } 
@@ -120,6 +121,7 @@ impl SoundManager {
             sounds,
             playing_bg: false,
             master_volume: 1.0,
+            active_3d_sounds: HashMap::new(),
             active_sounds: HashMap::new(),
         }
 
@@ -158,7 +160,7 @@ impl SoundManager {
     }
 
 
-    pub fn play_sound_3d(&mut self, sound_type: String, position: &Vec3) {
+    pub fn play_sound_3d(&mut self, sound_type: String, position: &Vec3, entity_id: usize) {
         let sound_data = match self.sounds.get(&sound_type) {
             Some(data) => data,
             None => {
@@ -196,7 +198,12 @@ impl SoundManager {
                 eprintln!("FMOD sound failed to start: {}", play_result);
             }
 
-            FMOD_Studio_EventInstance_Release(instance);
+            self.active_3d_sounds
+                .entry(entity_id)
+                .or_insert(Vec::new())
+                .push(instance);
+
+            // FMOD_Studio_EventInstance_Release(instance);
         }
     }
 
@@ -233,6 +240,17 @@ impl SoundManager {
             unsafe {
                 FMOD_Studio_EventInstance_Stop(*instance, super::fmod::FMOD_STUDIO_STOP_MODE::FMOD_STUDIO_STOP_IMMEDIATE);
                 FMOD_Studio_EventInstance_Release(*instance);
+            }
+        }
+    }
+
+    pub fn cleanup_entity_sounds(&mut self, entity_id: usize) {
+        if let Some(instances) = self.active_3d_sounds.remove(&entity_id) {
+            for instance in instances {
+                unsafe {
+                    FMOD_Studio_EventInstance_Stop(instance, super::fmod::FMOD_STUDIO_STOP_MODE::FMOD_STUDIO_STOP_IMMEDIATE);
+                    FMOD_Studio_EventInstance_Release(instance);
+                }
             }
         }
     }

@@ -12,6 +12,7 @@ pub struct GlyphInfo {
     pub width: u32,
     pub height: u32,
     pub advance: f32,
+    pub bearing_x: f32,
     pub bearing_y: f32,
 }
 
@@ -33,10 +34,15 @@ impl FontManager {
     }
 
     pub fn load_chars(&mut self, phrase: &str) {
-        let font_data = include_bytes!("../../resources/fonts/JetBrainsMonoNL-Regular.ttf");
+        // let font_data = include_bytes!("../../resources/fonts/JetBrainsMonoNL-Regular.ttf");
+        // let font_data = include_bytes!("../../resources/fonts/VintageCorner-Regular.otf");
+        // let font_data = include_bytes!("../../resources/fonts/Moodnight.otf");
+        let font_data = include_bytes!("../../resources/fonts/BebasNeue-Regular.ttf");
+
         let font = Font::try_from_bytes(font_data).unwrap();
         let scale = Scale::uniform(self.font_pixel_size);
         let v_metrics = font.v_metrics(scale);
+
 
         for c in phrase.chars() {
             if self.glyphs.contains_key(&c) {
@@ -46,11 +52,14 @@ impl FontManager {
             let glyph = font.glyph(c).scaled(scale).positioned(point(0.0, v_metrics.ascent));
             let h_metrics = glyph.unpositioned().h_metrics();
             let advance = h_metrics.advance_width;
-            let ascent = v_metrics.ascent;
 
             if let Some(bb) = glyph.pixel_bounding_box() {
+                let bearing_x = bb.min.x as f32;
+                let bearing_y = bb.min.y as f32;
+
                 let width = bb.width() as usize;
                 let height = bb.height() as usize;
+
                 let mut pixel_data = vec![0u8; width * height];
 
                 glyph.draw(|x, y, v| {
@@ -85,7 +94,8 @@ impl FontManager {
                     width: width as u32,
                     height: height as u32,
                     advance,
-                    bearing_y: ascent - bb.min.y as f32,
+                    bearing_x,
+                    bearing_y: -bearing_y,
                 });
             } else {
                 // Handle space or invisible glyphs
@@ -94,6 +104,7 @@ impl FontManager {
                     width: 0,
                     height: 0,
                     advance,
+                    bearing_x: 0.0,
                     bearing_y: 0.0,
                 });
             }
@@ -144,7 +155,7 @@ impl FontManager {
                 let w = glyph.width as f32 * scale;
                 let h = glyph.height as f32 * scale;
 
-                let xpos = cursor_x;
+                let xpos = cursor_x + glyph.bearing_x * scale;
                 let ypos = y - glyph.bearing_y * scale;
 
                 let x0 = xpos * sx - 1.0;
@@ -174,7 +185,8 @@ impl FontManager {
                     gl::DrawArrays(gl::TRIANGLES, 0, 6);
                 }
 
-                cursor_x += glyph.advance * scale;
+                cursor_x += (glyph.advance) * scale;
+                // cursor_x += ( as f32) * scale; // Hard coded letter spacing of 2.0
             }
         }
 

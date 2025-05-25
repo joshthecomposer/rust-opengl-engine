@@ -1,6 +1,6 @@
 use glam::{vec2, Vec2};
 
-use crate::entity_manager::EntityManager;
+use crate::{entity_manager::EntityManager, enums_types::Faction};
 
 pub fn update(em: &mut EntityManager) {
     handle_entity_collisions(em);
@@ -13,6 +13,14 @@ fn handle_entity_collisions(em: &mut EntityManager) {
         for c2 in em.cylinders.iter() {
             if c1.key() >= c2.key() {
                 continue;
+            }
+
+            if let (Some(p1), Some(p2)) = (em.parents.get(c1.key()), em.parents.get(c2.key())) {
+                if let (Some(f1), Some(f2)) = (em.factions.get(p1.parent_id), em.factions.get(p2.parent_id)) {
+                    if *f1 == Faction::Static || *f2 == Faction::Static {
+                        continue;
+                    }
+                }
             }
 
             let id1 = c1.key();

@@ -208,15 +208,22 @@ impl GameState {
                     }
                 },
                 glfw::WindowEvent::CursorPos(xpos, ypos) => {
-                    self.camera.process_mouse_input(&self.window, &event);
                     self.cursor_pos.x = xpos as f32;
                     self.cursor_pos.y = ypos as f32;
+
+                    if self.paused { return }
+                    self.camera.process_mouse_input(&self.window, &event);
                 },
                 glfw::WindowEvent::Key(key, _, action, _) => {
                     match key {
                         glfw::Key::G => {
                             if action == glfw::Action::Press {
                                 self.particles.spawn_oneshot_emitter(50, Vec3::splat(0.0));
+                            }
+                        },
+                        glfw::Key::Escape => {
+                            if action == glfw::Action::Press {
+                                self.paused = !self.paused;
                             }
                         },
                         _ => {}
@@ -279,10 +286,15 @@ impl GameState {
 
 
         // SHOULD WE QUIT THE GAME?
-        if self.paused { return; }
-        if self.pressed_keys.contains(&glfw::Key::Escape) {
-            self.window.set_should_close(true);
+        if self.paused { 
+            self.window.set_cursor_mode(glfw::CursorMode::Normal);
+            return; 
+        } else {
+            self.window.set_cursor_mode(glfw::CursorMode::Disabled);
         }
+        // if self.pressed_keys.contains(&glfw::Key::Escape) {
+        //     self.window.set_should_close(true);
+        // }
 
         // UPDATE OOP-ESQUE STRUCTS
         self.camera.update(&self.entity_manager, self.delta_time);
@@ -296,7 +308,7 @@ impl GameState {
         animation_system::update(&mut self.entity_manager, self.delta_time);
         state_machines::update(&mut self.entity_manager, self.delta_time, &mut self.particles);
         collision_system::update(&mut self.entity_manager);
-        self.entity_manager.update();
+        self.entity_manager.update(&mut self.sound_manager);
     }
 
     pub fn render(&mut self) {
@@ -351,8 +363,8 @@ impl GameState {
             self.renderer.shaders.get_mut(&ShaderType::Particles).unwrap(),
             &self.camera,
         );
-
-        self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera, &mut self.entity_manager);
+        
+        // self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera, &mut self.entity_manager);
 
 
         let phrase = format!("FPS: {}", self.fps);
@@ -364,17 +376,19 @@ impl GameState {
             self.fb_width as f32,
             self.fb_height as f32,
             self.renderer.shaders.get_mut(&ShaderType::Text).unwrap(),
-            0.5,
+            0.7,
         );
 
-        game_ui::do_ui(
-            self.fb_width as f32, 
-            self.fb_height as f32, 
-            self.cursor_pos, 
-            &mut self.font_manager,
-            self.renderer.shaders.get(&ShaderType::GameUi).unwrap(),
-            self.renderer.shaders.get(&ShaderType::Text).unwrap(),
-        );
+        if self.paused {
+            game_ui::do_ui(
+                self.fb_width as f32, 
+                self.fb_height as f32, 
+                self.cursor_pos, 
+                &mut self.font_manager,
+                self.renderer.shaders.get(&ShaderType::GameUi).unwrap(),
+                self.renderer.shaders.get(&ShaderType::Text).unwrap(),
+            );
+        }
 
         self.window.swap_buffers();
         self.glfw.poll_events()

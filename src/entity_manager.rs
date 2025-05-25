@@ -1,12 +1,13 @@
 #![allow(clippy::too_many_arguments)]
 use std::collections::HashSet;
 
+use gl::PolygonMode;
 use glam::{vec3, Mat4, Quat, Vec3};
 use libc::EILSEQ;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-use crate::{animation::{animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model}, animation_system}, camera::Camera, collision_system, config::{entity_config::{AnimationPropHelper, EntityConfig}, world_data::WorldData}, debug::gizmos::{Cuboid, Cylinder}, enums_types::{CellType, EntityType, Faction, Parent, Rotator, SimState, Transform, VisualEffect}, grid::Grid, movement_system, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot}, sparse_set::SparseSet, state_machines, terrain::Terrain};
+use crate::{animation::{animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model}, animation_system}, camera::Camera, collision_system, config::{entity_config::{AnimationPropHelper, EntityConfig}, world_data::WorldData}, debug::gizmos::{Cuboid, Cylinder}, enums_types::{CellType, EntityType, Faction, Parent, Rotator, SimState, Transform, VisualEffect}, grid::Grid, movement_system, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot, SoundManager}, sparse_set::SparseSet, state_machines, terrain::Terrain};
 
 pub struct EntityManager {
     pub next_entity_id: usize,
@@ -258,12 +259,13 @@ impl EntityManager {
         self.next_entity_id += 1;
     }
 
-    pub fn update(&mut self) {
-        self.delete_entities();
+    pub fn update(&mut self, sm: &mut SoundManager) {
+        self.delete_entities(sm);
     }
 
-    pub fn delete_entities(&mut self) {
+    pub fn delete_entities(&mut self, sm: &mut SoundManager) {
         for id in self.entity_trashcan.iter() {
+            sm.cleanup_entity_sounds(*id);
             self.transforms.remove(*id);
             self.factions.remove(*id);
             self.entity_types.remove(*id);

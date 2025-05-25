@@ -173,7 +173,7 @@ fn draw_rects(rects: Vec<Rect>, shader: &Shader, fb_width: f32, fb_height: f32, 
             let target_font_height = if rect.text == "X" {
                 rect.h * 0.9
             } else {
-                rect.h * 0.32
+                rect.h * 0.4
             };
 
             let scale = target_font_height / fm.font_pixel_size;
