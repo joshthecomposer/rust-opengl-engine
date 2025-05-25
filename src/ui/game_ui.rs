@@ -1,188 +1,186 @@
-use glam::{vec4, Vec4};
+use glam::{vec4, Vec2, Vec4};
 
-use crate::{gl_call, shaders::Shader};
+use crate::{enums_types::ShaderType, gl_call, renderer::Renderer, shaders::Shader};
 
-use super::color::hex_to_vec4;
+use super::{color::hex_to_vec4, font::FontManager};
 
-pub struct UiContainer {
-    // w,h are a percentage of the parent, if top level it is a percentage of the framebuffer
-    pub w: f32,
-    pub h: f32,
+pub struct Rect {
     pub x: f32,
     pub y: f32,
-    pub g: f32,
-
-    pub bg_color: Vec4,
-    pub text: Option<String>,
-
-    pub id: u32,
-    pub parent: Option<u32>,
+    pub w: f32,
+    pub h: f32,
+    pub color: Vec4,
+    pub text: String,
 }
 
-pub struct GameUi {
-    pub next_id: u32,
-    pub containers: Vec<UiContainer>,
+pub fn do_ui(fb_width: f32, fb_height: f32, mouse_pos: Vec2, fm: &mut FontManager, shader: &Shader, font_shader: &Shader) {
+    let mut rects = Vec::new();
+    let mut w = fb_width  * 0.25;
+    let mut h = fb_height * 0.45;
 
-    pub vao: u32,
-    pub vbo: u32,
+    let mut pause_container = Rect {
+        x: (fb_width / 2.0) - (w / 2.0),
+        y: (fb_height / 2.0) - (h / 2.0),
+        w,
+        h,
+        color: Vec4::splat(1.0),
+        text: "".to_string(),
+    };
+
+    w = pause_container.w * 0.95; 
+    h = pause_container.h * 0.95; 
+
+    let button_h = pause_container.h * 0.15;
+    let  exit_button_h = button_h / 3.0;
+    let gap = 15.0; // Pixels
+
+    let mut exit_button = Rect {
+        x: (pause_container.x + pause_container.w) - (exit_button_h + gap),
+        y: pause_container.y + gap,
+        w: exit_button_h,
+        h: exit_button_h,
+        color: Vec4::splat(1.0),
+        text: "X".to_string(),
+    };
+
+    let mut kill_button = Rect {
+        x: pause_container.x + (pause_container.w / 2.0) - (w / 2.0),
+        y: pause_container.y + h - ((button_h * 2.0) + gap),
+        w,
+        h: button_h,
+        color: Vec4::splat(1.0),
+        text: "Kill Entities".to_string(),
+    };
+
+    let mut quit_button = Rect {
+        x: pause_container.x + (pause_container.w / 2.0) - (w / 2.0),
+        y: pause_container.y + h - button_h,
+        w,
+        h: button_h,
+        color: Vec4::splat(1.0),
+        text: "Quit Game".to_string(),
+    };
+
+    let hovering_exit_button = mouse_pos.x >= exit_button.x 
+    && mouse_pos.y >= exit_button.y
+    && mouse_pos.x <= exit_button.x + exit_button.w 
+    && mouse_pos.y <= exit_button.h + exit_button.y;
+
+    let hovering_quit_button = mouse_pos.x >= quit_button.x 
+    && mouse_pos.y >= quit_button.y
+    && mouse_pos.x <= quit_button.x + quit_button.w 
+    && mouse_pos.y <= quit_button.h + quit_button.y;
+
+    let hovering_kill_button = mouse_pos.x >= kill_button.x 
+    && mouse_pos.y >= kill_button.y
+    && mouse_pos.x <= kill_button.x + kill_button.w 
+    && mouse_pos.y <= kill_button.h + kill_button.y;
+
+    let color_950 = hex_to_vec4("#0c0a09");
+    let color_900 = hex_to_vec4("#1c1917");
+    let color_800 = hex_to_vec4("#292524");
+
+    pause_container.color = color_950;
+
+    if hovering_exit_button {
+        exit_button.color = color_800;
+    } else {
+        exit_button.color =color_900;
+
+    };
+
+    if hovering_quit_button {
+        quit_button.color = color_800
+    } else {
+        quit_button.color = color_900
+    };
+
+    if hovering_kill_button {
+        kill_button.color = color_800
+    } else {
+        kill_button.color = color_900
+    };
+
+    rects.push(pause_container);
+    rects.push(exit_button);
+    rects.push(quit_button);
+    rects.push(kill_button);
+
+    draw_rects(rects, shader, fb_width, fb_height, fm, font_shader);
 }
 
-impl GameUi {
-    pub fn new() -> Self {
-        let mut game_ui = Self {
-            next_id: 1,
-            containers: vec![],
-            vao: 0,
-            vbo: 0,
-        };
-        game_ui.create_container(
-                0.5,
-                0.5,
-                0.1,
-                0.1,
-                "#030712",
-                None,
-        );
-        game_ui.setup_buffers();
+fn draw_rects(rects: Vec<Rect>, shader: &Shader, fb_width: f32, fb_height: f32, fm: &mut FontManager, font_shader: &Shader) {
+    shader.activate();
+    let mut vertices: Vec<f32> = Vec::with_capacity(rects.len() * 6 * 6);
 
-        game_ui
+    for rect in rects.iter() {
+        let x0 = (rect.x / fb_width) * 2.0 - 1.0; // You should pass in fb_width/fb_height here
+        let y0 = 1.0 - (rect.y / fb_height) * 2.0;
+        let x1 = ((rect.x + rect.w) / fb_width) * 2.0 - 1.0;
+        let y1 = 1.0 - ((rect.y + rect.h) / fb_height) * 2.0;
+
+        let c = rect.color.to_array();
+
+        // First triangle
+        vertices.extend_from_slice(&[x0, y0, c[0], c[1], c[2], c[3]]);
+        vertices.extend_from_slice(&[x1, y0, c[0], c[1], c[2], c[3]]);
+        vertices.extend_from_slice(&[x1, y1, c[0], c[1], c[2], c[3]]);
+        // Second triangle
+        vertices.extend_from_slice(&[x1, y1, c[0], c[1], c[2], c[3]]);
+        vertices.extend_from_slice(&[x0, y1, c[0], c[1], c[2], c[3]]);
+        vertices.extend_from_slice(&[x0, y0, c[0], c[1], c[2], c[3]]);
     }
 
-    pub fn create_container(&mut self, w: f32, h: f32, x: f32, y: f32, bg_color: &str, text: Option<&str>) {
-        let final_text = match text {
-            Some(t) => Some(t.to_string()),
-            None => None,
-        };
+    let mut vbo = 0;
+    let mut vao = 0;
+    unsafe {
+        gl_call!(gl::Disable(gl::DEPTH_TEST));
+        gl_call!(gl::GenVertexArrays(1, &mut vao));
+        gl_call!(gl::GenBuffers(1, &mut vbo));
 
-        self.containers.push(UiContainer {
-            w,
-            h,
-            x,
-            y,
-            g: 0.0,
-            bg_color: hex_to_vec4(bg_color),
-            text: final_text,
-            id: self.next_id,
-            parent: None,
-        });
+        gl_call!(gl::BindVertexArray(vao));
+        gl_call!(gl::BindBuffer(gl::ARRAY_BUFFER, vbo));
+        gl_call!(gl::BufferData(
+            gl::ARRAY_BUFFER,
+            (vertices.len() * std::mem::size_of::<f32>()) as isize,
+            vertices.as_ptr() as *const _,
+            gl::DYNAMIC_DRAW,
+        ));
 
-        self.next_id += 1;
+        gl_call!(gl::EnableVertexAttribArray(0));
+        gl_call!(gl::VertexAttribPointer(
+            0, 2, gl::FLOAT, gl::FALSE, 6 * 4, std::ptr::null()
+        ));
 
-        for i in 0..3 {
-            self.containers.push(UiContainer {
-                w: 0.8,
-                h: 0.1,
-                x: 0.05,
-                y: 0.05 + (0.1 * i as f32),
-                g: 5.0, // pixels.. change this
-                bg_color: hex_to_vec4("#111827"),
-                text: None,
-                id: self.next_id,
-                parent: Some(1),
-            });
+        gl_call!(gl::EnableVertexAttribArray(1));
+        gl_call!(gl::VertexAttribPointer(
+            1,
+            4,
+            gl::FLOAT,
+            gl::FALSE,
+            6 * 4,
+            (2 * 4) as *const _,
+        ));
 
-            self.next_id += 1;
-        }
-    }
+        gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, (vertices.len() / 6) as i32));
 
-    pub fn setup_buffers(&mut self) {
-        unsafe {
-            gl_call!(gl::GenVertexArrays(1, &mut self.vao));
-            gl_call!(gl::GenBuffers(1, &mut self.vbo));
+        gl_call!(gl::DeleteBuffers(1, &vbo));
+        gl_call!(gl::DeleteVertexArrays(1, &vao));
+        gl_call!(gl::Enable(gl::DEPTH_TEST));
 
-            gl_call!(gl::BindVertexArray(self.vao));
-            gl_call!(gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo));
-            gl_call!(gl::BufferData(
-                gl::ARRAY_BUFFER,
-                (6 * 7 * std::mem::size_of::<f32>()) as isize, // 7 * 6 floats each
-                std::ptr::null(),
-                gl::DYNAMIC_DRAW,
-            ));
-
-            gl_call!(gl::VertexAttribPointer(0, 3, gl::FLOAT, gl::FALSE, 7 * std::mem::size_of::<f32>() as i32, std::ptr::null()));
-            gl_call!(gl::EnableVertexAttribArray(0));
-
-            gl_call!(gl::VertexAttribPointer(1, 4, gl::FLOAT, gl::FALSE, 7 * std::mem::size_of::<f32>() as i32, (3 * std::mem::size_of::<f32>()) as *const _));
-            gl_call!(gl::EnableVertexAttribArray(1));
-
-            gl_call!(gl::BindBuffer(gl::ARRAY_BUFFER, 0));
-            gl_call!(gl::BindVertexArray(0));
-        }
-    }
-
-    pub fn draw(&self, fb_width: f32, fb_height: f32, shader: &mut Shader) {
-        shader.activate();
-        unsafe {
-            gl_call!(gl::BindVertexArray(self.vao));
-            gl_call!(gl::Disable(gl::DEPTH_TEST));
-        }
-
-        for con in self.containers.iter() {
-            let (xpos, ypos, w, h) = self.get_absolute_position(con, fb_width, fb_height);
-
-            let sx = 2.0 / fb_width;
-            let sy = 2.0 / fb_height;
-
-            let x0 = xpos * sx - 1.0;
-            let x1 = (xpos + w) * sx - 1.0 ;
-            let y0 = 1.0 - ypos * sy;
-            let y1 = 1.0 - (ypos + h) * sy;
-
-            let c: [f32; 4] = con.bg_color.into();
-
-                let vertices: [f32; 42] = [
-                    x0, y0, 0.0, c[0], c[1], c[2], c[3],
-                    x0, y1, 0.0, c[0], c[1], c[2], c[3],
-                    x1, y1, 0.0, c[0], c[1], c[2], c[3],
-                    x0, y0, 0.0, c[0], c[1], c[2], c[3],
-                    x1, y1, 0.0, c[0], c[1], c[2], c[3],
-                    x1, y0, 0.0, c[0], c[1], c[2], c[3],
-                ];
-
-            unsafe {
-                gl_call!(gl::BindBuffer(gl::ARRAY_BUFFER, self.vbo));
-
-                // TODO: unless the ui changes a bunch, we can probably just set up the buffer with the
-                // vertices one time in the setup function instead of here.
-                gl_call!(gl::BufferSubData(
-                    gl::ARRAY_BUFFER,
-                    0,
-                    (vertices.len() * std::mem::size_of::<f32>()) as isize,
-                    vertices.as_ptr() as *const _,
-                    // gl::STATIC_DRAW,
-                ));
-                gl_call!(gl::DrawArrays(gl::TRIANGLES, 0, 6));
-
-            }
-        }
-        unsafe {
-            gl_call!(gl::Enable(gl::DEPTH_TEST));
-        }
-    }
-
-    pub fn get_absolute_position(&self, con: &UiContainer, fb_width: f32, fb_height:f32) -> (f32, f32, f32, f32) {
-        if let Some(parent_id) = con.parent {
-            if let Some(parent) = self.containers.iter().find(|c| c.id == parent_id) {
-                let (px, py, pw, ph) = self.get_absolute_position(parent, fb_width, fb_height);
-
-                let abs_w = pw * con.w;
-                let abs_h = ph * con.h;
-                let abs_x = px + pw * con.x;
-                let abs_y = py + ph * con.y;
-
-                (abs_x, abs_y, abs_w, abs_h)
+        // Render font on top:
+        for rect in &rects {
+            let target_font_height = if rect.text == "X" {
+                rect.h * 0.9
             } else {
-                // fallback if parent is missing
-                (con.x, con.y, con.w, con.h)
-            }
-        } else {
-            // top-level container: treat x/y/w/h as relative to framebuffer
-            (
-                con.x *  fb_width,
-                con.y *  fb_height,
-                con.w *  fb_width,
-                con.h *  fb_height,
-            )
+                rect.h * 0.32
+            };
+
+            let scale = target_font_height / fm.font_pixel_size;
+
+            fm.render_phrase_centered(&rect.text, rect, fb_width, fb_height, font_shader, scale);
         }
+
     }
 }
+

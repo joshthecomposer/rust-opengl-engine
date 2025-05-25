@@ -2,12 +2,12 @@
 use std::collections::HashSet;
 
 use gl::{AttachShader, PixelStoref};
-use glam::{vec3, Quat, Vec2, Vec3};
+use glam::{vec2, vec3, Quat, Vec2, Vec3};
 use glfw::{Context, Glfw, GlfwReceiver, Key, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig, world_data::WorldData}, debug::{gizmos::Cylinder, write::write_data}, entity_manager::{self, EntityManager}, enums_types::{AnimationType, CameraState, EntityType, Faction, ShaderType, SimState, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, particles::{Emitter, ParticleSystem}, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::{font::{self, FontManager}, game_ui::GameUi, imgui::ImguiManager}};
+use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig, world_data::WorldData}, debug::{gizmos::Cylinder, write::write_data}, entity_manager::{self, EntityManager}, enums_types::{AnimationType, CameraState, EntityType, Faction, ShaderType, SimState, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, particles::{Emitter, ParticleSystem}, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::{font::{self, FontManager}, game_ui, imgui::ImguiManager}};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -46,7 +46,6 @@ pub struct GameState {
     pub fps: u32,
     pub last_fps_update: f32,
     pub particles: ParticleSystem,
-    pub game_ui: GameUi,
 }
 
 impl GameState {
@@ -153,13 +152,12 @@ impl GameState {
         // sound_manager.play_sound_3d("moose3D".to_string(), &vec3(0.0, 0.0, 4.0));
 
         let mut font_manager = FontManager::new();
-        font_manager.load_chars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:,.!?()[]{}<>");
+        font_manager.load_chars("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789:,.!?()[]{}<> ");
         font_manager.setup_buffers();
 
         let mut particles = ParticleSystem::new();
         particles.spawn_continuous_emitter(100, vec3(10.0, 20.0, 10.0), "Smoke", Some("resources/textures/smoke.png"));
          // particles.spawn_continuous_emitter(50, Vec3::splat(0.0), "Smoke", None);
-
         Self {
             delta_time: 0.0,
             last_frame: 0.0,
@@ -192,7 +190,6 @@ impl GameState {
             fps: 0,
             last_fps_update: 0.0,
             particles,
-            game_ui: GameUi::new(),
         }
     }
 
@@ -358,8 +355,6 @@ impl GameState {
         self.imgui_manager.draw(&mut self.window, self.fb_width as f32, self.fb_height as f32, self.delta_time, &mut self.light_manager, &mut self.renderer, &mut self.sound_manager, &self.camera, &mut self.entity_manager);
 
 
-        self.game_ui.draw(self.fb_width as f32, self.fb_height as f32, self.renderer.shaders.get_mut(&ShaderType::GameUi).unwrap());
-
         let phrase = format!("FPS: {}", self.fps);
 
         self.font_manager.render_phrase(
@@ -370,6 +365,15 @@ impl GameState {
             self.fb_height as f32,
             self.renderer.shaders.get_mut(&ShaderType::Text).unwrap(),
             0.5,
+        );
+
+        game_ui::do_ui(
+            self.fb_width as f32, 
+            self.fb_height as f32, 
+            self.cursor_pos, 
+            &mut self.font_manager,
+            self.renderer.shaders.get(&ShaderType::GameUi).unwrap(),
+            self.renderer.shaders.get(&ShaderType::Text).unwrap(),
         );
 
         self.window.swap_buffers();

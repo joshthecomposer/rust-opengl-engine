@@ -5,6 +5,8 @@ use rusttype::{point, Font, Scale};
 
 use crate::{enums_types::ShaderType, gl_call, shaders::Shader};
 
+use super::game_ui::Rect;
+
 pub struct GlyphInfo {
     pub texture: u32,
     pub width: u32,
@@ -17,6 +19,7 @@ pub struct FontManager {
     pub vao: u32,
     pub vbo: u32,
     pub glyphs: HashMap<char, GlyphInfo>,
+    pub font_pixel_size: f32,
 }
 
 impl FontManager {
@@ -25,21 +28,25 @@ impl FontManager {
             vao: 0,
             vbo: 0,
             glyphs: HashMap::new(),
+            font_pixel_size: 96.0,
         }
     }
 
     pub fn load_chars(&mut self, phrase: &str) {
         let font_data = include_bytes!("../../resources/fonts/JetBrainsMonoNL-Regular.ttf");
         let font = Font::try_from_bytes(font_data).unwrap();
-        let scale = Scale::uniform(64.0); // Smaller size
+        let scale = Scale::uniform(self.font_pixel_size);
         let v_metrics = font.v_metrics(scale);
 
         for c in phrase.chars() {
-            if self.glyphs.contains_key(&c) || c == ' ' {
+            if self.glyphs.contains_key(&c) {
                 continue;
             }
 
             let glyph = font.glyph(c).scaled(scale).positioned(point(0.0, v_metrics.ascent));
+            let h_metrics = glyph.unpositioned().h_metrics();
+            let advance = h_metrics.advance_width;
+            let ascent = v_metrics.ascent;
 
             if let Some(bb) = glyph.pixel_bounding_box() {
                 let width = bb.width() as usize;
@@ -73,14 +80,21 @@ impl FontManager {
                     gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::NEAREST as i32);
                 }
 
-                let ascent = v_metrics.ascent;
-
                 self.glyphs.insert(c, GlyphInfo {
                     texture: tex,
                     width: width as u32,
                     height: height as u32,
-                    advance: glyph.unpositioned().h_metrics().advance_width,
+                    advance,
                     bearing_y: ascent - bb.min.y as f32,
+                });
+            } else {
+                // Handle space or invisible glyphs
+                self.glyphs.insert(c, GlyphInfo {
+                    texture: 0, // No texture needed
+                    width: 0,
+                    height: 0,
+                    advance,
+                    bearing_y: 0.0,
                 });
             }
         }
@@ -123,11 +137,6 @@ impl FontManager {
         let mut cursor_x = x;
 
         for c in phrase.chars() {
-            if c == ' ' {
-                cursor_x += 10.0 * scale; // fixed width space
-                continue;
-            }
-
             if let Some(glyph) = self.glyphs.get(&c) {
                 let sx = 2.0 / fb_width;
                 let sy = 2.0 / fb_height;
@@ -175,6 +184,39 @@ impl FontManager {
             gl::BindVertexArray(0);
             gl::Disable(gl::BLEND);
         }
+    }
+
+    pub fn render_phrase_centered(
+        &self,
+        phrase: &str,
+        rect: &Rect,
+        fb_width: f32,
+        fb_height: f32,
+        shader: &Shader,
+        scale: f32,
+    ) {
+        // Compute total width
+        let mut text_width = 0.0;
+        for c in phrase.chars() {
+            if let Some(glyph) = self.glyphs.get(&c) {
+                text_width += glyph.advance * scale;
+            }
+        }
+
+        let text_x = rect.x + (rect.w - text_width) / 2.0;
+
+        let first_glyph = phrase
+            .chars()
+            .filter_map(|c| self.glyphs.get(&c))
+            .next();
+
+        let text_y = if let Some(g) = first_glyph {
+            rect.y + (rect.h / 2.0) + ((g.bearing_y - g.height as f32 / 2.0) * scale)
+        } else {
+            rect.y + rect.h / 2.0
+        };
+
+        self.render_phrase(phrase, text_x, text_y, fb_width, fb_height, shader, scale);
     }
 
 }
