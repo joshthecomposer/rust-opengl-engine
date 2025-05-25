@@ -1,7 +1,7 @@
 use glam::{vec4, Vec2, Vec4};
 use glfw::CursorMode;
 
-use crate::{enums_types::ShaderType, gl_call, renderer::Renderer, shaders::Shader};
+use crate::{enums_types::{CameraState, ShaderType}, gl_call, renderer::Renderer, shaders::Shader};
 
 use super::{color::hex_to_vec4, font::FontManager, message_queue::{MessageQueue, UiMessage}};
 
@@ -15,7 +15,7 @@ pub struct Rect {
     pub text: String,
 }
 
-pub fn do_ui(fb_width: f32, fb_height: f32, mouse_pos: Vec2, fm: &mut FontManager, shader: &Shader, font_shader: &Shader, mq: &mut MessageQueue, paused: bool, cm: CursorMode) {
+pub fn do_ui(fb_width: f32, fb_height: f32, mouse_pos: Vec2, fm: &mut FontManager, shader: &Shader, font_shader: &Shader, mq: &mut MessageQueue, paused: bool, cm: CursorMode, cs: &CameraState) {
     let mut rects = vec![];
     // =============================================================
     // PAUSE PANEL
@@ -73,7 +73,7 @@ pub fn do_ui(fb_width: f32, fb_height: f32, mouse_pos: Vec2, fm: &mut FontManage
     // LOWER RIGHT BOX
     // =============================================================
     // Main panel w/h
-    {
+    if *cs == CameraState::Third {
         let mut w = fb_width * 0.15;
         let h = w;
 
@@ -144,6 +144,10 @@ fn draw_rects(rects: Vec<Rect>, shader: &Shader, fb_width: f32, fb_height: f32, 
     let mut vbo = 0;
     let mut vao = 0;
     unsafe {
+
+        gl_call!(gl::Enable(gl::BLEND));
+        gl_call!(gl::BlendFunc(gl::SRC_ALPHA, gl::ONE_MINUS_SRC_ALPHA));
+
         gl_call!(gl::Disable(gl::DEPTH_TEST));
         gl_call!(gl::GenVertexArrays(1, &mut vao));
         gl_call!(gl::GenBuffers(1, &mut vbo));
@@ -177,6 +181,7 @@ fn draw_rects(rects: Vec<Rect>, shader: &Shader, fb_width: f32, fb_height: f32, 
         gl_call!(gl::DeleteBuffers(1, &vbo));
         gl_call!(gl::DeleteVertexArrays(1, &vao));
         gl_call!(gl::Enable(gl::DEPTH_TEST));
+        gl_call!(gl::Disable(gl::BLEND));
 
         // Render font on top:
         for rect in &rects {

@@ -23,6 +23,6 @@ pub fn hex_to_vec4(input: &str) -> Vec4 {
         *result.get(0).unwrap() / 255.0,
         *result.get(1).unwrap() / 255.0,
         *result.get(2).unwrap() / 255.0,
-        1.0,
+        0.75,
     )
 }

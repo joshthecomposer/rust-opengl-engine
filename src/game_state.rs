@@ -410,6 +410,7 @@ impl GameState {
             &mut self.message_queue,
             self.paused,
             self.window.get_cursor_mode(),
+            &self.camera.move_state,
         );
 
         if self.message_queue.queue.contains(&UiMessage::WindowShouldClose) {
