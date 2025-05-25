@@ -81,12 +81,12 @@ impl GameState {
                     let refresh_rate    = video_mode.refresh_rate; // e.g. 60, 144, etc.
 
                     window.set_monitor(
-                        // glfw::WindowMode::Windowed,
-                        glfw::WindowMode::FullScreen(monitor),
+                        glfw::WindowMode::Windowed,
+                        // glfw::WindowMode::FullScreen(monitor),
                         100,      // X-position on that monitor
                         100,      // Y-position on that monitor
-                        width as u32,
-                        height as u32,
+                        1920 as u32,
+                        1080 as u32,
                         Some(refresh_rate)
                     );
                 }
@@ -233,7 +233,7 @@ impl GameState {
                         },
                         glfw::Key::Escape => {
                             if action == glfw::Action::Press {
-                                self.paused = !self.paused;
+                                self.message_queue.send(UiMessage::PauseToggle);
                             }
                         },
                         _ => {}
@@ -298,19 +298,23 @@ impl GameState {
         }
 
 
-        // SHOULD WE QUIT THE GAME?
-        if self.paused { 
-            self.window.set_cursor_mode(glfw::CursorMode::Normal);
-            return; 
+        let desired_cursor_mode = if self.paused {
+            // println!("Setting cursormode to normal at line 305");
+            glfw::CursorMode::Normal
+        } else if self.camera.move_state == CameraState::Locked {
+            // println!("Setting cursormode to normal at line 308");
+            glfw::CursorMode::Normal // or Disabled, based on your UI preferences
         } else {
-            // TODO: maybe determining cursor lock state should be just done by the message queue, but that could be just as confusing.
-            if self.camera.move_state != CameraState::Locked {
-                self.window.set_cursor_mode(glfw::CursorMode::Disabled);
-            }
+            // println!("Setting cursormode to disabled at line 311");
+            glfw::CursorMode::Disabled
+        };
+
+        self.window.set_cursor_mode(desired_cursor_mode);
+
+        if self.paused {
+            // don't update the simulation/animations if paused
+            return;
         }
-        // if self.pressed_keys.contains(&glfw::Key::Escape) {
-        //     self.window.set_should_close(true);
-        // }
 
         // UPDATE OOP-ESQUE STRUCTS
         self.camera.update(&self.entity_manager, self.delta_time);

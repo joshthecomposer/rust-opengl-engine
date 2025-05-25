@@ -32,9 +32,11 @@ use std::io::Write;
 fn main() {
     let mut state = GameState::new();
     while !state.window.should_close() {
+        println!("START GAME LOOP");
         state.process_events();
         state.update();
         state.render();
+        println!("END GAME LOOP");
     }
 
 }

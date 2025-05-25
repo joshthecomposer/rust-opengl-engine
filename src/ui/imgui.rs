@@ -70,8 +70,6 @@ impl ImguiManager {
         let ui = self.imgui.frame();
 
         if camera.move_state == CameraState::Locked {
-            window.set_cursor_mode(glfw::CursorMode::Normal);
-
             ui.window("Lights")
                 .size([500.0, 200.0], imgui::Condition::FirstUseEver)
                 .position([50.0, 50.0], imgui::Condition::FirstUseEver)
@@ -216,10 +214,7 @@ impl ImguiManager {
 
                 });
 
-        } else {
-            window.set_cursor_mode(glfw::CursorMode::Disabled);
-        }
-
+        } 
 
         ui.window("Some Info")
             .size([400.0, 150.0], imgui::Condition::FirstUseEver)

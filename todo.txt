@@ -23,12 +23,7 @@
 // TODO: Should foliage be a child of the tree trunk?? Then when doing things we iterate up the parent tree?
 
 ===========================================
-./src\game_state.rs:306
-===========================================
-// TODO: maybe determining cursor lock state should be just done by the message queue, but that could be just as confusing.
-
-===========================================
-./src\game_state.rs:334
+./src\game_state.rs:338
 ===========================================
 // TODO: should we abstract this out somewhere?
 
