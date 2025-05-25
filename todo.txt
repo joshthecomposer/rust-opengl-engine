@@ -23,7 +23,7 @@
 // TODO: Should foliage be a child of the tree trunk?? Then when doing things we iterate up the parent tree?
 
 ===========================================
-./src\game_state.rs:300
+./src\game_state.rs:309
 ===========================================
 // TODO: should we abstract this out somewhere?
 
@@ -58,12 +58,12 @@
 // TODO: Instead allocate the right size at the beginning by multiplying the particles per second by the lifetimes
 
 ===========================================
-./src\renderer.rs:326
+./src\renderer.rs:328
 ===========================================
 // TODO: DOn't clone, we really need an enum here.
 
 ===========================================
-./src\renderer.rs:576
+./src\renderer.rs:578
 ===========================================
 // TODO:: Get rid of this.
 
@@ -81,4 +81,10 @@ pub sound_type: String, // TODO: JW - This sound_type should probably be an enum
 ./src\terrain.rs:28
 ===========================================
 // TODO: replace 10.0 with some max height value
+
+===========================================
+./src\ui\game_ui.rs:145
+===========================================
+// TODO: unless the ui changes a bunch, we can probably just set up the buffer with the
+// vertices one time in the setup function instead of here.
 

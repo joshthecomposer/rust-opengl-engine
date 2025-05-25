@@ -173,6 +173,7 @@ impl FontManager {
             gl::ActiveTexture(gl::TEXTURE1);
             gl::BindTexture(gl::TEXTURE_2D, 0);
             gl::BindVertexArray(0);
+            gl::Disable(gl::BLEND);
         }
     }
 
