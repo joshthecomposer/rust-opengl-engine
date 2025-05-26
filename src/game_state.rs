@@ -7,7 +7,7 @@ use glfw::{Context, Glfw, GlfwReceiver, Key, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig, world_data::WorldData}, debug::{gizmos::Cylinder, write::write_data}, entity_manager::{self, EntityManager}, enums_types::{AnimationType, CameraState, EntityType, Faction, ShaderType, SimState, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, particles::{Emitter, ParticleSystem}, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::{font::{self, FontManager}, game_ui, imgui::ImguiManager, message_queue::{MessageQueue, UiMessage}}};
+use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig, world_data::WorldData}, debug::{gizmos::Cylinder, write::write_data}, entity_manager::{self, EntityManager}, enums_types::{AnimationType, CameraState, EntityType, Faction, ShaderType, SimState, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, particles::{Emitter, ParticleSystem}, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::{font::{self, FontManager}, game_ui::{self, GameUiContext}, imgui::ImguiManager, message_queue::{MessageQueue, UiMessage}}};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -49,6 +49,7 @@ pub struct GameState {
     pub particles: ParticleSystem,
 
     pub message_queue: MessageQueue,
+    pub game_ui_context: GameUiContext,
 }
 
 impl GameState {
@@ -161,6 +162,9 @@ impl GameState {
         let mut particles = ParticleSystem::new();
         particles.spawn_continuous_emitter(100, vec3(10.0, 20.0, 10.0), "Smoke", Some("resources/textures/smoke.png"));
          // particles.spawn_continuous_emitter(50, Vec3::splat(0.0), "Smoke", None);
+
+        let ui_ctx = GameUiContext::new();
+
         Self {
             delta_time: 0.0,
             last_frame: 0.0,
@@ -195,6 +199,7 @@ impl GameState {
             last_fps_update: 0.0,
             particles,
             message_queue: MessageQueue::new(), 
+            game_ui_context: ui_ctx,
         }
     }
 
@@ -400,7 +405,7 @@ impl GameState {
         //     0.7,
         // );
 
-        game_ui::do_ui(
+       game_ui::do_ui(
             self.fb_width as f32, 
             self.fb_height as f32, 
             self.cursor_pos, 
@@ -411,6 +416,8 @@ impl GameState {
             self.paused,
             self.window.get_cursor_mode(),
             &self.camera.move_state,
+            &self.pressed_keys,
+            &mut self.game_ui_context,
         );
 
         if self.message_queue.queue.contains(&UiMessage::WindowShouldClose) {

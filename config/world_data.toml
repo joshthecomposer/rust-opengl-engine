@@ -1,8 +1,8 @@
 [[entities]]
 entity_type = "YRobot"
 faction = "Player"
-position = [38.9813, 0.0, -5.0717]
-rotation = [0.0, -0.6743, 0.0, 0.7385]
+position = [39.6798, 0.0, -5.0717]
+rotation = [0.0, -0.7071, 0.0, 0.7071]
 
 [[entities]]
 entity_type = "YRobot"
@@ -13,8 +13,8 @@ rotation = [0.0, 0.6915, 0.0, 0.7224]
 [[entities]]
 entity_type = "MooseMan"
 faction = "Enemy"
-position = [-0.0397, 0.0196, 3.8416]
-rotation = [0.0, -0.9923, 0.0, 0.1238]
+position = [11.5138, 0.0, -1.7805]
+rotation = [0.0, -0.1898, 0.0, -0.9818]
 
 [[entities]]
 entity_type = "TreeFoliage"
