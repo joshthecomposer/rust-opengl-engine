@@ -169,7 +169,7 @@ pub fn do_ui(fb_width: f32, fb_height: f32, mouse_pos: Vec2, fm: &mut FontManage
         for i in 0..num_buttons {
             let  label = if i == 9 { "0".to_string() } else { (i + 1).to_string() };
             
-            if i == 1 {
+            if &label == "1" {
                 if button(
                     &label, 
                     x, 
