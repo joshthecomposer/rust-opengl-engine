@@ -168,40 +168,80 @@ pub fn do_ui(fb_width: f32, fb_height: f32, mouse_pos: Vec2, fm: &mut FontManage
 
         for i in 0..num_buttons {
             let  label = if i == 9 { "0".to_string() } else { (i + 1).to_string() };
-            
-            if &label == "1" {
-                if button(
-                    &label, 
-                    x, 
-                    y, 
-                    button_w, 
-                    button_h, 
-                    mouse_pos, 
-                    mq, 
-                    &mut rects, 
-                    cm, 
-                    pk,
-                    Some(
-                        ui_ctx.tex_cache.get_or_load("resources/textures/guy.png")
-                    ),
-                ) {
-                    println!("PH2 clicked");
+
+            match i {
+                0 => {
+                    if button(
+                        &label, 
+                        x, 
+                        y, 
+                        button_w, 
+                        button_h, 
+                        mouse_pos, 
+                        mq, 
+                        &mut rects, 
+                        cm, 
+                        pk,
+                        Some(
+                            ui_ctx.tex_cache.get_or_load("resources/textures/guy.png")
+                        ),
+                    ) {
+                        println!("Activated 1");
+                    }
+                },
+                1 => {
+                    if button(
+                        &label, 
+                        x, 
+                        y, 
+                        button_w, 
+                        button_h, 
+                        mouse_pos, 
+                        mq, 
+                        &mut rects, 
+                        cm, 
+                        pk,
+                        Some(
+                            ui_ctx.tex_cache.get_or_load("resources/textures/tree.png")
+                        ),
+                    ) {
+                        println!("Activated 2");
+                    }
+                },
+                2 => {
+                    if button(
+                        &label, 
+                        x, 
+                        y, 
+                        button_w, 
+                        button_h, 
+                        mouse_pos, 
+                        mq, 
+                        &mut rects, 
+                        cm, 
+                        pk,
+                        Some(
+                            ui_ctx.tex_cache.get_or_load("resources/textures/moose.png")
+                        ),
+                    ) {
+                        println!("Activated 3");
+                    }
                 }
-            } else {
-                if button(
-                    &label, 
-                    x, 
-                    y, 
-                    button_w, 
-                    button_h, 
-                    mouse_pos, 
-                    mq, 
-                    &mut rects, 
-                    cm, 
-                    pk,
-                    None,
-                ) {
-                    println!("PH2 clicked");
+                _ => {
+                    if button(
+                        &label, 
+                        x, 
+                        y, 
+                        button_w, 
+                        button_h, 
+                        mouse_pos, 
+                        mq, 
+                        &mut rects, 
+                        cm, 
+                        pk,
+                        None,
+                    ) {
+                    }
                 }
             }
 
@@ -334,6 +374,7 @@ pub fn button(
     if let Some(key) = num_check {
         if pk.contains(&key) {
             hovered = true;
+            clicked = true;
         }
     } else if cm == CursorMode::Normal {
         hovered = mouse_pos.x >= x

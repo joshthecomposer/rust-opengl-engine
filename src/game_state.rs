@@ -82,12 +82,14 @@ impl GameState {
                     let refresh_rate    = video_mode.refresh_rate; // e.g. 60, 144, etc.
 
                     window.set_monitor(
-                        // glfw::WindowMode::Windowed,
-                        glfw::WindowMode::FullScreen(monitor),
+                        glfw::WindowMode::Windowed,
+                        // glfw::WindowMode::FullScreen(monitor),
                         100,      // X-position on that monitor
                         100,      // Y-position on that monitor
-                        width as u32,
-                        height as u32,
+                        1920,
+                        1080,
+                        // width as u32,
+                        // height as u32,
                         Some(refresh_rate)
                     );
                 }
