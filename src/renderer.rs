@@ -264,9 +264,11 @@ impl Renderer {
         // Non-animated models
         let foliage_ids = em.get_ids_for_type(EntityType::TreeFoliage);
         let trunk_ids = em.get_ids_for_type(EntityType::TreeTrunk);
+        let stump_ids = em.get_ids_for_type(EntityType::Stump);
 
         self.static_model_pass(camera, em, light_manager, foliage_ids);
         self.static_model_pass(camera, em, light_manager, trunk_ids);
+        self.static_model_pass(camera, em, light_manager, stump_ids);
 
         // Animated models
         let y_robot_ids = em.get_ids_for_type(EntityType::YRobot);
@@ -543,7 +545,8 @@ impl Renderer {
             gl_call!(gl::Clear(gl::DEPTH_BUFFER_BIT));
             // Render scene
             gl_call!(gl::Enable(CULL_FACE));
-            gl_call!(gl::CullFace(gl::BACK));
+            //gl_call!(gl::CullFace(gl::BACK));
+            gl::CullFace(gl::FRONT);
             self.render_sample_depth(em);
             // gl_call!(gl::CullFace(gl::BACK)); 
             gl_call!(gl::Disable(CULL_FACE));

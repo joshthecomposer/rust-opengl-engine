@@ -162,7 +162,7 @@ impl GameState {
         font_manager.setup_buffers();
 
         let mut particles = ParticleSystem::new();
-        particles.spawn_continuous_emitter(100, vec3(10.0, 20.0, 10.0), "Smoke", Some("resources/textures/smoke.png"));
+        // particles.spawn_continuous_emitter(100, vec3(10.0, 20.0, 10.0), "Smoke", Some("resources/textures/smoke.png"));
          // particles.spawn_continuous_emitter(50, Vec3::splat(0.0), "Smoke", None);
 
         let ui_ctx = GameUiContext::new();

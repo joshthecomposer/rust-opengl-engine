@@ -101,8 +101,14 @@ impl ImguiManager {
                     if ui.slider("Bounds", 0.0, 100.0, &mut lm.bounds) {
                     };
 
-                    if ui.slider("Bias Scalar", 0.0, 0.3, &mut lm.bias_scalar) {
-                    };
+                    // if ui.slider("Bias Scalar", 0.0, 0.3, &mut lm.bias_scalar) {
+                    // };
+
+                    if Drag::new("Bias Scalar")
+                        .speed(0.0001)
+                        .display_format("%.6f")
+                        .build(ui, &mut lm.bias_scalar) {
+                    }
 
                     lm.dir_light.view_pos.x = lm.dir_light.direction.x * lm.dir_light.distance;
                     lm.dir_light.view_pos.y = lm.dir_light.direction.y * lm.dir_light.distance;

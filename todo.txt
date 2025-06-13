@@ -58,12 +58,12 @@
 // TODO: Instead allocate the right size at the beginning by multiplying the particles per second by the lifetimes
 
 ===========================================
-./src\renderer.rs:328
+./src\renderer.rs:330
 ===========================================
 // TODO: DOn't clone, we really need an enum here.
 
 ===========================================
-./src\renderer.rs:578
+./src\renderer.rs:581
 ===========================================
 // TODO:: Get rid of this.
 

@@ -196,7 +196,7 @@ def export_mesh_with_indices(filepath):
                 f.write(f"VERT:\n{pos[0]:.5f} {pos[1]:.5f} {pos[2]:.5f}\n")
                 f.write(f"{norm[0]:.5f} {norm[1]:.5f} {norm[2]:.5f}\n")
                 f.write(f"{uv[0]:.5f} {uv[1]:.5f}\n")
-                f.write(f"COLOR: {color[0]:.4f} {color[1]:.4f} {color[2]:.4f} {color[3]:.4f}\n")
+                # f.write(f"COLOR: {color[0]:.4f} {color[1]:.4f} {color[2]:.4f} {color[3]:.4f}\n")
 
                 if weights:
                     text = " ".join(f"{bone} {weight}" for bone, weight in weights)
@@ -211,9 +211,9 @@ def export_mesh_with_indices(filepath):
             f.write("\n\n")
 
 armature_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/animated/002_y_robot/y_robot_idle_bones.txt")
-mesh_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/static/trees/001_tree_trunk_model.txt")
+mesh_output = os.path.expanduser("E:/Software_Dev/rust/rust-opengl-engine/resources/models/static/stump/001_stump.txt")
 
-export_animation_data(armature_output)
+# export_animation_data(armature_output)
 
 bpy.context.scene.frame_set(0)
 export_mesh_with_indices(mesh_output)

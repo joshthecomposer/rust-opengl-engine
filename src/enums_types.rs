@@ -75,6 +75,7 @@ pub enum EntityType {
     YRobot,
     Terrain,
     Cylinder,
+    Stump,
 }
 
 impl Display for EntityType {
@@ -87,6 +88,7 @@ impl Display for EntityType {
             EntityType::YRobot => write!(f, "YRobot"),
             EntityType::Terrain => write!(f, "Terrain"),
             EntityType::Cylinder => write!(f, "Cylinder"),
+            EntityType::Stump => write!(f, "Stump"),
         }
     }
 }
