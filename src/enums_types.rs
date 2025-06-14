@@ -76,6 +76,7 @@ pub enum EntityType {
     Terrain,
     Cylinder,
     Stump,
+    OrcSword,
 }
 
 impl Display for EntityType {
@@ -89,6 +90,7 @@ impl Display for EntityType {
             EntityType::Terrain => write!(f, "Terrain"),
             EntityType::Cylinder => write!(f, "Cylinder"),
             EntityType::Stump => write!(f, "Stump"),
+            EntityType::OrcSword => write!(f, "OrcSword"),
         }
     }
 }
@@ -102,6 +104,7 @@ pub enum Faction {
     World,
     Player,
     Gizmo,
+    Item,
 }
 
 impl Display for Faction {
@@ -112,6 +115,7 @@ impl Display for Faction {
             Faction::World => write!(f, "World"),
             Faction::Player=> write!(f, "Player"),
             Faction::Gizmo => write!(f, "Gizmo"),
+            Faction::Item => write!(f, "Item"),
         }
     }
 }
@@ -210,4 +214,14 @@ impl AnimationType {
 
 pub enum VisualEffect {
     Flashing,
+}
+
+pub struct ActiveItem {
+    // TODO: what if more hands
+    pub right_hand: Option<usize>,
+    pub left_hand: Option<usize>,
+}
+
+pub struct Inventory {
+    pub items: Vec<usize>,
 }

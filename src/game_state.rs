@@ -7,7 +7,7 @@ use glfw::{Context, Glfw, GlfwReceiver, Key, PWindow, WindowEvent};
 use image::GrayImage;
 use rusttype::{point, Font, Scale};
 
-use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig, world_data::WorldData}, debug::{gizmos::Cylinder, write::write_data}, entity_manager::{self, EntityManager}, enums_types::{AnimationType, CameraState, EntityType, Faction, ShaderType, SimState, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, lights::{DirLight, Lights}, movement_system, particles::{Emitter, ParticleSystem}, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::{font::{self, FontManager}, game_ui::{self, GameUiContext}, imgui::ImguiManager, message_queue::{MessageQueue, UiMessage}}};
+use crate::{animation::animation_system, camera::Camera, collision_system, config::{entity_config::{self, EntityConfig}, game_config::GameConfig, world_data::WorldData}, debug::{gizmos::Cylinder, write::write_data}, entity_manager::{self, EntityManager}, enums_types::{AnimationType, CameraState, EntityType, Faction, ShaderType, SimState, Transform}, gl_call, grid::Grid, input::{handle_keyboard_input, handle_mouse_input}, items, lights::{DirLight, Lights}, movement_system, particles::{Emitter, ParticleSystem}, renderer::Renderer, sound::{fmod::FMOD_Studio_System_Update, sound_manager::SoundManager}, state_machines, terrain::Terrain, ui::{font::{self, FontManager}, game_ui::{self, GameUiContext}, imgui::ImguiManager, message_queue::{MessageQueue, UiMessage}}};
 // use rand::prelude::*;
 // use rand_chacha::ChaCha8Rng;
 
@@ -243,6 +243,21 @@ impl GameState {
                                 self.message_queue.send(UiMessage::PauseToggle);
                             }
                         },
+                        glfw::Key::Num1 => {
+                            if action == glfw::Action::Press {
+                                let player_id = self.entity_manager.factions.iter().filter(|f| *f.value() == Faction::Player).last().unwrap().key();
+                                let active_weapon = self.entity_manager.active_items.get_mut(player_id).unwrap();
+                                let curr_weapon_id = active_weapon.right_hand.unwrap();
+
+                                let inventory = self.entity_manager.inventories.get_mut(player_id).unwrap();
+
+                                let next_weapon_id = inventory.items.pop();
+
+                                active_weapon.right_hand = next_weapon_id;
+
+                                inventory.items.push(curr_weapon_id);
+                            }
+                        },
                         _ => {}
                     }
                     handle_keyboard_input(key, action, &mut self.pressed_keys);
@@ -335,6 +350,7 @@ impl GameState {
         animation_system::update(&mut self.entity_manager, self.delta_time);
         state_machines::update(&mut self.entity_manager, self.delta_time, &mut self.particles);
         collision_system::update(&mut self.entity_manager);
+        items::update(&mut self.entity_manager);
         self.entity_manager.update(&mut self.sound_manager);
     }
 

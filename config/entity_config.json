@@ -70,6 +70,15 @@
 			"bone_path":"",
 			"hit_cyl": { "r": 0.1, "h": 2.0 },
 			"animation_properties" : []
+		},
+		"OrcSword": {
+			"__note__": "use Quat::from_rotation_x()",
+			"rot_correction": "",
+			"scale_correction": [1.0, 1.0, 1.0],
+			"mesh_path": "resources/models/static/weapons/swords/001_orc_sword.txt", 
+			"bone_path":"",
+			"hit_cyl": { "r": 0.1, "h": 2.0 },
+			"animation_properties" : []
 		}
 	}
 }

@@ -486,6 +486,57 @@ impl Animation {
         None
     }
 
+    pub fn get_raw_global_bone_transform_by_name_blended(
+        &mut self,
+        bone_name: &str,
+        skeleton: &Bone,
+        parent_transform: Mat4,
+        other_animation: &mut Animation,
+        blend_factor: f32,
+    ) -> Option<Mat4> {
+        if skeleton.name == bone_name {
+            let delta1 = self.current_time % self.duration;
+            let delta2 = other_animation.current_time % other_animation.duration;
+
+            let (pos1, rot1, scale1) = self.get_bone_local_transform(skeleton, delta1);
+            let (pos2, rot2, scale2) = other_animation.get_bone_local_transform(skeleton, delta2);
+
+            let final_pos = pos1.lerp(pos2, blend_factor);
+            let final_rot = rot1.slerp(rot2, blend_factor);
+            let final_scale = scale1.lerp(scale2, blend_factor);
+
+            let local = Mat4::from_scale_rotation_translation(final_scale, final_rot, final_pos);
+            return Some(parent_transform * local);
+        }
+
+        for child in &skeleton.children {
+            let delta1 = self.current_time % self.duration;
+            let delta2 = other_animation.current_time % other_animation.duration;
+
+            let (pos1, rot1, scale1) = self.get_bone_local_transform(skeleton, delta1);
+            let (pos2, rot2, scale2) = other_animation.get_bone_local_transform(skeleton, delta2);
+
+            let final_pos = pos1.lerp(pos2, blend_factor);
+            let final_rot = rot1.slerp(rot2, blend_factor);
+            let final_scale = scale1.lerp(scale2, blend_factor);
+
+            let local = Mat4::from_scale_rotation_translation(final_scale, final_rot, final_pos);
+            let next_parent = parent_transform * local;
+
+            if let Some(found) = self.get_raw_global_bone_transform_by_name_blended(
+                bone_name,
+                child,
+                next_parent,
+                other_animation,
+                blend_factor,
+            ) {
+                return Some(found);
+            }
+        }
+
+        None
+    }
+
     pub fn update(&mut self, skellington: &mut Bone, other_animation: Option<&mut Animation>, blend_factor: f32, dt: f32) {
         self.current_time += dt;
         if self.current_time > self.duration {
@@ -495,6 +546,12 @@ impl Animation {
                 self.current_time = self.duration - 0.001;
             }
         }
+
+        // self.calculate_pose(
+        //     skellington, 
+        //     Mat4::IDENTITY,
+        //     Mat4::IDENTITY, 
+        // );
 
         if let Some(other_animation) = other_animation {
             self.calculate_pose_blended(
@@ -611,7 +668,7 @@ pub fn import_bone_data(file_path: &str) -> (Bone, Animator, Animation) {
         animation.current_pose.push(b.offset);
         assert!(model_animation_join[b.id as usize].name == b.name);
         assert!(model_animation_join.len() == animation.current_pose.len());
-        
+
         // T pose
     }
 
@@ -781,7 +838,7 @@ pub fn import_model_data(file_path: &str, animation: &Animation) -> Model {
             "INDEX_COUNT:" => {
                 let index_count: u32 = parts[1].parse().unwrap();
                 let indices: Vec<u32> = lines.next().unwrap().split_whitespace().map(|n| n.parse().unwrap()).collect();
-                
+
                 dbg!(indices.len());
                 dbg!(index_count);
                 assert!(index_count == indices.len() as u32);

@@ -20,6 +20,10 @@ fn handle_entity_collisions(em: &mut EntityManager) {
                     if *f1 == Faction::Static || *f2 == Faction::Static {
                         continue;
                     }
+
+                    if *f1 == Faction::Item || *f2 == Faction::Item {
+                        continue;
+                    }
                 }
             }
 

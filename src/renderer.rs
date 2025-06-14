@@ -1,5 +1,5 @@
 #![allow(dead_code, clippy::too_many_arguments)]
-use std::{collections::HashMap, ffi::c_void, mem, ptr::null_mut};
+use std::{collections::{HashMap, HashSet}, ffi::c_void, mem, ptr::null_mut};
 
 use gl::CULL_FACE;
 use glam::{vec3, vec4, Mat4, Vec3, Vec4};
@@ -265,10 +265,12 @@ impl Renderer {
         let foliage_ids = em.get_ids_for_type(EntityType::TreeFoliage);
         let trunk_ids = em.get_ids_for_type(EntityType::TreeTrunk);
         let stump_ids = em.get_ids_for_type(EntityType::Stump);
+        let active_weapon_ids = em.get_active_weapon_ids();
 
         self.static_model_pass(camera, em, light_manager, foliage_ids);
         self.static_model_pass(camera, em, light_manager, trunk_ids);
         self.static_model_pass(camera, em, light_manager, stump_ids);
+        self.static_model_pass(camera, em, light_manager, active_weapon_ids);
 
         // Animated models
         let y_robot_ids = em.get_ids_for_type(EntityType::YRobot);
@@ -572,13 +574,21 @@ impl Renderer {
     }
 
     fn render_sample_depth(&mut self, em: &EntityManager) {
+        // TODO: shadow mapping should just do passes similar to the render ones where we gather
+        // ids we can liekly gather IDs once and then do it with both...
+        let active_weapon_ids: HashSet<usize> = em.get_active_weapon_ids().into_iter().collect();
+
         let depth_shader = self.shaders.get(&ShaderType::Depth).unwrap();
         depth_shader.activate();
 
         depth_shader.set_bool("is_animated", false);
         for model in em.models.iter() {
             let check = em.factions.get(model.key()).unwrap();
-            // TODO:: Get rid of this.
+
+            if !active_weapon_ids.contains(&model.key()) {
+                continue;
+            }
+            // TODO:: Get rid of this. see above...
             if check == &Faction::Gizmo {
                 continue;
             }

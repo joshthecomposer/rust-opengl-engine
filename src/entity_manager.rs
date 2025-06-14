@@ -7,7 +7,7 @@ use libc::EILSEQ;
 use rand::{Rng, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 
-use crate::{animation::{animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model}, animation_system}, camera::Camera, collision_system, config::{entity_config::{AnimationPropHelper, EntityConfig}, world_data::WorldData}, debug::gizmos::{Cuboid, Cylinder}, enums_types::{CellType, EntityType, Faction, Parent, Rotator, SimState, Transform, VisualEffect}, grid::Grid, movement_system, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot, SoundManager}, sparse_set::SparseSet, state_machines, terrain::Terrain};
+use crate::{animation::{animation::{import_bone_data, import_model_data, Animation, Animator, Bone, Model}, animation_system}, camera::Camera, collision_system, config::{entity_config::{AnimationPropHelper, EntityConfig}, world_data::WorldData}, debug::gizmos::{Cuboid, Cylinder}, enums_types::{ActiveItem, CellType, EntityType, Faction, Inventory, Parent, Rotator, SimState, Transform, VisualEffect}, grid::Grid, movement_system, some_data::{GRASSES, TREES}, sound::sound_manager::{ContinuousSound, OneShot, SoundManager}, sparse_set::SparseSet, state_machines, terrain::Terrain};
 
 pub struct EntityManager {
     pub next_entity_id: usize,
@@ -20,6 +20,8 @@ pub struct EntityManager {
     pub skellingtons: SparseSet<Bone>,
     pub rotators: SparseSet<Rotator>,
     pub sim_states: SparseSet<SimState>,
+    pub inventories: SparseSet<Inventory>,
+    pub active_items: SparseSet<ActiveItem>,
 
     // Simulation/Behavior Components
     pub destinations: SparseSet<Vec3>,
@@ -49,6 +51,8 @@ impl EntityManager {
             skellingtons: SparseSet::with_capacity(max_entities),
             rotators: SparseSet::with_capacity(max_entities),
             sim_states: SparseSet::with_capacity(max_entities),
+            inventories: SparseSet::with_capacity(max_entities),
+            active_items: SparseSet::with_capacity(max_entities),
 
             destinations: SparseSet::with_capacity(max_entities),
 
@@ -90,7 +94,7 @@ impl EntityManager {
                         archetype.hit_cyl.clone(),
                     );
                 },
-                Faction::World | Faction::Static | Faction::Gizmo => {
+                Faction::World | Faction::Static | Faction::Gizmo | Faction::Item => {
                     self.create_static_entity(
                         instance.entity_type.clone(),
                         instance.faction.clone(),
@@ -103,6 +107,61 @@ impl EntityManager {
                     );
                 },
             }
+
+        }
+
+
+        {
+            // Load a weapon for the player // TODO: don't hard code this
+            let player_id = self.factions.iter().filter(|f| *f.value() == Faction::Player).last().unwrap().key();
+            let weapon_id = self.next_entity_id;
+            self.create_static_entity(
+                EntityType::OrcSword, 
+                Faction::Item, 
+                Vec3::splat(0.0), 
+                Vec3::splat(1.0), 
+                Quat::from_rotation_z(-std::f32::consts::FRAC_PI_2) * Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2), 
+                Quat::IDENTITY, 
+                "resources/models/static/weapons/swords/001_double_axe.txt", 
+                Cylinder {
+                    r: 0.1,
+                    h: 0.1
+                }
+            );
+
+            self.active_items.insert(
+                player_id,
+                ActiveItem {
+                    right_hand: Some(weapon_id),
+                    left_hand: None,
+                }
+            );
+        }
+
+        {
+            // Load an inventory weapon for the player // TODO: don't hard code this
+            let player_id = self.factions.iter().filter(|f| *f.value() == Faction::Player).last().unwrap().key();
+            let weapon_id = self.next_entity_id;
+            self.create_static_entity(
+                EntityType::OrcSword, 
+                Faction::Item, 
+                Vec3::splat(0.0), 
+                Vec3::splat(1.0), 
+                Quat::from_rotation_z(-std::f32::consts::FRAC_PI_2) * Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2), 
+                Quat::IDENTITY, 
+                "resources/models/static/weapons/swords/001_orc_sword.txt", 
+                Cylinder {
+                    r: 0.1,
+                    h: 0.1
+                }
+            );
+
+            self.inventories.insert(
+                player_id,
+                Inventory {
+                    items: vec![weapon_id],
+                },
+            );
         }
     }
 
@@ -218,6 +277,8 @@ impl EntityManager {
         if faction != Faction::Player {
             self.destinations.insert(self.next_entity_id, position);
         }
+        
+
         self.animators.insert(self.next_entity_id, animator);
         self.skellingtons.insert(self.next_entity_id, skellington.clone());
         self.transforms.insert(self.next_entity_id, transform);
@@ -312,5 +373,17 @@ impl EntityManager {
             .collect();
 
             result
+    }
+
+    pub fn get_active_weapon_ids(&self) -> Vec<usize> {
+        self.active_items
+            .iter()
+            .flat_map(|item| {
+                let active = item.value();
+                [active.right_hand, active.left_hand]
+                    .into_iter()
+                    .flatten()
+            })
+            .collect()
     }
 }
