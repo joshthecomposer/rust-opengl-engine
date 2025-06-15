@@ -273,7 +273,7 @@ impl Animator {
 
     pub fn update(&mut self, skellington: &mut Bone, dt: f32) {
 
-        // Check death conditioin:
+        // Check death condition:
         if self.current_animation == AnimationType::Death {
             if let Some(anim) = self.animations.get(&AnimationType::Death) {
                 if anim.current_time >= anim.duration {
@@ -281,13 +281,8 @@ impl Animator {
                 }
             }
         }
-
-
-        // TODO: THIS IS POTENTIALLY ERROR PRONE. it is really easy to accidentally remove something
-        // twice and have it be gone forever, causing an unwrap() on a None animation value later in 
-        // the rendering stage. Note: when using insert() with the SparseSet, it overrides the previous
-        // value. Maybe this can be used in some way to fix this and get around the borrow checker.
-        // This along with a separate query loop and update loop might help.
+        
+        // TODO: Use the custom implementation of HasmapGetPairMut from items.rs#L64
         if self.current_animation != self.next_animation {
             self.blend_factor += dt / self.blend_time;
             if self.blend_factor >= 1.0 {
