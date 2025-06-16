@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use glam::{vec2, vec3, vec4, Mat4, Vec2, Vec3, Vec3Swizzles, Vec4Swizzles};
 use glfw::MouseButton;
 
-use crate::{camera::{self, Camera}, entity_manager::EntityManager};
+use crate::{camera::{self, Camera}, entity_manager::EntityManager, enums_types::{AnimationType, Faction}};
 
 pub fn handle_keyboard_input(key: glfw::Key, action: glfw::Action, pressed_keys: &mut HashSet<glfw::Key>) {
     match action {
@@ -23,6 +23,12 @@ pub fn handle_mouse_input(button: MouseButton, action: glfw::Action, cursor_pos:
 
                 if !pressed_keys.contains(&glfw::Key::LeftShift) {
                     em.selected.clear();
+
+
+                    let player_id = em.factions.iter().filter(|f| *f.value() == Faction::Player).last().unwrap().key();
+                    let animator = em.animators.get_mut(player_id).unwrap();
+
+                    animator.set_next_animation(AnimationType::Slash);
                 }
 
                 let (ray_origin, ray_dir) = mouse_ray_from_screen(cursor_pos, screen_size, camera);

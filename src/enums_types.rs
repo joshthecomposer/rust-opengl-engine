@@ -186,6 +186,7 @@ pub enum AnimationType {
     Idle,
     Death,
     Dance,
+    Slash,
 }
 
 impl Display for AnimationType {
@@ -195,6 +196,7 @@ impl Display for AnimationType {
             AnimationType::Idle => write!(f, "Idle"),
             AnimationType::Death => write!(f, "Death"),
             AnimationType::Dance => write!(f, "Dance"),
+            AnimationType::Slash => write!(f, "Slash"),
         }
     }
 }
@@ -206,6 +208,7 @@ impl AnimationType {
             "Idle" => Some(AnimationType::Idle),
             "Death" => Some(AnimationType::Death),
             "Dance" => Some(AnimationType::Dance),
+            "Slash" => Some(AnimationType::Slash),
             _ => panic!("Invalid AnimationType passed in."),
         }
     }

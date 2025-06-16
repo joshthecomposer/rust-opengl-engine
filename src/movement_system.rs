@@ -30,65 +30,71 @@ fn handle_player_movement(pressed_keys: &HashSet<glfw::Key>, em: &mut EntityMana
         return;
     }
 
-    let speed = 5.0 * delta;
-    let mut move_dir = vec3(0.0, 0.0, 0.0);
-
-    let forward_flat = vec3(camera.forward.x, 0.0, camera.forward.z).normalize();
-    let right_flat = vec3(camera.right.x, 0.0, camera.right.z).normalize();
-
-    if pressed_keys.contains(&glfw::Key::W) {
-        move_dir += forward_flat;
-    }
-    if pressed_keys.contains(&glfw::Key::S) {
-        move_dir -= forward_flat;
-    }
-    if pressed_keys.contains(&glfw::Key::D) {
-        move_dir += right_flat;
-    }
-    if pressed_keys.contains(&glfw::Key::A) {
-        move_dir -= right_flat;
-    }
-
-    let mut velocity = vec3(0.0, 0.0, 0.0);
-    let new_rotation: Option<Quat>;
-
-    let new_state = if move_dir.length_squared() > 0.0 {
-        move_dir = move_dir.normalize();
-        velocity = move_dir * speed;
-
-        let rot =Quat::from_rotation_y(f32::atan2(-move_dir.x, -move_dir.z));
-        new_rotation = Some(rot * em.transforms.get(player_key).unwrap().original_rotation.normalize());
-        AnimationType::Run 
+    if pressed_keys.contains(&glfw::Key::T) {
+        animator.set_next_animation(AnimationType::Slash);
     } else {
-        new_rotation = None;
-        AnimationType::Idle
-    };
 
-    let transform = em.transforms.get_mut(player_key).unwrap();
-    let rotator = em.rotators.get_mut(player_key).unwrap();
-    if rotator.next_rot != rotator.cur_rot {
-        rotator.blend_factor += delta as f32 / rotator.blend_time;
-        if rotator.blend_factor >= 1.0 {
-            rotator.blend_factor = 0.0;
-            rotator.cur_rot = rotator.next_rot;
+        let speed = 5.0 * delta;
+        let mut move_dir = vec3(0.0, 0.0, 0.0);
+
+        let forward_flat = vec3(camera.forward.x, 0.0, camera.forward.z).normalize();
+        let right_flat = vec3(camera.right.x, 0.0, camera.right.z).normalize();
+
+        if pressed_keys.contains(&glfw::Key::W) {
+            move_dir += forward_flat;
         }
+        if pressed_keys.contains(&glfw::Key::S) {
+            move_dir -= forward_flat;
+        }
+        if pressed_keys.contains(&glfw::Key::D) {
+            move_dir += right_flat;
+        }
+        if pressed_keys.contains(&glfw::Key::A) {
+            move_dir -= right_flat;
+        }
+
+        let mut velocity = vec3(0.0, 0.0, 0.0);
+        let new_rotation: Option<Quat>;
+
+        let new_state = if move_dir.length_squared() > 0.0 {
+            move_dir = move_dir.normalize();
+            velocity = move_dir * speed;
+
+            let rot =Quat::from_rotation_y(f32::atan2(-move_dir.x, -move_dir.z));
+            new_rotation = Some(rot * em.transforms.get(player_key).unwrap().original_rotation.normalize());
+            AnimationType::Run 
+        } else {
+            new_rotation = None;
+            AnimationType::Idle
+        };
+
+        let transform = em.transforms.get_mut(player_key).unwrap();
+        let rotator = em.rotators.get_mut(player_key).unwrap();
+        if rotator.next_rot != rotator.cur_rot {
+            rotator.blend_factor += delta as f32 / rotator.blend_time;
+            if rotator.blend_factor >= 1.0 {
+                rotator.blend_factor = 0.0;
+                rotator.cur_rot = rotator.next_rot;
+            }
+        }
+
+        animator.next_animation = new_state;
+
+        if let Some(rot) = new_rotation {
+            if rotator.blend_factor == 0.0 && rot != rotator.cur_rot {
+                rotator.next_rot = rot;
+            }
+
+            transform.rotation = rotator.cur_rot.slerp(rotator.next_rot, rotator.blend_factor);
+        }
+
+        // TODO: This should likely be different and calculated in the collision system
+        transform.position.y = terrain.get_height_at(transform.position.x, transform.position.z);
+
+        transform.position += velocity;
+
     }
 
-    animator.next_animation = new_state;
-
-    if let Some(rot) = new_rotation {
-        if rotator.blend_factor == 0.0 && rot != rotator.cur_rot {
-            rotator.next_rot = rot;
-        }
-
-        transform.rotation = rotator.cur_rot.slerp(rotator.next_rot, rotator.blend_factor);
-    }
-
-    // TODO: This should likely be different and calculated in the collision system
-    transform.position.y = terrain.get_height_at(transform.position.x, transform.position.z);
-
-    transform.position += velocity;
-    
 }
 
 fn handle_enemy_movement(ids: Vec<usize>, em: &mut EntityManager, terrain: &Terrain, dt: f32) {

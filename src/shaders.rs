@@ -237,6 +237,7 @@ pub fn init_shader_program(file_path: &str) -> u32 {
 }
 
 fn extract_shader_sources(file_path: &str) -> (String, Option<String>, String) {
+    println!("{}", file_path);
     let data = read_to_string(file_path).unwrap();
     let mut lines = data.lines();
 
