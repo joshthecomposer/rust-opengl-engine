@@ -345,8 +345,8 @@
           "name": "Run",
           "one_shots": {
             "Footstep": [
-              5,
-              14
+              4,
+              13
             ]
           },
           "continuous_sounds": [],
