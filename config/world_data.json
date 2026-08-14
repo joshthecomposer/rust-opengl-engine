@@ -484,7 +484,7 @@
       ],
       "weapons": [
         {
-          "entity_type": "OrcSword",
+          "entity_type": "DoubleAxe",
           "faction": "Item",
           "position": [
             0.0,
