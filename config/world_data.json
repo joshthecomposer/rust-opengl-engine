@@ -469,7 +469,7 @@
       "pickup_range": null
     },
     {
-      "entity_type": "Peasant1",
+      "entity_type": "ik_guy",
       "faction": "Player",
       "position": [
         7.6030593,

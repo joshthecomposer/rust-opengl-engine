@@ -88,7 +88,7 @@ pub fn locomotion_state_machine(
             LocoState::Jumping => {
                 let jump_anim = animator.animations.get(&AnimationType::Jump).unwrap();
 
-                if jump_anim.current_segment.get() >= 8 && !ctrl.jump_command_issued {
+                if jump_anim.current_segment.get() >= 5 && !ctrl.jump_command_issued {
                     cmds.jump(player_id);
                     cmds.loco.push(LocoCmd {
                         target: player_id,

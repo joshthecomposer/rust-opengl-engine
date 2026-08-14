@@ -137,6 +137,14 @@ def write_mesh(f, mesh_obj, bone_index_of, diffuse_texture):
     deps = bpy.context.evaluated_depsgraph_get()
     mesh_eval = mesh_obj.evaluated_get(deps)
     me_eval = mesh_eval.to_mesh()
+    
+    normal_matrix = (
+        mesh_obj.matrix_world
+        .to_3x3()
+        .inverted()
+        .transposed()
+    )
+    
     try:
         # Match working exporter: pre-apply conversion to the evaluated mesh
         me_eval.transform(C)
@@ -156,7 +164,9 @@ def write_mesh(f, mesh_obj, bone_index_of, diffuse_texture):
 
                 # Positions/normals in world space
                 p = mesh_obj.matrix_world @ v.co
-                n = (mesh_obj.matrix_world.to_3x3() @ v.normal).normalized()
+                
+                #flat shading, every corner gets the same face normal
+                n = (normal_matrix @ poly.normal).normalized()
 
                 if uv_layer:
                     uv = uv_layer.data[li].uv
@@ -254,7 +264,7 @@ def move_texture_file(diffuse_texture_path, parent_dir):
 # where is the texture file located currently
 diffuse_texture_path = Path(r"C:\Users\jdwis\OneDrive\Desktop\blue_noise.png")
 # where should we put the mesh/armature
-output_mesh_path = Path(r"C:\Users\jdwis\OneDrive\Desktop\Output\testerino.txt")
+output_mesh_path = Path(r"C:\Users\jdwis\OneDrive\Desktop\Output\no_ik_guy.txt")
 # what should we name the texture file (it will go where the mesh goes)
 diffuse_texture_filename = "testtext.png"
 # ===================================================
