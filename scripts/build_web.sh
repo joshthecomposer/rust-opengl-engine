@@ -13,7 +13,7 @@ fi
 
 rm -rf dist
 mkdir -p dist
-wasm-bindgen --target web --out-dir dist --out-name learn_opengl_rs \
+wasm-bindgen --target web --out-dir dist --out-name learn_wgpu_rs \
   "target/wasm32-unknown-unknown/${WASM_DIR}/learn-wgpu-rs.wasm"
 
 cp web/index.html dist/
