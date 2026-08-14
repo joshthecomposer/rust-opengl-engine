@@ -337,7 +337,7 @@
           "hold_frame": null,
           "interrupt_frame": null,
           "reset_on_change": false,
-          "do_root_motion": false,
+          "do_root_motion": true,
           "projectile_frame": null,
           "damage_volume": null
         },
@@ -357,6 +357,57 @@
           "do_root_motion": false,
           "projectile_frame": null,
           "damage_volume": null
+        },
+        {
+          "name": "OSBasic1",
+          "one_shots": {},
+          "continuous_sounds": [],
+          "hurtbox_activation": [
+            [
+              10,
+              15
+            ]
+          ],
+          "hold_frame": null,
+          "interrupt_frame": 16,
+          "reset_on_change": true,
+          "do_root_motion": true,
+          "projectile_frame": null,
+          "damage_volume": null
+        },
+        {
+          "name": "OSBasic2",
+          "one_shots": {},
+          "continuous_sounds": [],
+          "hurtbox_activation": [
+            [
+              10,
+              15
+            ]
+          ],
+          "hold_frame": null,
+          "interrupt_frame": 16,
+          "reset_on_change": true,
+          "do_root_motion": true,
+          "projectile_frame": null,
+          "damage_volume": null
+        },
+        {
+          "name": "OSBasic3",
+          "one_shots": {},
+          "continuous_sounds": [],
+          "hurtbox_activation": [
+            [
+              10,
+              15
+            ]
+          ],
+          "hold_frame": null,
+          "interrupt_frame": 25,
+          "reset_on_change": true,
+          "do_root_motion": true,
+          "projectile_frame": null,
+          "damage_volume": null
         }
       ],
       "item_bones": {
@@ -371,7 +422,7 @@
         "h": 1.8
       },
       "total_mass": 60.0,
-      "root_bone": null
+      "root_bone": "pelvis"
     },
     "GoldGrass01": {
       "rot_correction": [
